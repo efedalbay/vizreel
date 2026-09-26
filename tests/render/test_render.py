@@ -373,6 +373,51 @@ def test_render_command(tmp_path: Path) -> None:
     assert result.stdout.strip().endswith("1 rendered, 0 failed")
 
 
+def test_watch_renders_again_only_the_changed_chart(tmp_path: Path) -> None:
+    import threading
+    import time
+
+    from vizreel.watch import FileWatcher, watch_spec
+
+    spec = tmp_path / "spec.yaml"
+    charts = (
+        "  - {{ id: first, type: stat, value: {first} }}\n"
+        "  - {{ id: second, type: stat, value: 2 }}\n"
+    )
+    spec.write_text("version: 1\ncharts:\n" + charts.format(first=1), encoding="utf-8")
+    renders: list[list[str]] = []
+    waits = threading.Semaphore(0)
+    done = threading.Event()
+    watcher = FileWatcher([spec], settle=0.1)
+    thread = threading.Thread(
+        target=watch_spec,
+        args=(spec, RenderOptions(out_dir=tmp_path / "out", quality="preview")),
+        kwargs={
+            "on_render": renders.append,
+            "on_result": lambda result: None,
+            "on_error": lambda error: pytest.fail(str(error)),
+            "on_wait": waits.release,
+            "stop": done.is_set,
+            "poll_seconds": 0.05,
+            "watcher": watcher,
+        },
+    )
+    thread.start()
+    try:
+        assert waits.acquire(timeout=120)
+        first_clip = tmp_path / "out" / "first.preview.mov"
+        rendered_at = first_clip.stat().st_mtime_ns
+        time.sleep(0.05)
+        spec.write_text("version: 1\ncharts:\n" + charts.format(first=5), encoding="utf-8")
+        assert waits.acquire(timeout=120)
+    finally:
+        done.set()
+        thread.join(timeout=120)
+
+    assert renders == [["first", "second"], ["first"]]
+    assert first_clip.stat().st_mtime_ns > rendered_at
+
+
 @pytest.mark.parametrize("size_px", [180, 36])
 def test_composed_numbers_match_pango_layout(tmp_path: Path, size_px: float) -> None:
     from manim import tempconfig

@@ -52,6 +52,7 @@ vizreel/
 │   ├── cli.py               ← Typer app, no business logic
 │   ├── errors.py            ← VizreelError hierarchy
 │   ├── validation.py        ← YAML reading and user-facing validation messages
+│   ├── watch.py             ← `render --watch`: poll files, re-render changed charts
 │   ├── spec/
 │   │   ├── models.py        ← Pydantic models for the spec
 │   │   └── loader.py        ← read YAML → validated Spec
@@ -173,6 +174,10 @@ Resolution order for `meta.theme`: built-in name → path relative to the spec f
 - `--still` also writes the final frame as PNG. This is how both humans and Claude Code check a chart visually without playing video.
 - Output is deterministic: same spec + theme → same frames. No randomness.
 - Manim's own cache and partial-movie files go to a temporary directory, not to the user's output folder.
+
+### Watch mode
+
+`vizreel render --watch` runs `watch.py`. It renders once, then polls the spec file and the theme file it resolves to (standard library only, no file-system event dependency: at most two files are watched). A change is read only after the files have stayed unchanged for a moment, because some editors save in several steps. Each render compares the new spec with the last one that loaded: if `meta` or the theme changed every chart renders, otherwise only charts that are new or whose model differs. Charts that failed are rendered again on the next change. A spec or theme that fails to load is reported and watching goes on. The pure parts (`FileWatcher` with an injectable clock, `charts_to_render`) are unit-tested.
 
 ## Errors
 

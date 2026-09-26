@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `vizreel render --watch` renders again whenever the spec or its theme file is saved. Only the charts that changed are rendered, an invalid spec prints its errors without stopping, and Ctrl+C stops watching.
+
 ## [0.1.1] - 2026-09-27
 
 Fixes found while making the first real clips with 0.1.0.

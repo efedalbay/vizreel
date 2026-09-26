@@ -2,12 +2,14 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 from typer.testing import CliRunner
 
 from vizreel import __version__, cli
 from vizreel.cli import app
+from vizreel.errors import RenderError
 
 ROOT = Path(__file__).parents[2]
 SHOWCASE = ROOT / "examples" / "showcase.yaml"
@@ -133,6 +135,30 @@ def test_render_missing_theme(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert 'theme "brand.yaml" not found' in result.stderr
+
+
+def test_render_watch_prints_progress_and_stops_on_ctrl_c(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def watch(spec: Path, options: object, **callbacks: Any) -> None:
+        callbacks["on_render"](["peak-valuation"])
+        callbacks["on_error"](RenderError("something went wrong"))
+        callbacks["on_render"]([])
+        callbacks["on_wait"]()
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "watch_spec", watch)
+
+    result = runner.invoke(app, ["render", str(SHOWCASE), "--watch"])
+
+    assert result.exit_code == 0
+    assert result.stdout.splitlines() == [
+        "Rendering peak-valuation...",
+        "No chart changed.",
+        f"Watching {SHOWCASE} for changes. Press Ctrl+C to stop.",
+        "Stopped watching.",
+    ]
+    assert result.stderr.strip() == "error: something went wrong"
 
 
 def test_render_rejects_unknown_quality() -> None:

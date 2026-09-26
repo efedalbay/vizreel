@@ -118,6 +118,7 @@ vizreel new line -o charts.yaml         # start from a commented template
 vizreel validate charts.yaml            # check a spec and list every error
 vizreel render charts.yaml              # render all charts to ./out
 vizreel render charts.yaml --only offers --quality preview --still
+vizreel render charts.yaml --quality preview --still --watch   # render again on every save
 vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
 vizreel themes list                     # built-in themes
 vizreel theme check my-brand.yaml       # contrast and color vision checks for a theme
@@ -130,6 +131,7 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 | `--quality preview\|final` | `preview` is low resolution and fast, and writes `ID.preview.mov`; `final` uses the spec settings |
 | `--format mov\|webm\|mp4` | `mov` and `webm` keep transparency; `mp4` uses the theme background |
 | `--still` | Also save the final frame as a PNG |
+| `--watch` | Keep running and render again whenever the spec or its theme file is saved. Only the charts that changed are rendered; an invalid spec prints its errors and watching goes on. Ctrl+C stops |
 
 ## Using the clips in a video editor
 

@@ -20,6 +20,7 @@ from vizreel.spec.loader import load_spec, spec_json_schema
 from vizreel.spec.templates import spec_template
 from vizreel.themes.check import check_theme
 from vizreel.themes.loader import describe_builtin_themes, load_theme
+from vizreel.watch import watch_spec
 
 app = typer.Typer(
     name="vizreel",
@@ -113,6 +114,14 @@ def render(
     still: Annotated[
         bool, typer.Option("--still", help="Also save the last frame as PNG.")
     ] = False,
+    watch: Annotated[
+        bool,
+        typer.Option(
+            "--watch",
+            help="Keep running and render again whenever the spec or its theme changes. "
+            "Only changed charts are rendered. Ctrl+C stops.",
+        ),
+    ] = False,
 ) -> None:
     """Render each chart of a spec to its own clip."""
     options = RenderOptions(
@@ -123,6 +132,9 @@ def render(
         still=still,
     )
     console = _stdout()
+    if watch:
+        _watch(ctx, spec, options, console)
+        return
     with _reporting_errors(ctx), console.status("Rendering...") as status:
         results = render_spec(
             spec,
@@ -137,6 +149,37 @@ def render(
         _stderr().print(f"[red]{summary}[/]")
         raise typer.Exit(1)
     console.print(f"[green]{summary}[/]")
+
+
+def _watch(ctx: typer.Context, spec: Path, options: RenderOptions, console: Console) -> None:
+    def rendering(ids: list[str]) -> None:
+        if ids:
+            console.print(f"Rendering {escape(', '.join(ids))}...")
+        else:
+            console.print("No chart changed.")
+
+    def waiting() -> None:
+        console.print(f"[dim]Watching {escape(str(spec))} for changes. Press Ctrl+C to stop.[/]")
+
+    with _reporting_errors(ctx):
+        try:
+            watch_spec(
+                spec,
+                options,
+                on_render=rendering,
+                on_result=lambda result: _print_chart_result(console, result),
+                on_error=_print_vizreel_error,
+                on_wait=waiting,
+            )
+        except KeyboardInterrupt:
+            console.print("Stopped watching.")
+
+
+def _print_vizreel_error(error: VizreelError) -> None:
+    if isinstance(error, InputFileError):
+        _print_input_error(error)
+    else:
+        _stderr().print(f"[red]error:[/] {escape(str(error))}")
 
 
 def _print_chart_result(console: Console, result: ChartResult) -> None:
@@ -263,11 +306,8 @@ def _reporting_errors(ctx: typer.Context) -> Iterator[None]:
         yield
     except typer.Exit:
         raise
-    except InputFileError as exc:
-        _print_input_error(exc)
-        raise typer.Exit(1) from None
     except VizreelError as exc:
-        _stderr().print(f"[red]error:[/] {escape(str(exc))}")
+        _print_vizreel_error(exc)
         raise typer.Exit(1) from None
     except Exception as exc:
         if ctx.obj:
