@@ -1,0 +1,7 @@
+version: 1
+charts:
+  - id: valuation
+    type: line
+    x: ["2016", "2017", "2018", "2019", "2020"]
+    series:
+      - values: [0.05, 0.2, 2.25, 2.25]

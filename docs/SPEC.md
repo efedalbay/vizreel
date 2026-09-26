@@ -27,6 +27,13 @@ vizreel render users.yaml
 | `meta` | object | no | see below | Settings shared by all charts. |
 | `charts` | list | yes | — | One or more charts. Each renders to its own file. |
 
+### Rules that apply everywhere
+
+- **Unknown fields are errors.** A misspelled field such as `lable:` is reported, not ignored.
+- **Numbers are numbers, text is text.** A number field does not accept text (`"740M"`, `"12"`), and a text field does not accept a number. Put years and dates in quotes (`"2016"`, `"Mar 2016"`): unquoted, YAML reads `2016` as a number and `2016-03-01` as a date. YAML also reads `yes`, `no`, `on`, `off`, `true` and `false` as booleans, so quote them when you mean text.
+- **Text fields cannot be empty**, except `prefix` and `suffix`.
+- `inf` and `nan` are not valid numbers.
+
 ## `meta`
 
 | Field | Type | Default | Description |
@@ -44,13 +51,13 @@ CLI flags override `meta` values.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name. |
+| `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
 | `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`. |
 | `title` | string | no | — | Shown at the top of the chart. |
 | `subtitle` | string | no | — | Smaller line under the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
 | `duration` | number (seconds) | no | depends on type | Total clip length, including the final hold. Minimum 2. |
-| `highlight` | object | no | — | Type-specific emphasis. See each type. |
+| `highlight` | object | no | — | Type-specific emphasis. See each type. `stat` has no `highlight`. |
 
 ### Number format (`number`)
 
@@ -60,7 +67,7 @@ Used by any field that displays values.
 |---|---|---|---|
 | `prefix` | string | `""` | `$` |
 | `suffix` | string | `""` | `%`, ` users` |
-| `decimals` | integer | auto | `1` → `4.2` |
+| `decimals` | integer, 0–6 | auto | `1` → `4.2` |
 | `compact` | boolean | `false` | `true` → `740M`, `2.25B` |
 
 Values in the spec are always plain numbers. `740000000` with `prefix: "$"` and `compact: true` renders as `$740M`. Never write `"740M"` as a value.
@@ -96,13 +103,13 @@ One or more series drawn from left to right.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `x` | list of strings | yes | — | Labels on the horizontal axis, in order (e.g. years). |
+| `x` | list of strings | yes | — | Labels on the horizontal axis, in order (e.g. years). At least 2, each unique. |
 | `series` | list | yes | — | 1–3 series. |
 | `series[].name` | string | if more than one series | — | Shown in the legend. |
-| `series[].values` | list of numbers or `null` | yes | — | Same length as `x`. `null` leaves a gap. |
+| `series[].values` | list of numbers or `null` | yes | — | Same length as `x`. `null` leaves a gap. At least one value must be a number. |
 | `number` | number format | no | — | Formatting of axis and value labels. |
-| `y_min` / `y_max` | number | no | auto | Axis range. Auto range starts at 0 when all values are positive. |
-| `highlight.x` | string | no | — | An `x` label to mark with a vertical line and dot. |
+| `y_min` / `y_max` | number | no | auto | Axis range. Auto range starts at 0 when all values are positive. `y_min` must be less than `y_max`, and every value must lie inside the range. |
+| `highlight.x` | string | if `highlight` is given | — | An `x` label to mark with a vertical line and dot. At least one series must have a value there. |
 | `highlight.label` | string | no | — | Callout text at the highlighted point. |
 
 Default `duration`: 6.
@@ -126,11 +133,11 @@ Vertical bars, one per category.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `bars` | list | yes | — | 2–8 bars. |
-| `bars[].label` | string | yes | — | Category label. |
-| `bars[].value` | number | yes | — | Bar height. |
+| `bars[].label` | string | yes | — | Category label. Each label is unique. |
+| `bars[].value` | number | yes | — | Bar height. Zero or more; negative values are not supported in version 1. |
 | `number` | number format | no | — | Formatting of value labels. |
 | `sort` | `none` \| `asc` \| `desc` | no | `none` | Order of bars. |
-| `highlight.label` | string | no | — | Bar to draw in the `highlight` color. Others use `muted`. |
+| `highlight.label` | string | if `highlight` is given | — | Bar to draw in the `highlight` color. Others use `muted`. Must match a bar label. |
 
 Default `duration`: 5.
 
@@ -155,7 +162,7 @@ Events placed in order along a horizontal line.
 | `events` | list | yes | — | 2–7 events, in chronological order. |
 | `events[].date` | string | yes | — | Displayed as written, e.g. `"Mar 2016"`. |
 | `events[].label` | string | yes | — | Short description, max ~40 characters for readability. |
-| `events[].emphasis` | boolean | no | `false` | Draws this event in the `highlight` color, larger. |
+| `events[].emphasis` | boolean | no | `false` | Draws this event in the `highlight` color, larger. At most one event per timeline. |
 
 Default `duration`: 7.
 

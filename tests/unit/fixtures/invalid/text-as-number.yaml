@@ -1,0 +1,6 @@
+version: 1
+charts:
+  - id: peak-valuation
+    type: stat
+    value: "740M"
+    number: { prefix: "$", compact: true }

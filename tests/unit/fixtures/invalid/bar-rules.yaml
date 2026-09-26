@@ -1,0 +1,9 @@
+version: 1
+charts:
+  - id: offers
+    type: bar
+    bars:
+      - { label: "Buyer A (2015)", value: 740000000 }
+      - { label: "Buyer B (2016)", value: 70000000 }
+      - { label: "Buyer A (2015)", value: 40000000 }
+    highlight: { label: "Buyer D (2017)" }

@@ -1,0 +1,4 @@
+version: 1
+charts:
+  - id: users
+    value: 1200000

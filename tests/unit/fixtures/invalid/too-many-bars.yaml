@@ -1,0 +1,14 @@
+version: 1
+charts:
+  - id: regions
+    type: bar
+    bars:
+      - { label: "North", value: 1 }
+      - { label: "South", value: 2 }
+      - { label: "East", value: 3 }
+      - { label: "West", value: 4 }
+      - { label: "Central", value: 5 }
+      - { label: "Coast", value: 6 }
+      - { label: "Hills", value: 7 }
+      - { label: "Valley", value: 8 }
+      - { label: "Islands", value: 9 }

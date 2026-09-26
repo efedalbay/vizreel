@@ -1,0 +1,6 @@
+version: 1
+charts:
+  - id: users
+    type: stat
+    value: 1200000
+    lable: Monthly users

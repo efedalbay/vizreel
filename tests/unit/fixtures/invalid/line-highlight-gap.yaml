@@ -1,0 +1,8 @@
+version: 1
+charts:
+  - id: valuation
+    type: line
+    x: ["2019", "2020"]
+    series:
+      - values: [2.25, null]
+    highlight: { x: "2020", label: "Last round" }

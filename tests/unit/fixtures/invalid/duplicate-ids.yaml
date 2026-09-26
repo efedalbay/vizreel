@@ -1,0 +1,5 @@
+version: 1
+charts:
+  - { id: users, type: stat, value: 1200000 }
+  - { id: revenue, type: stat, value: 1750000000 }
+  - { id: users, type: stat, value: 900000 }

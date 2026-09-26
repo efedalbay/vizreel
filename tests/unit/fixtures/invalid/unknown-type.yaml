@@ -1,0 +1,5 @@
+version: 1
+charts:
+  - id: market-share
+    type: pie
+    title: Northwind's market share

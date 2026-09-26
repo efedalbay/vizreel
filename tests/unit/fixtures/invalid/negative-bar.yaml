@@ -1,0 +1,7 @@
+version: 1
+charts:
+  - id: profit
+    type: bar
+    bars:
+      - { label: "2019", value: 12 }
+      - { label: "2020", value: -3 }

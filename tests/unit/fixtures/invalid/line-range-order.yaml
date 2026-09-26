@@ -1,0 +1,9 @@
+version: 1
+charts:
+  - id: users
+    type: line
+    x: ["2019", "2020"]
+    y_min: 10
+    y_max: 5
+    series:
+      - values: [6, 7]

@@ -1,0 +1,4 @@
+version: 1
+charts:
+  - { id: Peak Valuation, type: stat, value: 740000000 }
+  - { id: con, type: stat, value: 1 }

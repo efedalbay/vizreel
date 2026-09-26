@@ -1,0 +1,8 @@
+version: 1
+charts:
+  - id: final-years
+    type: timeline
+    events:
+      - { date: "2018", label: "Raises $865M", emphasis: true }
+      - { date: "2020", label: "Revenue reaches $1.75B" }
+      - { date: "Jun 2021", label: "Files for bankruptcy", emphasis: true }

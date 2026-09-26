@@ -1,0 +1,7 @@
+version: 1
+charts:
+  - id: final-years
+    type: timeline
+    events:
+      - { date: 2018-03-01, label: "Raises $865M" }
+      - { date: "Jun 2021", label: no }

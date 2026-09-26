@@ -1,0 +1,10 @@
+version: 1
+charts:
+  - id: users
+    type: line
+    x: ["2019", "2020", "2020"]
+    y_max: 10
+    series:
+      - { name: Web, values: [4, 12, null] }
+      - values: [null, null, null]
+    highlight: { x: "2021" }

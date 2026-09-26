@@ -1,0 +1,4 @@
+version: 1
+charts:
+  - { id: short, type: stat, value: .inf, duration: 1 }
+  - { id: format, type: stat, value: 1, number: { decimals: 7, compact: "yes" } }
