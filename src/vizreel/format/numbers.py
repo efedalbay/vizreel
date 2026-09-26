@@ -37,22 +37,38 @@ def format_number(value: float, fmt: NumberFormat | None = None) -> str:
 
 
 def format_numbers(values: Sequence[float], fmt: NumberFormat | None = None) -> list[str]:
-    """Format values that appear together in one chart with the same number of decimals.
+    """Format values that appear together in one chart with consistent decimals.
 
-    When `fmt.decimals` is not set, every value gets as many decimals as the most
-    precise one needs, so a chart shows 0.05, 0.20 and 2.25 rather than 0.05, 0.2 and 2.25.
+    See `shared_decimals`: a chart shows 0.05, 0.20 and 2.25 rather than 0.05, 0.2 and 2.25.
 
     Args:
         values: The numbers to format.
         fmt: Prefix, suffix, decimals and compact notation. Defaults to plain formatting.
     """
     fmt = fmt or _DEFAULT_FORMAT
-    decimals = decimals_for(values, fmt)
-    return [_format(value, fmt, decimals) for value in values]
+    decimals = shared_decimals(values, fmt)
+    return [_format(value, fmt, places) for value, places in zip(values, decimals, strict=True)]
+
+
+def shared_decimals(values: Sequence[float], fmt: NumberFormat | None = None) -> list[int]:
+    """Return the decimals of each value when the values are shown together.
+
+    With `fmt.decimals` set, every value uses it. Otherwise values share the decimals of the
+    most precise one; with compact notation, only values with the same unit share them, so
+    $1.25B stands next to $412.0M rather than $412.00M.
+    """
+    fmt = fmt or _DEFAULT_FORMAT
+    if fmt.decimals is not None:
+        return [fmt.decimals] * len(values)
+    auto = [_auto_decimals(value, fmt.compact) for value in values]
+    most_by_unit: dict[int, int] = {}
+    for unit_index, places in auto:
+        most_by_unit[unit_index] = max(most_by_unit.get(unit_index, 0), places)
+    return [most_by_unit[unit_index] for unit_index, _ in auto]
 
 
 def decimals_for(values: Sequence[float], fmt: NumberFormat | None = None) -> int:
-    """Return the number of decimals `format_numbers` uses for these values.
+    """Return one number of decimals for all these values, whatever their units.
 
     A counting animation formats every frame with the decimals of its start and end
     values, so the text does not change length while it counts.
@@ -60,7 +76,7 @@ def decimals_for(values: Sequence[float], fmt: NumberFormat | None = None) -> in
     fmt = fmt or _DEFAULT_FORMAT
     if fmt.decimals is not None:
         return fmt.decimals
-    return max((_auto_decimals(value, fmt.compact) for value in values), default=0)
+    return max((_auto_decimals(value, fmt.compact)[1] for value in values), default=0)
 
 
 def _format(value: float, fmt: NumberFormat, decimals: int) -> str:
@@ -70,7 +86,8 @@ def _format(value: float, fmt: NumberFormat, decimals: int) -> str:
     return f"{sign}{fmt.prefix}{digits}{COMPACT_UNITS[unit_index][0]}{fmt.suffix}"
 
 
-def _auto_decimals(value: float, compact: bool) -> int:
+def _auto_decimals(value: float, compact: bool) -> tuple[int, int]:
+    """Return the compact unit a value is shown in and the decimals it needs."""
     number = _to_decimal(value)
     scaled, unit_index = _scale(number, compact)
     if unit_index == 0:
@@ -78,8 +95,8 @@ def _auto_decimals(value: float, compact: bool) -> int:
     else:
         integer_digits = len(str(int(abs(scaled))))
         max_decimals = max(0, COMPACT_SIGNIFICANT_DIGITS - integer_digits)
-    rounded, _ = _round_scaled(number, compact, max_decimals)
-    return _decimals_needed(rounded)
+    rounded, rounded_unit = _round_scaled(number, compact, max_decimals)
+    return rounded_unit, _decimals_needed(rounded)
 
 
 def _round_scaled(number: Decimal, compact: bool, decimals: int) -> tuple[Decimal, int]:

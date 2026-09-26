@@ -1,6 +1,12 @@
 import pytest
 
-from vizreel.format.numbers import MINUS_SIGN, decimals_for, format_number, format_numbers
+from vizreel.format.numbers import (
+    MINUS_SIGN,
+    decimals_for,
+    format_number,
+    format_numbers,
+    shared_decimals,
+)
 from vizreel.spec.models import NumberFormat
 
 M = MINUS_SIGN
@@ -156,6 +162,26 @@ def test_group_of_whole_numbers_has_no_decimals() -> None:
     values = [740000000, 70000000, 40000000]
 
     assert format_numbers(values, DOLLARS_COMPACT) == ["$740M", "$70M", "$40M"]
+
+
+def test_compact_group_shares_decimals_per_unit() -> None:
+    values = [1250000000, 412000000, 187500000, 54300000, 7800000, 950000]
+
+    assert format_numbers(values, DOLLARS_COMPACT) == [
+        "$1.25B",
+        "$412.0M",
+        "$187.5M",
+        "$54.3M",
+        "$7.8M",
+        "$950K",
+    ]
+
+
+def test_shared_decimals() -> None:
+    assert shared_decimals([1250000000, 412000000, 7800000], COMPACT) == [2, 1, 1]
+    assert shared_decimals([0.05, 2.25, 3]) == [2, 2, 2]
+    assert shared_decimals([1, 2.5], NumberFormat(decimals=3)) == [3, 3]
+    assert shared_decimals([]) == []
 
 
 def test_group_with_fixed_decimals_ignores_precision_of_values() -> None:
