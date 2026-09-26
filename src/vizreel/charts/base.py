@@ -23,6 +23,8 @@ class ChartType(ABC):
     Attributes:
         name: The `type:` value in the spec, e.g. "line".
         model: Pydantic model for this chart's fields.
+        template: A commented example of this chart as a YAML list item, printed by
+            `vizreel new`. It must be a valid chart.
         chart: The chart to build, an instance of `model`.
         theme: All styling.
         layout: All geometry.
@@ -30,6 +32,7 @@ class ChartType(ABC):
 
     name: ClassVar[str]
     model: ClassVar[type[BaseChart]]
+    template: ClassVar[str]
 
     def __init__(self, chart: BaseChart, theme: Theme, layout: Layout) -> None:
         self.chart = chart

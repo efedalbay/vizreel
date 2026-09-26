@@ -18,6 +18,7 @@ class DemoChart(BaseChart):
 class DemoChartType(ChartType):
     name = "demo"
     model = DemoChart
+    template = "- { id: demo, type: demo }\n"
 
     def build(self, scene: object) -> None:
         raise NotImplementedError
@@ -62,3 +63,11 @@ def test_register_rejects_model_with_mismatched_type() -> None:
 
     with pytest.raises(TypeError, match=r"DemoChart\.type must be Literal\['other'\]"):
         ChartRegistry().register(Mismatched)
+
+
+def test_register_rejects_chart_type_without_template() -> None:
+    class Untemplated(DemoChartType):
+        template = ""
+
+    with pytest.raises(TypeError, match="needs a template for `vizreel new`"):
+        ChartRegistry().register(Untemplated)

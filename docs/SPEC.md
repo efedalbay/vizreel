@@ -19,6 +19,12 @@ charts:
 vizreel render users.yaml
 ```
 
+To start from a commented template of any chart type:
+
+```bash
+vizreel new line -o revenue.yaml
+```
+
 ## Top level
 
 | Field | Type | Required | Default | Description |

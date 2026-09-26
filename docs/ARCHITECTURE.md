@@ -116,6 +116,7 @@ Every chart type is a subclass of `ChartType` in `charts/base.py`:
 class ChartType(ABC):
     name: ClassVar[str]                 # the `type:` value in the spec, e.g. "line"
     model: ClassVar[type[BaseChart]]    # Pydantic model for this chart's fields
+    template: ClassVar[str]             # commented example chart, printed by `vizreel new`
 
     def __init__(self, chart: BaseChart, theme: Theme, layout: Layout): ...
 
@@ -134,7 +135,7 @@ Rules:
 - A chart module imports Manim, and `render/elements.py`, inside `build`, not at the top. `vizreel validate` imports every chart module through the registry, and importing Manim takes several seconds.
 - Text is never shrunk to fit. Text that does not fit at the theme size is a `RenderError` asking the user to shorten it.
 
-Adding a new chart type = one module in `charts/` + one Pydantic model + one section in `docs/SPEC.md` + one example in `examples/showcase.yaml` + tests. Nothing else.
+Adding a new chart type = one module in `charts/` (with its template) + one Pydantic model + one section in `docs/SPEC.md` + one example in `examples/showcase.yaml` + tests. Nothing else. The registry refuses a chart type without a template, and a test checks that every template is a valid spec, also with its commented optional fields uncommented.
 
 ## Spec models
 

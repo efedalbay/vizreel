@@ -316,6 +316,19 @@ def test_light_theme_is_used_for_rendering(tmp_path: Path) -> None:
     assert np.allclose(corner[:3], hex_rgb("#F6F8FA"), atol=4)
 
 
+@pytest.mark.parametrize("name", ["stat", "line", "bar", "timeline"])
+def test_every_template_renders(tmp_path: Path, name: str) -> None:
+    from vizreel.spec.templates import spec_template
+
+    spec = tmp_path / f"{name}.yaml"
+    spec.write_text(spec_template(name), encoding="utf-8")
+
+    [result] = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+
+    assert result.error is None
+    assert result.video is not None
+
+
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     too_wide = "Northwind " * 20
     spec = tmp_path / "spec.yaml"

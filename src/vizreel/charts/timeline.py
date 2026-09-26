@@ -133,6 +133,18 @@ class TimelineChartType(ChartType):
 
     name = "timeline"
     model = TimelineChart
+    template = """\
+- id: history                      # unique; lowercase letters, digits and hyphens
+  type: timeline
+  title: How Northwind grew
+  events:                          # two to seven events, in order
+    - { date: "2016", label: "Founded" }   # dates are shown as written
+    - { date: "2018", label: "Opens offices in three countries", emphasis: true }
+    - { date: "2020", label: "Reaches one million users" }
+  # subtitle: 2016 to 2020         # optional
+  # source: "Source: example data" # optional
+  # duration: 7                    # optional: seconds, at least 2
+"""
 
     def build(self, scene: "Scene") -> None:
         """Add the timeline to the scene and animate it."""

@@ -42,6 +42,21 @@ class BarChartType(ChartType):
 
     name = "bar"
     model = BarChart
+    template = """\
+- id: regions                      # unique; lowercase letters, digits and hyphens
+  type: bar
+  title: Northwind revenue by region
+  bars:                            # two to eight bars; values zero or more
+    - { label: North, value: 412000000 }
+    - { label: South, value: 298000000 }
+    - { label: East, value: 187500000 }
+  number: { prefix: "$", compact: true }
+  highlight: { label: East }       # optional: the bar that carries the message
+  # sort: desc                     # optional: none, asc or desc
+  # subtitle: Fiscal year 2022     # optional
+  # source: "Source: example data" # optional
+  # duration: 5                    # optional: seconds, at least 2
+"""
 
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""

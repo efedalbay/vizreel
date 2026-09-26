@@ -84,6 +84,22 @@ class LineChartType(ChartType):
 
     name = "line"
     model = LineChart
+    template = """\
+- id: revenue                      # unique; lowercase letters, digits and hyphens
+  type: line
+  title: Northwind revenue by product
+  x: ["2019", "2020", "2021", "2022"]   # labels in order; quote years
+  series:                          # one to three series
+    - { name: Cloud, values: [1.2, 2.4, 3.9, 5.1] }
+    - { name: Devices, values: [3.1, 2.9, 3.2, 3.0] }   # null leaves a gap
+  number: { prefix: "$", suffix: "B" }
+  highlight: { x: "2021", label: "Cloud passes devices" }   # optional
+  # subtitle: In billions of dollars   # optional
+  # source: "Source: example data"     # optional
+  # y_min: 0                       # optional: fixed axis range
+  # y_max: 6
+  # duration: 6                    # optional: seconds, at least 2
+"""
 
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""

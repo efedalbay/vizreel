@@ -17,6 +17,7 @@ from vizreel import __version__
 from vizreel.errors import InputFileError, OutputError, VizreelError
 from vizreel.render.engine import ChartResult, RenderOptions, render_spec
 from vizreel.spec.loader import load_spec, spec_json_schema
+from vizreel.spec.templates import spec_template
 from vizreel.themes.check import check_theme
 from vizreel.themes.loader import describe_builtin_themes, load_theme
 
@@ -168,6 +169,38 @@ def schema(
     with _reporting_errors(ctx):
         _write_text(output, text)
     _stdout().print(f"Wrote JSON Schema to {escape(str(output))}")
+
+
+@app.command()
+def new(
+    ctx: typer.Context,
+    chart_type: Annotated[
+        str,
+        typer.Argument(
+            metavar="TYPE", help="Chart type: stat, line, bar or timeline.", show_default=False
+        ),
+    ],
+    output: Annotated[
+        Path | None,
+        typer.Option(
+            "--output",
+            "-o",
+            help="Write the template to this new file (UTF-8) instead of printing it.",
+            show_default=False,
+        ),
+    ] = None,
+) -> None:
+    """Print a commented spec template for a chart type."""
+    with _reporting_errors(ctx):
+        text = spec_template(chart_type)
+        if output is not None and output.exists():
+            raise OutputError(f"{output} already exists; choose another file name")
+    if output is None:
+        sys.stdout.write(text)
+        return
+    with _reporting_errors(ctx):
+        _write_text(output, text)
+    _stdout().print(f"Wrote a {escape(chart_type)} template to {escape(str(output))}")
 
 
 themes_app = typer.Typer(help="Built-in themes.", no_args_is_help=True)

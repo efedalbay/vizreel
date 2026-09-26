@@ -32,6 +32,10 @@ class RenderError(VizreelError):
     """A chart could not be rendered."""
 
 
+class UsageError(VizreelError):
+    """A command was given an argument it cannot use."""
+
+
 class InputFileError(VizreelError):
     """An input file could not be read or is not valid.
 

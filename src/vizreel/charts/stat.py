@@ -24,6 +24,19 @@ class StatChartType(ChartType):
 
     name = "stat"
     model = StatChart
+    template = """\
+- id: customers                    # unique; lowercase letters, digits and hyphens
+  type: stat
+  value: 48200                     # the number to count to
+  label: Northwind customers       # optional: line under the number
+  number: { compact: true }        # optional: prefix, suffix, decimals, compact
+  # start: 0                       # optional: value the count starts from
+  # trend: up                      # optional: up, down or none; colors the number
+  # title: Customers in 2022       # optional
+  # subtitle: All regions          # optional
+  # source: "Source: example data" # optional: short, shown at the bottom
+  # duration: 3                    # optional: seconds, at least 2
+"""
 
     def build(self, scene: "Scene") -> None:
         """Add the card to the scene and animate it."""

@@ -190,6 +190,43 @@ def test_theme_check_missing_theme() -> None:
     assert 'theme "nope" not found' in result.stderr
 
 
+def test_new_prints_a_valid_template() -> None:
+    from vizreel.spec.loader import parse_spec
+
+    result = runner.invoke(app, ["new", "line"])
+
+    assert result.exit_code == 0
+    assert [chart.type for chart in parse_spec(result.stdout, "line.yaml").charts] == ["line"]
+
+
+def test_new_writes_a_template_file(tmp_path: Path) -> None:
+    path = tmp_path / "stat.yaml"
+
+    result = runner.invoke(app, ["new", "stat", "-o", str(path)])
+
+    assert result.exit_code == 0
+    assert result.stdout.strip() == f"Wrote a stat template to {path}"
+    assert path.read_text(encoding="utf-8").startswith("# A stat chart.")
+
+
+def test_new_does_not_overwrite_a_file(tmp_path: Path) -> None:
+    path = tmp_path / "mine.yaml"
+    path.write_text("keep me", encoding="utf-8")
+
+    result = runner.invoke(app, ["new", "bar", "--output", str(path)])
+
+    assert result.exit_code == 1
+    assert "already exists; choose another file name" in result.stderr
+    assert path.read_text(encoding="utf-8") == "keep me"
+
+
+def test_new_unknown_type() -> None:
+    result = runner.invoke(app, ["new", "pie"])
+
+    assert result.exit_code == 1
+    assert 'unknown chart type "pie". Valid types: bar, line, stat, timeline' in result.stderr
+
+
 def test_schema_prints_json_schema() -> None:
     result = runner.invoke(app, ["schema"])
 

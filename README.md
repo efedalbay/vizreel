@@ -94,6 +94,7 @@ vizreel --help
 ## Usage
 
 ```bash
+vizreel new line -o charts.yaml         # start from a commented template
 vizreel validate charts.yaml            # check a spec and list every error
 vizreel render charts.yaml              # render all charts to ./out
 vizreel render charts.yaml --only offers --quality preview --still

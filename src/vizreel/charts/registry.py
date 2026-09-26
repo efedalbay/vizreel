@@ -22,7 +22,8 @@ class ChartRegistry:
 
         Raises:
             ValueError: The name is already registered.
-            TypeError: The model's `type` field does not match the chart type's name.
+            TypeError: The model's `type` field does not match the chart type's name, or the
+                chart type has no template.
         """
         name = chart_type.name
         if name in self._types:
@@ -31,6 +32,8 @@ class ChartRegistry:
         if get_args(type_field.annotation) != (name,):
             model_name = chart_type.model.__name__
             raise TypeError(f"{model_name}.type must be Literal[{name!r}] to match its chart type")
+        if not getattr(chart_type, "template", "").strip():
+            raise TypeError(f"chart type {name!r} needs a template for `vizreel new`")
         self._types[name] = chart_type
         return chart_type
 
