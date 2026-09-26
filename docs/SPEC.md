@@ -187,17 +187,26 @@ vizreel validate spec.yaml
 Reports every error at once, with its location, for example:
 
 ```
-charts[1].series[0].values: expected 5 values (same as x), got 4
-charts[2].type: unknown type "pie". Valid types: bar, line, stat, timeline
+spec.yaml: 2 errors
+  charts[1].series[0].values: expected 5 values (same as x), got 4
+  charts[2].type: unknown type "pie". Valid types: bar, line, stat, timeline
 ```
+
+The exit code is `0` when the spec is valid and `1` when it is not.
 
 ## JSON Schema
 
 ```bash
-vizreel schema > vizreel.schema.json
+vizreel schema -o vizreel.schema.json
 ```
 
-Editors (VS Code with the YAML extension) and AI assistants can use this schema to write valid specs.
+Without `-o`, the schema is printed. Prefer `-o` over `>` on Windows PowerShell 5.1, which saves redirected output as UTF-16 and some tools cannot read that.
+
+Editors (VS Code with the YAML extension) and AI assistants can use this schema to write valid specs. In VS Code, point a spec at the schema with a comment on its first line:
+
+```yaml
+# yaml-language-server: $schema=./vizreel.schema.json
+```
 
 ## Versioning
 

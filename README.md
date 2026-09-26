@@ -97,7 +97,7 @@ vizreel --help
 vizreel validate charts.yaml            # check a spec and list every error
 vizreel render charts.yaml              # render all charts to ./out
 vizreel render charts.yaml --only offers --quality preview --still
-vizreel schema > vizreel.schema.json    # JSON Schema for editors and tools
+vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
 ```
 
 | Option | Description |

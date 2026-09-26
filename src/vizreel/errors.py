@@ -24,6 +24,10 @@ class SpecIssue:
         return f"{self.location}: {self.message}" if self.location else self.message
 
 
+class OutputError(VizreelError):
+    """An output file could not be written."""
+
+
 class SpecError(VizreelError):
     """A spec file could not be read or is not valid.
 
