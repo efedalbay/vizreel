@@ -13,6 +13,7 @@ from manim import (
     ManimColor,
     MarkupText,
     Mobject,
+    Paragraph,
     RoundedRectangle,
     Text,
     VGroup,
@@ -59,6 +60,30 @@ def text(content: str, style: FontStyle, size_px: float, hex_color: str) -> VMob
     )
     # With ligatures disabled, Text has one submobject per character, spaces included.
     _check_complete(mobject, content, len(content))
+    return mobject.scale(1 / oversample)
+
+
+def paragraph(lines: list[str], style: FontStyle, size_px: float, hex_color: str) -> VMobject:
+    """Build centered lines of text, spaced by Pango so that baselines are even.
+
+    Raises:
+        RenderError: Pango could not lay out every character.
+    """
+    lines = [line.strip() for line in lines]
+    size = font_size(size_px)
+    oversample = max(1.0, LAYOUT_FONT_SIZE / size)
+    mobject = Paragraph(
+        *lines,
+        font=style.family,
+        weight=_PANGO_WEIGHTS[style.weight],
+        font_size=size * oversample,
+        color=color(hex_color),
+        alignment="center",
+        disable_ligatures=True,
+        warn_missing_font=False,
+    )
+    for line, line_mobject in zip(lines, mobject.submobjects, strict=True):
+        _check_complete(line_mobject, line, len(line))
     return mobject.scale(1 / oversample)
 
 

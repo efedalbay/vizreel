@@ -46,7 +46,6 @@ class BarChartType(ChartType):
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""
         from manim import (
-            DOWN,
             AnimationGroup,
             Create,
             FadeIn,
@@ -83,7 +82,7 @@ class BarChartType(ChartType):
                     elements.text(part, fonts.body, sizes.label, colors.muted) for part in split
                 ]
                 if all(line.width <= max_width for line in lines):
-                    return VGroup(*lines).arrange(DOWN, buff=label_gap)
+                    return elements.paragraph(list(split), fonts.body, sizes.label, colors.muted)
             raise RenderError(
                 f'bar label "{content_text}" is too long for {count} bars; shorten it'
             )
