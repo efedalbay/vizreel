@@ -42,6 +42,7 @@ vizreel/
 ├── docs/
 │   ├── ARCHITECTURE.md      ← this file
 │   ├── SPEC.md              ← spec format reference (source of truth)
+│   ├── THEMES.md            ← theme format reference and checks
 │   ├── DESIGN.md            ← visual quality rules
 │   └── ROADMAP.md           ← milestones and acceptance criteria
 ├── src/vizreel/
@@ -78,7 +79,8 @@ vizreel/
 │       └── fonts/           ← bundled open-license fonts + their licenses
 ├── examples/
 │   ├── showcase.yaml        ← one of every chart type (fictional data)
-│   └── themes/example-brand.yaml  ← added in M5
+│   ├── brand.yaml           ← charts in the example brand theme
+│   └── themes/example-brand.yaml  ← a complete custom theme
 └── tests/
     ├── unit/                ← fast, no rendering
     └── render/              ← slow, marked `@pytest.mark.render`

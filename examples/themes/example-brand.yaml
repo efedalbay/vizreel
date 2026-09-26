@@ -1,0 +1,52 @@
+# An example custom theme for the fictional company Northwind.
+# Use it from a spec with a path relative to the spec file:
+#
+#   meta:
+#     theme: themes/example-brand.yaml
+#
+# Every field is described in docs/THEMES.md. Check your own theme with:
+#
+#   vizreel theme check examples/themes/example-brand.yaml
+
+description: Northwind brand colors on a navy panel.
+
+colors:
+  background: "#081A2B"   # frame of opaque (mp4) output
+  surface: "#0B2239"      # panel behind the chart
+  text: "#F2F6FA"
+  muted: "#A9B8C8"
+  grid: "#24425F"
+  accent: "#4FC3F7"
+  positive: "#4CC38A"
+  negative: "#FF6B6B"
+  highlight: "#FFC857"
+  series: ["#4FC3F7", "#F78FB3", "#9575CD"]
+  dim_opacity: 0.5
+
+fonts:
+  heading: { family: Inter, weight: bold }
+  body: { family: Inter, weight: regular }
+  numbers: { family: Inter, weight: bold }
+
+sizes:                    # pixels at 1080p
+  title: 66
+  subtitle: 40
+  big_number: 200
+  label: 40
+  value: 38
+  caption: 28
+  panel_radius: 16
+  panel_padding: 72
+  line: 7
+  grid_line: 2
+  dot: 18
+
+motion:                   # seconds
+  easing: ease_out_quart
+  title_fade: 0.4
+  structure: 0.5
+  stagger: 0.1
+  highlight: 0.7
+  hold: 2
+
+background_panel: true

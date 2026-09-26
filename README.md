@@ -123,18 +123,19 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 
 ## Themes
 
-A theme sets colors, fonts, text sizes and motion timing for every chart. vizreel ships with built-in themes, and you can write your own in YAML and point to it from your spec:
+A theme sets colors, fonts, text sizes and motion timing for every chart. vizreel ships with two built-in themes, `default` (dark) and `light`, and you can write your own in YAML and point to it from your spec:
 
 ```yaml
 meta:
-  theme: ./themes/my-brand.yaml
+  theme: themes/my-brand.yaml
 ```
 
-Theme reference and examples will be added in milestone M5.
+Start from [`examples/themes/example-brand.yaml`](examples/themes/example-brand.yaml), and run `vizreel theme check` on your theme to test its contrast and its colors for color vision deficiency. Every field is described in the [theme reference](docs/THEMES.md).
 
 ## Documentation
 
 - [Spec reference](docs/SPEC.md)
+- [Theme reference](docs/THEMES.md)
 - [Design rules](docs/DESIGN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)

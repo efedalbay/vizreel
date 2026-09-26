@@ -1,0 +1,24 @@
+# Charts in a custom theme, loaded by a path relative to this file. All data is fictional.
+version: 1
+meta:
+  title: Northwind brand example
+  theme: themes/example-brand.yaml
+
+charts:
+  - id: brand-customers
+    type: stat
+    value: 48200
+    label: Northwind customers
+    number: { compact: true }
+    trend: up
+
+  - id: brand-revenue
+    type: line
+    title: Northwind revenue by product
+    x: ["2019", "2020", "2021", "2022"]
+    series:
+      - { name: Cloud, values: [1.2, 2.4, 3.9, 5.1] }
+      - { name: Devices, values: [3.1, 2.9, 3.2, 3.0] }
+      - { name: Services, values: [0.4, 0.9, 1.1, 1.8] }
+    number: { prefix: "$", suffix: "B" }
+    highlight: { x: "2021", label: "Cloud passes devices" }

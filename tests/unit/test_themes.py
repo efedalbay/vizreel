@@ -128,7 +128,7 @@ def test_unknown_theme_field(tmp_path: Path) -> None:
     path = write_theme(tmp_path / "typo.yaml", {"motion": {"hodl": 2}})
 
     assert theme_errors(path) == [
-        "motion.hodl: unknown field. Check the spelling against the built-in default theme"
+        "motion.hodl: unknown field. Check the spelling against docs/THEMES.md"
     ]
 
 
@@ -140,3 +140,11 @@ def test_empty_theme_file(tmp_path: Path) -> None:
         "the file is empty; a theme needs `colors`, `fonts`, `sizes`, `motion` and "
         "`background_panel`"
     ]
+
+
+def test_themes_doc_lists_every_builtin_theme() -> None:
+    doc = (Path(__file__).parents[2] / "docs" / "THEMES.md").read_text(encoding="utf-8")
+
+    for name in builtin_theme_names():
+        description = load_theme(name, Path(".")).description
+        assert f"| `{name}` | {description} |" in doc

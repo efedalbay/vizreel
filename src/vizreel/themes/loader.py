@@ -12,7 +12,7 @@ from vizreel.validation import format_location, issue_from_error, read_yaml_mapp
 BUILTIN_DIR = Path(__file__).with_name("builtin")
 _KIND = "theme"
 _REQUIRED = ("colors", "fonts", "sizes", "motion", "background_panel")
-_REFERENCE = "the built-in default theme"
+_REFERENCE = "docs/THEMES.md"
 
 
 def builtin_theme_names() -> list[str]:
