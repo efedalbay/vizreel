@@ -72,6 +72,16 @@ Used by any field that displays values.
 
 Values in the spec are always plain numbers. `740000000` with `prefix: "$"` and `compact: true` renders as `$740M`. Never write `"740M"` as a value.
 
+Formatting rules (en-US):
+
+- **Thousands separators:** `1200000` → `1,200,000`.
+- **Automatic decimals** (no `decimals` set): whole numbers get none; other numbers get at most 2, without trailing zeros (`4.2`, `0.05`, `1.23`). With `compact: true`, abbreviated numbers keep 3 significant digits (`740M`, `2.25B`, `1.2M`, `12.3M`).
+- **Fixed decimals** (`decimals` set): always that many, trailing zeros kept (`decimals: 2` → `2.20`). With `compact: true`, `decimals` applies to the abbreviated number (`decimals: 1` → `740.0M`).
+- **Compact units:** `K` from 1,000, `M` from 1,000,000, `B` from 1,000,000,000, `T` from 1,000,000,000,000. Numbers below 1,000 are not abbreviated. When rounding reaches 1,000 of a unit, the next unit is used: `999950` → `1M`, not `1000K`.
+- **Rounding:** halves round away from zero: `2.675` → `2.68`, `2.5` → `3`.
+- **Negative numbers:** the minus sign (−, U+2212) comes before the prefix: `−$1.2M`. A value that rounds to zero never shows a sign.
+- **Same decimals within a chart:** values shown together in one chart, such as axis or bar labels, share the number of decimals of the most precise value: `$0.05B`, `$0.20B`, `$2.25B`.
+
 ---
 
 ## `stat` — big number card
