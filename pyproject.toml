@@ -1,6 +1,6 @@
 [project]
 name = "vizreel"
-version = "0.1.0"
+version = "0.1.1"
 description = "Animated charts for video, from a YAML file."
 readme = "README.md"
 license = "MIT"
