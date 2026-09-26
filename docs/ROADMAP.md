@@ -64,12 +64,49 @@ Work proceeds one milestone at a time. A milestone is done only when every accep
 
 **Done when:** `pip install vizreel` in a clean Windows environment, then the README quickstart, works exactly as written.
 
+From here on, each milestone ends with a minor release (M7 → 0.2.0, M8 → 0.3.0, …).
+
+## M7 — Watch mode
+
+- `vizreel render SPEC --watch`: render once, then re-render whenever the spec file, or a theme file it uses, changes. Ctrl+C stops.
+- Only the charts that changed are rendered again; a change to `meta` or to the theme renders every chart.
+- An invalid spec while editing prints its errors and keeps watching.
+- No new dependency: the files are polled.
+
+**Done when:** saving a spec starts a render within about a second, only changed charts are re-rendered, an invalid save does not stop watching, and Ctrl+C exits with code 0.
+
+## M8 — Vertical 9:16
+
+- Vertical resolution presets for Shorts, and a layout for every chart type in the vertical frame.
+- Revisit the bar label length limit, which is tighter in a narrow frame: with 8 bars at the default theme a category label fits about 10 characters per line on two lines at 16:9, and a longer label is an error. An option is to let labels shrink down to the theme's minimum size.
+
+**Done when:** every showcase chart passes the design checklist in both 16:9 and 9:16.
+
+## M9 — New chart types
+
+- Animated `table`, `compare` (before/after), `waterfall`, stacked `bar`, `share` (part-to-whole, max 6 parts). Each has its own plan and follows the chart type contract.
+
+**Done when:** each new type is in `examples/showcase.yaml`, passes the design checklist in 16:9 and 9:16, and is documented in `docs/SPEC.md`.
+
+## M10 — Chart states across clips
+
+- The same chart used several times in a video, each clip continuing from the last: the highlight moves (the next timeline event, the next bar) and a clip can start from where the previous one ended instead of drawing again.
+
+**Done when:** a sequence of clips cut back to back in an editor looks like one continuous chart.
+
+## M11 — Number locales
+
+- A locale for number formatting, starting with `en` and `tr` (`1,846` / `1.846`, `47%` / `%47`).
+
+**Done when:** every number format option works in both locales and is documented.
+
+## M12 — Third-party chart types
+
+- Chart types from other packages via Python entry points, using the same chart type contract as the built-in types.
+
+**Done when:** an example plugin package installs next to vizreel and its chart type validates, renders and appears in `vizreel new`.
+
 ## Later (not scheduled)
 
-- Chart types: animated `table`, `compare` (before/after), `waterfall`, stacked `bar`, `share` (part-to-whole, max 6 parts).
-- Vertical 9:16 layouts for Shorts.
-- Third-party chart types via Python entry points.
-- Watch mode: re-render when the spec file changes.
 - macOS testing (needs a contributor with a Mac).
-- Revisit the bar label length limit if it gets in the way in real use: with 8 bars at the default theme a category label fits about 10 characters per line on two lines, and a longer label is an error. An option is to let labels shrink down to the theme's minimum size.
 - Verify that transparent clips import with alpha in DaVinci Resolve on Windows (M2 verified CapCut only). If the default `mov` (QuickTime Animation) does not keep alpha there, add a ProRes 4444 re-encode step.
