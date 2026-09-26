@@ -15,7 +15,7 @@ vizreel output is watched, not studied. A viewer sees each chart for a few secon
 
 Sizes are defined relative to a 1080p frame and scale with resolution.
 
-| Element | Minimum height at 1080p |
+| Element | Minimum font size at 1080p |
 |---|---|
 | Title | 56 px |
 | Big number (`stat`) | 160 px |

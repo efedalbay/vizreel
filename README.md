@@ -108,6 +108,17 @@ vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
 | `--format mov\|webm\|mp4` | `mov` and `webm` keep transparency; `mp4` uses the theme background |
 | `--still` | Also save the final frame as a PNG |
 
+## Using the clips in a video editor
+
+`mov` clips (the default) keep a transparent background: place them on a track above your footage. They use the QuickTime Animation codec, which editors read but many media players, such as the Windows media player, cannot play. That is expected; open them in your editor.
+
+| Editor (Windows) | `mov` (default) | `webm` | `mp4` |
+|---|---|---|---|
+| CapCut | Transparent | Not transparent (dark background) | Opaque, by design |
+| DaVinci Resolve | Not tested yet | Not tested yet | Opaque, by design |
+
+`webm` clips also contain transparency, but not every editor reads it. Use `--format mp4` when you do not need transparency: the chart is drawn on the theme's background color.
+
 ## Themes
 
 A theme sets colors, fonts, text sizes and motion timing for every chart. vizreel ships with built-in themes, and you can write your own in YAML and point to it from your spec:
