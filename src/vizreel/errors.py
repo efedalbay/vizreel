@@ -46,3 +46,7 @@ class InputFileError(VizreelError):
 
 class SpecError(InputFileError):
     """A spec file could not be read or is not valid."""
+
+
+class ThemeError(InputFileError):
+    """A theme could not be found, read or validated."""

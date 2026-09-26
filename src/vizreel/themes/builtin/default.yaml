@@ -1,0 +1,37 @@
+# The default vizreel theme: dark panel, light text, amber highlight.
+colors:
+  background: "#0E1116"
+  surface: "#161B22"
+  text: "#F0F3F6"
+  muted: "#9BA4AE"
+  grid: "#30363D"
+  accent: "#58A6FF"
+  positive: "#3FB950"
+  negative: "#F85149"
+  highlight: "#F2B53A"
+  series: ["#58A6FF", "#F2B53A", "#D2A8FF"]
+
+fonts:
+  heading: { family: Inter, weight: semibold }
+  body: { family: Inter, weight: regular }
+  numbers: { family: Inter, weight: bold }
+
+sizes:
+  title: 60
+  subtitle: 38
+  big_number: 180
+  label: 38
+  value: 36
+  caption: 26
+  panel_radius: 32
+  panel_padding: 64
+
+motion:
+  easing: ease_out_cubic
+  title_fade: 0.5
+  structure: 0.6
+  stagger: 0.08
+  highlight: 0.6
+  hold: 1.5
+
+background_panel: true

@@ -147,6 +147,8 @@ def _message(error: ErrorDetails, reference: str) -> str:
         return f"expected at least {_items(ctx['min_length'])}, got {ctx['actual_length']}"
     if kind == "too_long":
         return f"expected at most {_items(ctx['max_length'])}, got {ctx['actual_length']}"
+    if kind == "greater_than":
+        return f"must be greater than {show(ctx['gt'])}, got {show(value)}"
     if kind == "greater_than_equal":
         return f"must be at least {show(ctx['ge'])}, got {show(value)}"
     if kind == "less_than_equal":
