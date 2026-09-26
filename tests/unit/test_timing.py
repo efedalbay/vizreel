@@ -1,6 +1,7 @@
 import pytest
 
 from vizreel.charts.base import (
+    FrameClock,
     Phases,
     check_reading_time,
     reading_time,
@@ -59,6 +60,36 @@ def test_too_short_duration_names_the_minimum() -> None:
         RenderError, match=r"duration 2s is too short for this chart; use at least 2.5s"
     ):
         split_duration(2, intro=0.5, highlight=0, hold=1.5)
+
+
+def test_frame_clock_keeps_the_total_exact() -> None:
+    clock = FrameClock(15)
+
+    frames = [clock.frames_for(duration) for duration in (0.5, 0.6, 2.8, 0.6, 1.5)]
+
+    assert sum(frames) == 90
+    assert clock.frames == 90
+    assert frames == [8, 9, 42, 9, 22]
+
+
+@pytest.mark.parametrize("fps", [15, 30, 60])
+@pytest.mark.parametrize("durations", [(0.5, 1.0, 1.5), (0.5, 0.6, 1.8, 0.6, 1.5), (1 / 3,) * 9])
+def test_frame_clock_total_matches_duration(fps: int, durations: tuple[float, ...]) -> None:
+    clock = FrameClock(fps)
+    elapsed = 0.0
+    for duration in durations:
+        clock.frames_for(duration)
+        elapsed += duration
+        assert abs(clock.frames - elapsed * fps) <= 0.5 + 1e-9
+
+    assert clock.frames == round(sum(durations) * fps)
+
+
+def test_frame_clock_gives_every_animation_a_frame() -> None:
+    clock = FrameClock(15)
+
+    assert clock.frames_for(0.001) == 1
+    assert clock.frames_for(0.001) == 1
 
 
 def test_staggered_items_start_one_after_another() -> None:

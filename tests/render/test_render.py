@@ -184,6 +184,29 @@ def test_bar_label_too_long_even_on_two_lines_is_an_error(tmp_path: Path) -> Non
     assert "is too long for 8 bars; shorten it" in result.error
 
 
+@pytest.mark.parametrize(
+    ("quality", "duration", "frames"),
+    [("preview", 3.7, 56), ("final", 2.7, 81)],
+)
+def test_clip_has_exactly_the_frames_of_its_duration(
+    tmp_path: Path, quality: str, duration: float, frames: int
+) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\nmeta: { resolution: 720p, fps: 30 }\n"
+        f"charts: [{{ id: a, type: stat, value: 42, title: Northwind, duration: {duration} }}]\n"
+    )
+
+    [result] = render_spec(
+        spec,
+        RenderOptions(out_dir=tmp_path, quality=quality),
+        reraise=True,  # type: ignore[arg-type]
+    )
+
+    assert result.video is not None
+    assert len(frames_rgba(result.video)) == frames
+
+
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     too_wide = "Northwind " * 20
     spec = tmp_path / "spec.yaml"

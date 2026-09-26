@@ -1,5 +1,6 @@
 """The contract every chart type implements, and the timing helpers charts share."""
 
+import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
@@ -131,6 +132,34 @@ def staggered_progress(
     delay = min(stagger, total / 2 / (count - 1)) if count > 1 else 0.0
     duration = total - delay * (count - 1)
     return min(max((progress * total - index * delay) / duration, 0.0), 1.0)
+
+
+class FrameClock:
+    """Turns the wanted length of each animation into whole frames.
+
+    Rounding every animation on its own adds up: two animations of 7.5 frames would make
+    16 frames instead of 15. The clock tracks the total wanted time and gives each
+    animation the frames that keep the total on it, so a clip has exactly
+    `round(duration × fps)` frames and no animation is off by more than half a frame.
+    """
+
+    def __init__(self, fps: int) -> None:
+        self.fps = fps
+        self._wanted = 0.0
+        self._frames = 0
+
+    def frames_for(self, duration: float) -> int:
+        """Frames for the next animation of `duration` seconds. At least one."""
+        self._wanted += duration
+        target = max(math.floor(self._wanted * self.fps + 0.5), self._frames + 1)
+        frames = target - self._frames
+        self._frames = target
+        return frames
+
+    @property
+    def frames(self) -> int:
+        """Frames handed out so far."""
+        return self._frames
 
 
 def reading_time(text: str) -> float:
