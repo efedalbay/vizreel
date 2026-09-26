@@ -103,7 +103,7 @@ vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
 | Option | Description |
 |---|---|
 | `--out DIR` | Output folder (default `out`) |
-| `--only ID` | Render a single chart |
+| `--only ID` | Render only this chart; repeat for several |
 | `--quality preview\|final` | `preview` is low resolution and fast; `final` uses the spec settings |
 | `--format mov\|webm\|mp4` | `mov` and `webm` keep transparency; `mp4` uses the theme background |
 | `--still` | Also save the final frame as a PNG |

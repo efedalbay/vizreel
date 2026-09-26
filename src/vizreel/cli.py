@@ -5,6 +5,7 @@ import json
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
@@ -14,6 +15,7 @@ from rich.markup import escape
 
 from vizreel import __version__
 from vizreel.errors import InputFileError, OutputError, VizreelError
+from vizreel.render.engine import ChartResult, RenderOptions, render_spec
 from vizreel.spec.loader import load_spec, spec_json_schema
 
 app = typer.Typer(
@@ -64,6 +66,83 @@ def validate(
     count = len(loaded.charts)
     noun = "chart" if count == 1 else "charts"
     _stdout().print(f"[green]{escape(str(spec))} is valid[/]: {count} {noun}")
+
+
+class QualityChoice(StrEnum):
+    """Values of --quality."""
+
+    preview = "preview"
+    final = "final"
+
+
+class FormatChoice(StrEnum):
+    """Values of --format."""
+
+    mov = "mov"
+    webm = "webm"
+    mp4 = "mp4"
+
+
+@app.command()
+def render(
+    ctx: typer.Context,
+    spec: Annotated[Path, typer.Argument(help="Spec file to render.", show_default=False)],
+    out: Annotated[Path, typer.Option("--out", help="Output folder.")] = Path("out"),
+    only: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--only", help="Render only this chart id. Repeat for several.", show_default=False
+        ),
+    ] = None,
+    quality: Annotated[
+        QualityChoice,
+        typer.Option(help="preview is small and fast; final uses the spec settings."),
+    ] = QualityChoice.final,
+    output_format: Annotated[
+        FormatChoice | None,
+        typer.Option(
+            "--format",
+            help="mov and webm keep transparency; mp4 uses the theme background. "
+            "Default: meta.format.",
+            show_default=False,
+        ),
+    ] = None,
+    still: Annotated[
+        bool, typer.Option("--still", help="Also save the last frame as PNG.")
+    ] = False,
+) -> None:
+    """Render each chart of a spec to its own clip."""
+    options = RenderOptions(
+        out_dir=out,
+        only=tuple(only or ()),
+        quality=quality.value,
+        format=output_format.value if output_format else None,
+        still=still,
+    )
+    console = _stdout()
+    with _reporting_errors(ctx), console.status("Rendering...") as status:
+        results = render_spec(
+            spec,
+            options,
+            on_start=lambda chart: status.update(f"Rendering {escape(chart.id)}..."),
+            on_done=lambda result: _print_chart_result(console, result),
+            reraise=bool(ctx.obj),
+        )
+    failed = sum(1 for result in results if result.error)
+    summary = f"{len(results) - failed} rendered, {failed} failed"
+    if failed:
+        _stderr().print(f"[red]{summary}[/]")
+        raise typer.Exit(1)
+    console.print(f"[green]{summary}[/]")
+
+
+def _print_chart_result(console: Console, result: ChartResult) -> None:
+    name = escape(result.chart_id)
+    if result.error:
+        _stderr().print(f"  [red]{name}[/]: {escape(result.error)}")
+        return
+    files = ", ".join(escape(str(path)) for path in (result.video, result.still) if path)
+    console.print(f"  [green]{name}[/]: {files} ({result.seconds:.1f}s)")
 
 
 @app.command()

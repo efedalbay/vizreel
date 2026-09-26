@@ -1,10 +1,17 @@
+from pathlib import Path
 from typing import Literal
 
 import pytest
 
 from vizreel.charts.base import ChartType
 from vizreel.charts.registry import ChartRegistry, builtin_registry
+from vizreel.errors import RenderError
+from vizreel.render.layout import build_layout
+from vizreel.spec.loader import parse_spec
 from vizreel.spec.models import BaseChart, StatChart
+from vizreel.themes.loader import load_theme
+
+SHOWCASE = Path(__file__).parents[2] / "examples" / "showcase.yaml"
 
 
 class DemoChart(BaseChart):
@@ -61,8 +68,13 @@ def test_register_rejects_model_with_mismatched_type() -> None:
         ChartRegistry().register(Mismatched)
 
 
-def test_stub_chart_types_are_not_implemented_yet() -> None:
-    chart_type = builtin_registry().get("line")
+@pytest.mark.parametrize(("name", "milestone"), [("line", "M3"), ("bar", "M3"), ("timeline", "M4")])
+def test_stub_chart_types_report_that_they_are_not_implemented(name: str, milestone: str) -> None:
+    spec = parse_spec(SHOWCASE.read_text(encoding="utf-8"), "showcase.yaml")
+    chart = next(chart for chart in spec.charts if chart.type == name)
+    theme = load_theme("default", Path("."))
+    layout = build_layout(theme.sizes, panel=True, title_lines=1, subtitle_lines=0, source_lines=0)
+    chart_type = builtin_registry().get(name)(chart, theme, layout)
 
-    with pytest.raises(NotImplementedError):
-        chart_type().build(scene=None)  # type: ignore[arg-type]
+    with pytest.raises(RenderError, match=f"not implemented yet \\(planned for {milestone}\\)"):
+        chart_type.build(scene=None)  # type: ignore[arg-type]

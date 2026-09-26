@@ -22,11 +22,18 @@ LINE_HEIGHT = 1.3
 """Height of a line of text as a multiple of its font size."""
 BAND_GAP = 0.5
 """Gap between the title, content and source bands, as a multiple of the title size."""
+STACK_GAP = 0.45
+"""Gap between lines of stacked text, as a multiple of the smaller font size."""
 
 
 def px(pixels: float) -> float:
     """Convert pixels at 1080p to scene units."""
     return pixels * FRAME_HEIGHT / REFERENCE_HEIGHT_PX
+
+
+def stack_gap(above_px: float, below_px: float) -> float:
+    """Vertical gap, in scene units, between two stacked lines of text with these font sizes."""
+    return px(min(above_px, below_px)) * STACK_GAP
 
 
 def font_size(pixels: float) -> float:
@@ -93,7 +100,9 @@ class Layout:
         title: Band at the top of `inner` for the title and subtitle. Zero height without them.
         source: Band at the bottom of `inner` for the source line. Zero height without it.
         content: The rest of `inner`, for the chart itself.
-        panel_padding: Space between a background panel and the content it surrounds.
+        panel: Whether a background panel is drawn behind the content.
+        panel_padding: Space between the background panel and the content it surrounds.
+        band_gap: Gap between the title, content and source bands.
     """
 
     frame: Box
@@ -102,7 +111,9 @@ class Layout:
     title: Box
     source: Box
     content: Box
+    panel: bool
     panel_padding: float
+    band_gap: float
 
     def panel_around(self, content: Box) -> Box:
         """Background panel surrounding `content`, kept inside the safe area."""
@@ -152,5 +163,7 @@ def build_layout(
         title=title_band,
         source=source_band,
         content=content,
+        panel=panel,
+        band_gap=gap,
         panel_padding=padding,
     )

@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
 from vizreel.errors import RenderError
+from vizreel.render.layout import Layout
 from vizreel.spec.models import BaseChart
+from vizreel.themes.models import Theme
 
 if TYPE_CHECKING:
     from manim import Scene
@@ -14,13 +16,24 @@ if TYPE_CHECKING:
 class ChartType(ABC):
     """A chart type: its spec model and how it builds itself on a Manim scene.
 
+    Chart modules import Manim inside `build`, not at the top, so that validating a spec
+    does not pay for importing Manim.
+
     Attributes:
         name: The `type:` value in the spec, e.g. "line".
         model: Pydantic model for this chart's fields.
+        chart: The chart to build, an instance of `model`.
+        theme: All styling.
+        layout: All geometry.
     """
 
     name: ClassVar[str]
     model: ClassVar[type[BaseChart]]
+
+    def __init__(self, chart: BaseChart, theme: Theme, layout: Layout) -> None:
+        self.chart = chart
+        self.theme = theme
+        self.layout = layout
 
     @abstractmethod
     def build(self, scene: "Scene") -> None:

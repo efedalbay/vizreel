@@ -49,6 +49,7 @@ vizreel/
 │   ├── __main__.py          ← `python -m vizreel`
 │   ├── cli.py               ← Typer app, no business logic
 │   ├── errors.py            ← VizreelError hierarchy
+│   ├── validation.py        ← YAML reading and user-facing validation messages
 │   ├── spec/
 │   │   ├── models.py        ← Pydantic models for the spec
 │   │   └── loader.py        ← read YAML → validated Spec
@@ -57,7 +58,7 @@ vizreel/
 │   │   ├── loader.py        ← resolve theme by name or path
 │   │   └── builtin/         ← default.yaml, light.yaml
 │   ├── charts/
-│   │   ├── base.py          ← ChartType base class
+│   │   ├── base.py          ← ChartType base class, timing helpers
 │   │   ├── registry.py      ← @register decorator, lookup by type name
 │   │   ├── stat.py
 │   │   ├── line.py
@@ -65,7 +66,10 @@ vizreel/
 │   │   └── timeline.py
 │   ├── render/
 │   │   ├── engine.py        ← render a Spec: loop charts, configure Manim, write files
-│   │   └── scene.py         ← generic Manim Scene that hosts one chart
+│   │   ├── scene.py         ← generic Manim Scene that hosts one chart
+│   │   ├── layout.py        ← frame geometry in scene units (pure functions)
+│   │   ├── elements.py      ← shared Manim building blocks: text, panel, easing
+│   │   └── fonts.py         ← register bundled fonts with Pango
 │   ├── format/
 │   │   └── numbers.py       ← number/currency/date formatting (pure functions)
 │   └── assets/
@@ -90,8 +94,9 @@ Spec ──► themes/loader.py resolves theme (built-in name or file path)
 render/engine.py
    for each chart in spec (optionally filtered by --only):
        ChartType = registry.get(chart.type)
+       layout = build_layout(theme sizes, panel, title/subtitle/source lines)
        configure Manim (resolution, fps, transparency, output path) via tempconfig
-       ChartScene(chart, theme, ChartType).render()
+       ChartScene(ChartType(chart, theme, layout)).render()
    │
    ▼
 out/<chart-id>.<ext>   (+ optional <chart-id>.png still)
@@ -120,8 +125,10 @@ Rules:
 - Registered with `@register` from `charts/registry.py`. The registry is the only place that maps `type` strings to classes.
 - A chart reads **all** styling from `theme` and **all** geometry from `layout` (safe area, title area, plot area). No literal colors, font names or pixel sizes inside chart modules.
 - A chart builds from Manim primitives (`Line`, `Rectangle`, `Text`, `VGroup`, `ValueTracker`) rather than Manim's high-level `BarChart`/`Axes` when those limit styling.
-- A chart must respect `chart.duration`. The shared timing helpers in `base.py` split duration into intro, main animation, highlight and hold phases.
+- A chart must respect `chart.duration`. The shared timing helpers in `base.py` split duration into intro, main animation, highlight and hold phases, and check that text stays on screen long enough to be read.
 - Number and date text always goes through `format/numbers.py`.
+- A chart module imports Manim, and `render/elements.py`, inside `build`, not at the top. `vizreel validate` imports every chart module through the registry, and importing Manim takes several seconds.
+- Text is never shrunk to fit. Text that does not fit at the theme size is a `RenderError` asking the user to shorten it.
 
 Adding a new chart type = one module in `charts/` + one Pydantic model + one section in `docs/SPEC.md` + one example in `examples/showcase.yaml` + tests. Nothing else.
 

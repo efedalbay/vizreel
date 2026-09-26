@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from vizreel.charts.base import ChartType
 from vizreel.charts.registry import register
+from vizreel.errors import RenderError
 from vizreel.spec.models import TimelineChart
 
 if TYPE_CHECKING:
@@ -19,4 +20,4 @@ class TimelineChartType(ChartType):
 
     def build(self, scene: "Scene") -> None:
         """Not implemented yet."""
-        raise NotImplementedError("the timeline chart type is not implemented yet")
+        raise RenderError("the timeline chart type is not implemented yet (planned for M4)")

@@ -1,6 +1,14 @@
-import manimpango
+from pathlib import Path
 
-from vizreel.render.fonts import FONTS_DIR, bundled_font_files, register_bundled_fonts
+import pytest
+
+from vizreel.errors import RenderError
+from vizreel.render.fonts import (
+    FONTS_DIR,
+    bundled_font_files,
+    check_theme_fonts,
+    register_bundled_fonts,
+)
 from vizreel.themes.loader import load_theme
 
 
@@ -11,15 +19,26 @@ def test_bundled_fonts_ship_with_their_license() -> None:
     assert "SIL OPEN FONT LICENSE" in (FONTS_DIR / "Inter-OFL.txt").read_text(encoding="utf-8")
 
 
-def test_registered_fonts_are_available_to_pango() -> None:
-    register_bundled_fonts()
-    register_bundled_fonts()
+def test_registering_makes_inter_available() -> None:
+    first = register_bundled_fonts()
+    second = register_bundled_fonts()
 
-    assert "Inter" in manimpango.list_fonts()
+    assert "Inter" in first
+    assert first == second
 
 
-def test_default_theme_uses_only_bundled_families() -> None:
-    fonts = load_theme("default", FONTS_DIR).fonts
+def test_default_theme_fonts_are_available() -> None:
+    check_theme_fonts(load_theme("default", Path(".")))
 
-    families = {style.family for style in (fonts.heading, fonts.body, fonts.numbers)}
-    assert families == {"Inter"}
+
+def test_missing_theme_font_is_an_error() -> None:
+    theme = load_theme("default", Path("."))
+    heading = theme.fonts.heading.model_copy(update={"family": "No Such Font"})
+    fonts = theme.fonts.model_copy(update={"heading": heading})
+
+    with pytest.raises(
+        RenderError,
+        match=r'font "No Such Font" \(theme fonts.heading\) is not installed. '
+        "The bundled font is Inter",
+    ):
+        check_theme_fonts(theme.model_copy(update={"fonts": fonts}))

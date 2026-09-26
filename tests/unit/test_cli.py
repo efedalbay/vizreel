@@ -107,6 +107,40 @@ def test_debug_lets_unexpected_errors_through(monkeypatch: pytest.MonkeyPatch) -
     assert isinstance(result.exception, RuntimeError)
 
 
+def test_render_unknown_chart_id() -> None:
+    result = runner.invoke(app, ["render", str(SHOWCASE), "--only", "nope"])
+
+    assert result.exit_code == 1
+    assert "error: no chart with id 'nope'" in result.stderr
+
+
+def test_render_invalid_spec() -> None:
+    path = INVALID_DIR / "unknown-type.yaml"
+
+    result = runner.invoke(app, ["render", str(path)])
+
+    assert result.exit_code == 1
+    assert result.stderr.splitlines()[0] == f"{path}: 1 error"
+
+
+def test_render_missing_theme(tmp_path: Path) -> None:
+    path = tmp_path / "spec.yaml"
+    path.write_text(
+        "version: 1\nmeta: { theme: brand.yaml }\ncharts: [{ id: a, type: stat, value: 1 }]"
+    )
+
+    result = runner.invoke(app, ["render", str(path)])
+
+    assert result.exit_code == 1
+    assert 'theme "brand.yaml" not found' in result.stderr
+
+
+def test_render_rejects_unknown_quality() -> None:
+    result = runner.invoke(app, ["render", str(SHOWCASE), "--quality", "draft"])
+
+    assert result.exit_code == 2
+
+
 def test_schema_prints_json_schema() -> None:
     result = runner.invoke(app, ["schema"])
 

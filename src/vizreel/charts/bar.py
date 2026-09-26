@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from vizreel.charts.base import ChartType
 from vizreel.charts.registry import register
+from vizreel.errors import RenderError
 from vizreel.spec.models import BarChart
 
 if TYPE_CHECKING:
@@ -19,4 +20,4 @@ class BarChartType(ChartType):
 
     def build(self, scene: "Scene") -> None:
         """Not implemented yet."""
-        raise NotImplementedError("the bar chart type is not implemented yet")
+        raise RenderError("the bar chart type is not implemented yet (planned for M3)")
