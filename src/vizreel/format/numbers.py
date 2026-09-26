@@ -47,11 +47,20 @@ def format_numbers(values: Sequence[float], fmt: NumberFormat | None = None) -> 
         fmt: Prefix, suffix, decimals and compact notation. Defaults to plain formatting.
     """
     fmt = fmt or _DEFAULT_FORMAT
-    if fmt.decimals is not None:
-        decimals = fmt.decimals
-    else:
-        decimals = max((_auto_decimals(value, fmt.compact) for value in values), default=0)
+    decimals = decimals_for(values, fmt)
     return [_format(value, fmt, decimals) for value in values]
+
+
+def decimals_for(values: Sequence[float], fmt: NumberFormat | None = None) -> int:
+    """Return the number of decimals `format_numbers` uses for these values.
+
+    A counting animation formats every frame with the decimals of its start and end
+    values, so the text does not change length while it counts.
+    """
+    fmt = fmt or _DEFAULT_FORMAT
+    if fmt.decimals is not None:
+        return fmt.decimals
+    return max((_auto_decimals(value, fmt.compact) for value in values), default=0)
 
 
 def _format(value: float, fmt: NumberFormat, decimals: int) -> str:

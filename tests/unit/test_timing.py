@@ -1,0 +1,81 @@
+import pytest
+
+from vizreel.charts.base import (
+    Phases,
+    check_reading_time,
+    reading_time,
+    split_duration,
+)
+from vizreel.errors import RenderError
+
+
+def test_short_clip_gives_remaining_time_to_data() -> None:
+    phases = split_duration(3, intro=0, highlight=0, hold=1.5)
+
+    assert phases == Phases(intro=0, main=1.5, highlight=0, hold=1.5)
+
+
+def test_intro_takes_time_from_data_not_hold() -> None:
+    phases = split_duration(3, intro=0.5, highlight=0, hold=1.5)
+
+    assert phases.main == pytest.approx(1.0)
+    assert phases.hold == pytest.approx(1.5)
+
+
+def test_data_reveal_is_at_most_half_the_clip() -> None:
+    phases = split_duration(10, intro=0.5, highlight=0.6, hold=1.5)
+
+    assert phases.main == pytest.approx(5)
+    assert phases.hold == pytest.approx(10 - 0.5 - 5 - 0.6)
+
+
+@pytest.mark.parametrize(
+    ("duration", "intro", "highlight", "hold"),
+    [(3, 0, 0, 1.5), (6, 1.1, 0.6, 1.5), (7, 1.1, 0.6, 2), (20, 1.1, 0.6, 1.5), (2, 0, 0, 1.5)],
+)
+def test_phases_add_up_and_respect_minimum_hold(
+    duration: float, intro: float, highlight: float, hold: float
+) -> None:
+    phases = split_duration(duration, intro=intro, highlight=highlight, hold=hold)
+
+    assert phases.total == pytest.approx(duration)
+    assert phases.hold >= hold
+    assert phases.main <= duration / 2
+    assert (phases.intro, phases.highlight) == (intro, highlight)
+
+
+def test_phase_start_times() -> None:
+    phases = Phases(intro=0.5, main=2, highlight=0.6, hold=1.9)
+
+    assert phases.main_start == 0.5
+    assert phases.highlight_start == 2.5
+    assert phases.hold_start == pytest.approx(3.1)
+    assert phases.total == pytest.approx(5)
+
+
+def test_too_short_duration_names_the_minimum() -> None:
+    with pytest.raises(
+        RenderError, match=r"duration 2s is too short for this chart; use at least 2.5s"
+    ):
+        split_duration(2, intro=0.5, highlight=0, hold=1.5)
+
+
+@pytest.mark.parametrize(
+    ("text", "seconds"),
+    [("Revenue", 1 / 3), ("Northwind's peak valuation", 1), ("  one   two  three four ", 4 / 3)],
+)
+def test_reading_time_is_one_second_per_three_words(text: str, seconds: float) -> None:
+    assert reading_time(text) == pytest.approx(seconds)
+
+
+def test_text_that_stays_long_enough_passes() -> None:
+    check_reading_time([("Northwind's peak valuation", 1.0), ("Source: example data", 0)], 3)
+
+
+def test_text_that_appears_too_late_names_the_duration_needed() -> None:
+    with pytest.raises(
+        RenderError,
+        match=r'"Revenue grew for six straight years" needs 2.0s on screen to be read; '
+        r"set duration to at least 4.5s",
+    ):
+        check_reading_time([("Revenue grew for six straight years", 2.5)], 4)

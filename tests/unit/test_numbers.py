@@ -1,6 +1,6 @@
 import pytest
 
-from vizreel.format.numbers import MINUS_SIGN, format_number, format_numbers
+from vizreel.format.numbers import MINUS_SIGN, decimals_for, format_number, format_numbers
 from vizreel.spec.models import NumberFormat
 
 M = MINUS_SIGN
@@ -168,6 +168,22 @@ def test_group_mixed_precision() -> None:
 
 def test_empty_group() -> None:
     assert format_numbers([]) == []
+
+
+@pytest.mark.parametrize(
+    ("values", "fmt", "expected"),
+    [
+        ([0, 1200000], None, 0),
+        ([0, 4.25], None, 2),
+        ([0, 740000000], COMPACT, 0),
+        ([0, 2250000000], COMPACT, 2),
+        ([0, 1200000], COMPACT, 1),
+        ([0, 4.25], NumberFormat(decimals=4), 4),
+        ([], None, 0),
+    ],
+)
+def test_decimals_for(values: list[float], fmt: NumberFormat | None, expected: int) -> None:
+    assert decimals_for(values, fmt) == expected
 
 
 @pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
