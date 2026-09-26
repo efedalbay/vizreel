@@ -71,4 +71,5 @@ Work proceeds one milestone at a time. A milestone is done only when every accep
 - Third-party chart types via Python entry points.
 - Watch mode: re-render when the spec file changes.
 - macOS testing (needs a contributor with a Mac).
+- Revisit the bar label length limit if it gets in the way in real use: with 8 bars at the default theme a category label fits about 10 characters per line on two lines, and a longer label is an error. An option is to let labels shrink down to the theme's minimum size.
 - Verify that transparent clips import with alpha in DaVinci Resolve on Windows (M2 verified CapCut only). If the default `mov` (QuickTime Animation) does not keep alpha there, add a ProRes 4444 re-encode step.
