@@ -44,7 +44,8 @@ vizreel/
 │   ├── SPEC.md              ← spec format reference (source of truth)
 │   ├── THEMES.md            ← theme format reference and checks
 │   ├── DESIGN.md            ← visual quality rules
-│   └── ROADMAP.md           ← milestones and acceptance criteria
+│   ├── ROADMAP.md           ← milestones and acceptance criteria
+│   └── images/              ← README GIFs, made by scripts/readme_gifs.py
 ├── src/vizreel/
 │   ├── __init__.py          ← version
 │   ├── __main__.py          ← `python -m vizreel`
@@ -81,6 +82,8 @@ vizreel/
 │   ├── showcase.yaml        ← one of every chart type (fictional data)
 │   ├── brand.yaml           ← charts in the example brand theme
 │   └── themes/example-brand.yaml  ← a complete custom theme
+├── scripts/
+│   └── readme_gifs.py       ← development tool: README GIFs
 └── tests/
     ├── unit/                ← fast, no rendering
     └── render/              ← slow, marked `@pytest.mark.render`
