@@ -10,6 +10,10 @@ All notable changes to vizreel are documented here. The format follows
 
 - `--quality preview` writes `ID.preview.mov` (and `ID.preview.png` with `--still`), so a preview no longer replaces a final clip of the same chart.
 
+### Fixed
+
+- The first render after installing no longer prints `SyntaxWarning: invalid escape sequence` warnings from pydub, a Manim dependency.
+
 ## [0.1.0] - 2026-09-26
 
 The first release.
