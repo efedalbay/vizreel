@@ -8,8 +8,8 @@ class VizreelError(Exception):
 
 
 @dataclass(frozen=True)
-class SpecIssue:
-    """One problem found in a spec file.
+class InputIssue:
+    """One problem found in an input file.
 
     Attributes:
         location: Path to the offending field, e.g. ``charts[1].series[0].values``.
@@ -28,17 +28,21 @@ class OutputError(VizreelError):
     """An output file could not be written."""
 
 
-class SpecError(VizreelError):
-    """A spec file could not be read or is not valid.
+class InputFileError(VizreelError):
+    """An input file could not be read or is not valid.
 
     Attributes:
-        source: Name of the spec file, as shown to the user.
+        source: Name of the file, as shown to the user.
         issues: Every problem found, in document order.
     """
 
-    def __init__(self, source: str, issues: list[SpecIssue]) -> None:
+    def __init__(self, source: str, issues: list[InputIssue]) -> None:
         self.source = source
         self.issues = issues
         count = len(issues)
         noun = "error" if count == 1 else "errors"
         super().__init__(f"{source}: {count} {noun}")
+
+
+class SpecError(InputFileError):
+    """A spec file could not be read or is not valid."""

@@ -7,11 +7,11 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    ValidationError,
     field_validator,
     model_validator,
 )
-from pydantic_core import InitErrorDetails, PydanticCustomError
+
+from vizreel.validation import Location, RuleViolation, raise_rule_violations, rule_error
 
 CHART_ID_PATTERN = r"^[a-z0-9-]+$"
 WINDOWS_RESERVED_NAMES = frozenset(
@@ -20,31 +20,11 @@ WINDOWS_RESERVED_NAMES = frozenset(
     | {f"lpt{i}" for i in range(1, 10)}
 )
 
-RULE_ERROR_TYPE = "spec_rule"
-"""Pydantic error type for vizreel's own rules. The message is shown to the user as written."""
 
-Location = tuple[str | int, ...]
-Issue = tuple[Location, str]
-
-
-def rule_error(message: str) -> PydanticCustomError:
-    """Build a Pydantic error whose message is shown to the user as written."""
-    return PydanticCustomError(RULE_ERROR_TYPE, "{message}", {"message": message})
-
-
-def _raise_issues(model: str, issues: list[Issue]) -> None:
-    if issues:
-        raise ValidationError.from_exception_data(
-            model,
-            [
-                InitErrorDetails(type=rule_error(message), loc=loc, input=None)
-                for loc, message in issues
-            ],
-        )
-
-
-def _duplicate_issues(values: list[str], list_name: str, key: str | None, what: str) -> list[Issue]:
-    issues: list[Issue] = []
+def _duplicate_issues(
+    values: list[str], list_name: str, key: str | None, what: str
+) -> list[RuleViolation]:
+    issues: list[RuleViolation] = []
     first_index: dict[str, int] = {}
     for index, value in enumerate(values):
         if value not in first_index:
@@ -192,11 +172,11 @@ class LineChart(BaseChart):
             *self._range_issues(),
             *self._highlight_issues(),
         ]
-        _raise_issues(type(self).__name__, issues)
+        raise_rule_violations(type(self).__name__, issues)
         return self
 
-    def _series_issues(self) -> list[Issue]:
-        issues: list[Issue] = []
+    def _series_issues(self) -> list[RuleViolation]:
+        issues: list[RuleViolation] = []
         expected = len(self.x)
         for index, series in enumerate(self.series):
             values_loc: Location = ("series", index, "values")
@@ -215,11 +195,11 @@ class LineChart(BaseChart):
                 )
         return issues
 
-    def _range_issues(self) -> list[Issue]:
+    def _range_issues(self) -> list[RuleViolation]:
         y_min, y_max = self.y_min, self.y_max
         if y_min is not None and y_max is not None and y_min >= y_max:
             return [(("y_max",), f"must be greater than y_min ({y_min:g}), got {y_max:g}")]
-        issues: list[Issue] = []
+        issues: list[RuleViolation] = []
         for series_index, series in enumerate(self.series):
             for value_index, value in enumerate(series.values):
                 loc: Location = ("series", series_index, "values", value_index)
@@ -231,7 +211,7 @@ class LineChart(BaseChart):
                     issues.append((loc, f"{value:g} is above y_max ({y_max:g})"))
         return issues
 
-    def _highlight_issues(self) -> list[Issue]:
+    def _highlight_issues(self) -> list[RuleViolation]:
         if self.highlight is None:
             return []
         target = self.highlight.x
@@ -291,7 +271,7 @@ class BarChart(BaseChart):
                     f"Bar labels: {_quoted_list(labels)}",
                 )
             )
-        _raise_issues(type(self).__name__, issues)
+        raise_rule_violations(type(self).__name__, issues)
         return self
 
 
@@ -318,14 +298,14 @@ class TimelineChart(BaseChart):
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         emphasized = [index for index, event in enumerate(self.events) if event.emphasis]
-        issues: list[Issue] = [
+        issues: list[RuleViolation] = [
             (
                 ("events", index, "emphasis"),
                 f"only one event can have emphasis; events[{emphasized[0]}] already has it",
             )
             for index in emphasized[1:]
         ]
-        _raise_issues(type(self).__name__, issues)
+        raise_rule_violations(type(self).__name__, issues)
         return self
 
 
@@ -354,5 +334,5 @@ class Spec(SpecModel):
     @model_validator(mode="after")
     def _check_unique_ids(self) -> Self:
         ids = [chart.id for chart in self.charts]
-        _raise_issues(type(self).__name__, _duplicate_issues(ids, "charts", "id", "ids"))
+        raise_rule_violations(type(self).__name__, _duplicate_issues(ids, "charts", "id", "ids"))
         return self

@@ -13,7 +13,7 @@ from rich.console import Console
 from rich.markup import escape
 
 from vizreel import __version__
-from vizreel.errors import OutputError, SpecError, VizreelError
+from vizreel.errors import InputFileError, OutputError, VizreelError
 from vizreel.spec.loader import load_spec, spec_json_schema
 
 app = typer.Typer(
@@ -105,8 +105,8 @@ def _reporting_errors(ctx: typer.Context) -> Iterator[None]:
         yield
     except typer.Exit:
         raise
-    except SpecError as exc:
-        _print_spec_error(exc)
+    except InputFileError as exc:
+        _print_input_error(exc)
         raise typer.Exit(1) from None
     except VizreelError as exc:
         _stderr().print(f"[red]error:[/] {escape(str(exc))}")
@@ -121,7 +121,7 @@ def _reporting_errors(ctx: typer.Context) -> Iterator[None]:
         raise typer.Exit(1) from None
 
 
-def _print_spec_error(error: SpecError) -> None:
+def _print_input_error(error: InputFileError) -> None:
     console = _stderr()
     console.print(f"[red]{escape(str(error))}[/]")
     for issue in error.issues:
