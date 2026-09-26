@@ -9,7 +9,7 @@ from vizreel.render.fonts import (
     check_theme_fonts,
     register_bundled_fonts,
 )
-from vizreel.themes.loader import load_theme
+from vizreel.themes.loader import builtin_theme_names, load_theme
 
 
 def test_bundled_fonts_ship_with_their_license() -> None:
@@ -27,8 +27,9 @@ def test_registering_makes_inter_available() -> None:
     assert first == second
 
 
-def test_default_theme_fonts_are_available() -> None:
-    check_theme_fonts(load_theme("default", Path(".")))
+@pytest.mark.parametrize("name", builtin_theme_names())
+def test_builtin_theme_fonts_are_available(name: str) -> None:
+    check_theme_fonts(load_theme(name, Path(".")))
 
 
 def test_missing_theme_font_is_an_error() -> None:

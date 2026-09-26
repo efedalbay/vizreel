@@ -1,0 +1,42 @@
+description: Light panel, dark text and an orange highlight.
+
+colors:
+  background: "#F6F8FA"
+  surface: "#FFFFFF"
+  text: "#1F2328"
+  muted: "#59636E"
+  grid: "#D8DEE4"
+  accent: "#1F5FD1"
+  positive: "#1A7F37"
+  negative: "#CF222E"
+  highlight: "#D16B05"
+  series: ["#1F5FD1", "#089191", "#B30F66"]
+  dim_opacity: 0.55
+
+fonts:
+  heading: { family: Inter, weight: semibold }
+  body: { family: Inter, weight: regular }
+  numbers: { family: Inter, weight: bold }
+
+sizes:
+  title: 60
+  subtitle: 38
+  big_number: 180
+  label: 38
+  value: 36
+  caption: 26
+  panel_radius: 32
+  panel_padding: 64
+  line: 6
+  grid_line: 2
+  dot: 16
+
+motion:
+  easing: ease_out_cubic
+  title_fade: 0.5
+  structure: 0.6
+  stagger: 0.08
+  highlight: 0.6
+  hold: 1.5
+
+background_panel: true

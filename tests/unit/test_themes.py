@@ -32,7 +32,7 @@ def theme_errors(path: Path) -> list[str]:
 
 
 def test_builtin_themes() -> None:
-    assert builtin_theme_names() == ["default"]
+    assert builtin_theme_names() == ["default", "light"]
 
 
 def test_default_theme_loads() -> None:
@@ -68,7 +68,7 @@ def test_missing_theme_lists_builtin_themes(tmp_path: Path) -> None:
 
     assert caught.value.source == str(tmp_path / "dark")
     assert [str(issue) for issue in caught.value.issues] == [
-        'theme "dark" not found. Built-in themes: default. '
+        'theme "dark" not found. Built-in themes: default, light. '
         f"A custom theme is a path to a YAML file; a relative path is looked up in {tmp_path}"
     ]
 

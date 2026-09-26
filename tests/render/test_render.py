@@ -302,6 +302,20 @@ def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
     assert "is too long for 7 events; shorten it" in result.error
 
 
+def test_light_theme_is_used_for_rendering(tmp_path: Path) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\nmeta: { theme: light, format: mp4 }\n"
+        "charts: [{ id: a, type: stat, value: 42, label: Northwind }]\n"
+    )
+
+    result = render_one(spec, tmp_path, "a")
+
+    assert result.video is not None
+    corner = frames_rgba(result.video)[-1][2, 2]
+    assert np.allclose(corner[:3], hex_rgb("#F6F8FA"), atol=4)
+
+
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     too_wide = "Northwind " * 20
     spec = tmp_path / "spec.yaml"

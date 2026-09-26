@@ -15,7 +15,7 @@ from vizreel.themes.check import (
     linear_rgb,
     simulate,
 )
-from vizreel.themes.loader import load_theme
+from vizreel.themes.loader import builtin_theme_names, load_theme
 
 
 def test_contrast_matches_wcag_examples() -> None:
@@ -66,10 +66,9 @@ def test_red_and_green_collapse_for_deuteranopia() -> None:
     assert deuteranopia < normal / 2
 
 
-def test_default_theme_passes_every_check() -> None:
-    failures = [
-        result for result in check_theme(load_theme("default", Path("."))) if not result.passed
-    ]
+@pytest.mark.parametrize("name", builtin_theme_names())
+def test_builtin_themes_pass_every_check(name: str) -> None:
+    failures = [result for result in check_theme(load_theme(name, Path("."))) if not result.passed]
 
     assert failures == []
 

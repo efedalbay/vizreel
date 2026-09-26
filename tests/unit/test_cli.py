@@ -145,7 +145,10 @@ def test_themes_list_shows_names_and_descriptions() -> None:
     result = runner.invoke(app, ["themes", "list"])
 
     assert result.exit_code == 0
-    assert "default  Dark panel, light text and an amber highlight." in result.stdout
+    assert result.stdout.splitlines() == [
+        "default  Dark panel, light text and an amber highlight.",
+        "light  Light panel, dark text and an orange highlight.",
+    ]
 
 
 def test_theme_check_passing_theme() -> None:
