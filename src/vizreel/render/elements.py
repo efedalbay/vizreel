@@ -1,4 +1,4 @@
-"""Manim building blocks shared by chart types: text, panels, easing.
+"""Manim building blocks shared by chart types: text, headers, panels, easing.
 
 Imports Manim at the top. Chart modules import this module inside `build`.
 """
@@ -8,6 +8,8 @@ from xml.sax.saxutils import escape
 
 from manim import (
     DOWN,
+    LEFT,
+    UP,
     ManimColor,
     MarkupText,
     Mobject,
@@ -19,7 +21,7 @@ from manim import (
 )
 
 from vizreel.errors import RenderError
-from vizreel.render.layout import Box, font_size, px
+from vizreel.render.layout import Box, Layout, font_size, px, stack_gap
 from vizreel.themes.models import FontStyle, Theme
 
 _PANGO_WEIGHTS = {"regular": "NORMAL", "semibold": "SEMIBOLD", "bold": "BOLD"}
@@ -142,3 +144,49 @@ def check_fits(mobject: Mobject, box: Box, what: str) -> None:
     """
     if mobject.width > box.width + 1e-9:
         raise RenderError(f"{what} is too wide to fit at the theme's size; shorten it")
+
+
+def header(title: str | None, subtitle: str | None, theme: Theme, layout: Layout) -> VGroup:
+    """Build the title and subtitle, left-aligned at the top of the title band.
+
+    Raises:
+        RenderError: The title or subtitle is too wide for the frame.
+    """
+    lines: list[tuple[VMobject, float]] = []
+    if title:
+        lines.append(
+            (
+                text(title, theme.fonts.heading, theme.sizes.title, theme.colors.text),
+                theme.sizes.title,
+            )
+        )
+    if subtitle:
+        lines.append(
+            (
+                text(subtitle, theme.fonts.body, theme.sizes.subtitle, theme.colors.muted),
+                theme.sizes.subtitle,
+            )
+        )
+    group = VGroup()
+    for index, (mobject, size) in enumerate(lines):
+        check_fits(mobject, layout.title, "the title" if index == 0 and title else "the subtitle")
+        if index == 0:
+            mobject.align_to((layout.title.left, layout.title.top, 0.0), UP + LEFT)
+        else:
+            previous, previous_size = lines[index - 1]
+            mobject.next_to(previous, DOWN, buff=stack_gap(previous_size, size), aligned_edge=LEFT)
+        group.add(mobject)
+    return group
+
+
+def source_line(source: str | None, theme: Theme, layout: Layout) -> VMobject | None:
+    """Build the source line, left-aligned at the bottom of the source band.
+
+    Raises:
+        RenderError: The source is too wide for the frame.
+    """
+    if not source:
+        return None
+    mobject = text(source, theme.fonts.body, theme.sizes.caption, theme.colors.muted)
+    check_fits(mobject, layout.source, "the source")
+    return mobject.align_to((layout.source.left, layout.source.bottom, 0.0), DOWN + LEFT)

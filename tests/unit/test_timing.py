@@ -5,6 +5,7 @@ from vizreel.charts.base import (
     check_reading_time,
     reading_time,
     split_duration,
+    staggered_progress,
 )
 from vizreel.errors import RenderError
 
@@ -58,6 +59,32 @@ def test_too_short_duration_names_the_minimum() -> None:
         RenderError, match=r"duration 2s is too short for this chart; use at least 2.5s"
     ):
         split_duration(2, intro=0.5, highlight=0, hold=1.5)
+
+
+def test_staggered_items_start_one_after_another() -> None:
+    def at(progress: float, index: int) -> float:
+        return staggered_progress(progress, index, 3, stagger=0.1, total=2)
+
+    assert [at(0, i) for i in range(3)] == [0, 0, 0]
+    assert at(0.05, 0) == pytest.approx(0.1 / 1.8)
+    assert at(0.05, 1) == 0
+    assert at(0.1, 2) == 0
+    assert [at(1, i) for i in range(3)] == [1, 1, 1]
+
+
+def test_last_staggered_item_finishes_at_the_end() -> None:
+    assert staggered_progress(0.999, 7, 8, stagger=0.08, total=2.5) < 1
+    assert staggered_progress(1, 7, 8, stagger=0.08, total=2.5) == 1
+
+
+def test_long_stagger_is_shortened_to_half_the_time() -> None:
+    # 8 items with 1 s delays would need 7 s; they get 0.5 s in total instead.
+    assert staggered_progress(0.5, 7, 8, stagger=1, total=1) == pytest.approx(0)
+    assert staggered_progress(0.75, 7, 8, stagger=1, total=1) == pytest.approx(0.5)
+
+
+def test_single_item_is_not_delayed() -> None:
+    assert staggered_progress(0.5, 0, 1, stagger=0.1, total=2) == 0.5
 
 
 @pytest.mark.parametrize(

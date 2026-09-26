@@ -138,7 +138,9 @@ Default `duration`: 6.
 
 ## `bar` — compare categories
 
-Vertical bars, one per category.
+Vertical bars, one per category. Each bar shows its value above it, so there is no value axis. The bars grow from the baseline one after another; at the highlight beat the highlighted bar turns to the `highlight` color and the others to `muted`.
+
+Category labels that do not fit under their bar are split into two lines. With many bars each label has little room (about 10 characters per line with 8 bars at the default theme); a label that does not fit on two lines is an error asking you to shorten it.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|

@@ -68,7 +68,7 @@ def test_register_rejects_model_with_mismatched_type() -> None:
         ChartRegistry().register(Mismatched)
 
 
-@pytest.mark.parametrize(("name", "milestone"), [("line", "M3"), ("bar", "M3"), ("timeline", "M4")])
+@pytest.mark.parametrize(("name", "milestone"), [("line", "M3"), ("timeline", "M4")])
 def test_stub_chart_types_report_that_they_are_not_implemented(name: str, milestone: str) -> None:
     spec = parse_spec(SHOWCASE.read_text(encoding="utf-8"), "showcase.yaml")
     chart = next(chart for chart in spec.charts if chart.type == name)

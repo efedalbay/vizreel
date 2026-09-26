@@ -110,6 +110,29 @@ def split_duration(duration: float, *, intro: float, highlight: float, hold: flo
     return Phases(intro=intro, main=main, highlight=highlight, hold=hold + (available - main))
 
 
+def staggered_progress(
+    progress: float, index: int, count: int, *, stagger: float, total: float
+) -> float:
+    """Progress of one item in a group that starts one item after another.
+
+    Items start `stagger` seconds apart and all finish within `total` seconds. If the delays
+    would take more than half of `total`, they are shortened to fit.
+
+    Args:
+        progress: How far the group is, from 0 to 1.
+        index: Position of the item in the group, from 0.
+        count: Number of items.
+        stagger: Wanted delay between two items, in seconds.
+        total: Length of the whole group animation, in seconds.
+
+    Returns:
+        How far the item is, from 0 to 1.
+    """
+    delay = min(stagger, total / 2 / (count - 1)) if count > 1 else 0.0
+    duration = total - delay * (count - 1)
+    return min(max((progress * total - index * delay) / duration, 0.0), 1.0)
+
+
 def reading_time(text: str) -> float:
     """Seconds a text must stay on screen to be read."""
     return len(text.split()) / WORDS_PER_SECOND

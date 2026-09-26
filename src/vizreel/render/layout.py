@@ -26,6 +26,10 @@ BAND_GAP = 0.5
 """Gap between the title, content and source bands, as a multiple of the title size."""
 STACK_GAP = 0.45
 """Gap between lines of stacked text, as a multiple of the smaller font size."""
+BAR_FILL = 0.62
+"""Share of each bar's slot covered by the bar; the rest is space between bars."""
+LABEL_FILL = 0.96
+"""Share of a slot that a category label may use, leaving space between labels."""
 
 
 def px(pixels: float) -> float:

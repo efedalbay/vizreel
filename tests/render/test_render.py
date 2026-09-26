@@ -116,18 +116,92 @@ def test_stat_webm(tmp_path: Path) -> None:
     assert len(frames_rgba(result.video)) == STAT_DURATION * PREVIEW_FPS
 
 
-def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
-    results = render_spec(SHOWCASE, RenderOptions(out_dir=tmp_path, quality="preview"))
+def render_one(spec_path: Path, out_dir: Path, chart_id: str) -> ChartResult:
+    [result] = render_spec(
+        spec_path,
+        RenderOptions(out_dir=out_dir, only=(chart_id,), quality="preview", still=True),
+        reraise=True,
+    )
+    return result
 
-    assert [result.chart_id for result in results] == [
-        "peak-valuation",
-        "valuation",
-        "offers",
-        "final-years",
-    ]
+
+def hex_rgb(color: str) -> tuple[int, int, int]:
+    return (int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16))
+
+
+@pytest.fixture(scope="module")
+def bar_mov(tmp_path_factory: pytest.TempPathFactory) -> ChartResult:
+    return render_one(SHOWCASE, tmp_path_factory.mktemp("bar"), "offers")
+
+
+def test_bar_clip_has_expected_duration_and_still_hold(bar_mov: ChartResult) -> None:
+    assert bar_mov.error is None
+    assert bar_mov.video is not None
+    frames = frames_rgba(bar_mov.video)
+
+    assert len(frames) == 5 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+
+
+def test_bar_highlight_colors_in_last_frame(bar_mov: ChartResult) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    assert bar_mov.still is not None
+    rgb = image_rgba(bar_mov.still)[:, :, :3].astype(int)
+
+    def matching(color: str) -> np.ndarray:
+        return np.all(np.abs(rgb - hex_rgb(color)) <= 6, axis=2)
+
+    highlighted_columns = np.nonzero(matching(colors.highlight))[1]
+    # The highlighted bar is the last of three, so it lies in the right third.
+    assert highlighted_columns.size > 50
+    assert highlighted_columns.min() > PREVIEW[0] * 2 / 3
+    assert not matching(colors.accent).any()
+
+
+def test_bar_chart_with_eight_long_labels_wraps_them(tmp_path: Path) -> None:
+    labels = [f"Northwind region {name}" for name in "ABCDEFGH"]
+    bars = ", ".join(f'{{ label: "{label}", value: {i + 1} }}' for i, label in enumerate(labels))
+    spec = tmp_path / "bars.yaml"
+    spec.write_text(f"version: 1\ncharts:\n  - {{ id: regions, type: bar, bars: [{bars}] }}\n")
+
+    result = render_one(spec, tmp_path, "regions")
+
+    assert result.error is None
+
+
+def test_bar_label_too_long_even_on_two_lines_is_an_error(tmp_path: Path) -> None:
+    long = "Northwind Incorporated International Holdings"
+    bars = ", ".join(f'{{ label: "{long} {i}", value: {i + 1} }}' for i in range(8))
+    spec = tmp_path / "bars.yaml"
+    spec.write_text(f"version: 1\ncharts:\n  - {{ id: regions, type: bar, bars: [{bars}] }}\n")
+
+    [result] = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+
+    assert result.error is not None
+    assert "is too long for 8 bars; shorten it" in result.error
+
+
+def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
+    too_wide = "Northwind " * 20
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n"
+        "  - { id: first, type: stat, value: 1 }\n"
+        f'  - {{ id: broken, type: stat, value: 2, title: "{too_wide.strip()}" }}\n'
+        "  - { id: last, type: stat, value: 3 }\n"
+    )
+
+    results = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+
+    assert [result.chart_id for result in results] == ["first", "broken", "last"]
     assert results[0].error is None
-    assert (tmp_path / "peak-valuation.mov").is_file()
-    assert all("not implemented yet" in (result.error or "") for result in results[1:])
+    assert results[2].error is None
+    assert results[1].error
+    assert (tmp_path / "first.mov").is_file()
+    assert (tmp_path / "last.mov").is_file()
 
 
 def test_render_command(tmp_path: Path) -> None:
