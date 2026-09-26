@@ -9,8 +9,8 @@ colors:
   positive: "#3FB950"
   negative: "#F85149"
   highlight: "#F2B53A"
-  series: ["#58A6FF", "#F2B53A", "#D2A8FF"]
-  dim_opacity: 0.4
+  series: ["#58A6FF", "#3DD6C6", "#D2A8FF"]
+  dim_opacity: 0.55
 
 fonts:
   heading: { family: Inter, weight: semibold }

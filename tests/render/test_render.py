@@ -184,6 +184,56 @@ def test_bar_label_too_long_even_on_two_lines_is_an_error(tmp_path: Path) -> Non
     assert "is too long for 8 bars; shorten it" in result.error
 
 
+@pytest.fixture(scope="module")
+def line_mov(tmp_path_factory: pytest.TempPathFactory) -> ChartResult:
+    return render_one(SHOWCASE, tmp_path_factory.mktemp("line"), "valuation")
+
+
+def test_line_clip_has_expected_duration_and_still_hold(line_mov: ChartResult) -> None:
+    assert line_mov.error is None
+    assert line_mov.video is not None
+    frames = frames_rgba(line_mov.video)
+
+    assert len(frames) == 6 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+
+
+def test_line_highlight_marks_the_highlighted_x(line_mov: ChartResult) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    assert line_mov.still is not None
+    rgb = image_rgba(line_mov.still)[:, :, :3].astype(int)
+    highlight = np.all(np.abs(rgb - hex_rgb(colors.highlight)) <= 12, axis=2)
+    columns = np.nonzero(highlight)[1]
+
+    # The guide line stands on "2018", the middle of five x labels.
+    assert columns.size > 20
+    assert PREVIEW[0] * 0.4 < np.median(columns) < PREVIEW[0] * 0.6
+
+
+def test_line_chart_with_three_named_series_and_gaps(tmp_path: Path) -> None:
+    spec = tmp_path / "lines.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n"
+        "  - id: users\n"
+        "    type: line\n"
+        "    title: Northwind users by platform\n"
+        '    x: ["2016", "2017", "2018", "2019", "2020", "2021"]\n'
+        "    number: { compact: true }\n"
+        "    series:\n"
+        "      - { name: Web, values: [120000, 180000, 260000, 250000, 310000, 330000] }\n"
+        "      - { name: Mobile, values: [null, 90000, 210000, 270000, 300000, 340000] }\n"
+        "      - { name: Kiosk, values: [40000, 45000, null, 60000, 62000, 335000] }\n"
+        '    highlight: { x: "2019", label: "Mobile passes web" }\n'
+    )
+
+    result = render_one(spec, tmp_path, "users")
+
+    assert result.error is None
+
+
 @pytest.mark.parametrize(
     ("quality", "duration", "frames"),
     [("preview", 3.7, 56), ("final", 2.7, 81)],

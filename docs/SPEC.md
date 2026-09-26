@@ -111,6 +111,10 @@ Default `duration`: 3.
 
 One or more series drawn from left to right.
 
+Each line draws with a label at its tip that counts along. The first value of each series is labeled once the tip has moved on, and the last value stays labeled at the end of the line; with more than one series, the end label also shows the series name next to a mark in the series color. End labels that would overlap are moved apart. Axis labels on the horizontal axis are thinned when they do not all fit, always keeping the first and the last.
+
+At the highlight beat the lines dim, the highlighted point gets a guide line and a dot, and `highlight.label` appears above the plot. With a single series the callout also shows the value.
+
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `x` | list of strings | yes | — | Labels on the horizontal axis, in order (e.g. years). At least 2, each unique. |
