@@ -1,0 +1,43 @@
+# One chart of every type. All data is fictional.
+version: 1
+meta:
+  title: vizreel showcase
+  theme: default
+  resolution: 1080p
+  fps: 60
+
+charts:
+  - id: peak-valuation
+    type: stat
+    value: 740000000
+    label: Northwind's peak valuation
+    number: { prefix: "$", compact: true }
+    source: "Source: example data"
+
+  - id: valuation
+    type: line
+    title: Northwind's valuation
+    x: ["2016", "2017", "2018", "2019", "2020"]
+    series:
+      - values: [0.05, 0.2, 2.25, 2.25, null]
+    number: { prefix: "$", suffix: "B", decimals: 2 }
+    highlight: { x: "2018", label: "Series C closes" }
+    source: "Source: example data"
+
+  - id: offers
+    type: bar
+    title: Offers Northwind received
+    bars:
+      - { label: "Buyer A (2015)", value: 740000000 }
+      - { label: "Buyer B (2016)", value: 70000000 }
+      - { label: "Buyer C (2016)", value: 40000000 }
+    number: { prefix: "$", compact: true }
+    highlight: { label: "Buyer C (2016)" }
+
+  - id: final-years
+    type: timeline
+    title: Northwind's last three years
+    events:
+      - { date: "2018", label: "Raises $865M" }
+      - { date: "2020", label: "Revenue reaches $1.75B" }
+      - { date: "Jun 2021", label: "Files for bankruptcy", emphasis: true }

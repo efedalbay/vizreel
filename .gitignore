@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Rendered output
+out/
+media/
+*.mov
+*.webm
+*.mp4
+*.png
+!docs/**/*.png
+!docs/**/*.gif
+
+# Private working files (used during development, never published)
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+local/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
