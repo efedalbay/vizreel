@@ -4,7 +4,12 @@
 
 vizreel turns a short YAML spec into clean, animated chart clips (big numbers, line charts, bar charts and timelines) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
 
-> **Status: early development.** vizreel is not usable yet. The spec format and architecture are designed; implementation is in progress. See the [roadmap](docs/ROADMAP.md) for what is being built and in which order.
+> **Status: 0.1.0, the first release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
+
+| | |
+|---|---|
+| ![A stat chart counting up to $740M](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/stat.gif) | ![A line chart drawing from left to right](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/line.gif) |
+| ![A bar chart with one highlighted bar](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/bar.gif) | ![A timeline with an emphasized event](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/timeline.gif) |
 
 ## Why
 
@@ -13,12 +18,53 @@ Most chart tools are made for reports and dashboards. On video they look static 
 vizreel is built for video from the start:
 
 - **Declarative.** Describe the chart and its data in YAML. No code, no timeline editing.
-- **Made to be watched.** Large type, one message per chart, a clear highlight moment, smooth eased motion, a clean final frame. See the [design rules](docs/DESIGN.md).
+- **Made to be watched.** Large type, one message per chart, a clear highlight moment, smooth eased motion, a clean final frame. See the [design rules](https://github.com/efedalbay/vizreel/blob/main/docs/DESIGN.md).
 - **Editor-ready.** One clip per chart, transparent background, 1080p or 4K at 60 fps.
 - **Consistent.** Colors, fonts and timing come from a theme, so every chart in a video matches.
 - **Easy to install.** Pure Python. No LaTeX, no separate FFmpeg install.
 
+## Installation
+
+**Requirements:** Python 3.11 or 3.12 on Windows or Linux. Other Python versions and macOS may work but are untested.
+
+With [uv](https://docs.astral.sh/uv/) (recommended), which puts the `vizreel` command on your PATH:
+
+```bash
+uv tool install vizreel
+vizreel --version
+```
+
+With pip, in a virtual environment. On Windows, in PowerShell:
+
+```powershell
+py -m venv .venv
+.venv\Scripts\activate
+python -m pip install vizreel
+vizreel --version
+```
+
+If PowerShell says that running scripts is disabled, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once and activate again. On Linux and macOS, activate with `source .venv/bin/activate`.
+
+## Quickstart
+
+Create a spec from a template, then render it:
+
+```bash
+vizreel new stat -o chart.yaml
+vizreel render chart.yaml --quality preview --still
+```
+
+```
+out/
+├── customers.mov    ← the clip, with a transparent background
+└── customers.png    ← its last frame
+```
+
+Open `chart.yaml`, change the number and the label, and render again. Without `--quality preview`, the clip renders at full quality: 1080p at 60 fps unless the spec says otherwise.
+
 ## Example
+
+A spec can hold several charts; each renders to its own clip:
 
 ```yaml
 version: 1
@@ -63,33 +109,7 @@ out/
 | `bar` | Comparing up to 8 categories, with one highlighted bar |
 | `timeline` | A sequence of up to 7 events, with an emphasized moment |
 
-Every field is documented in the [spec reference](docs/SPEC.md).
-
-## Installation
-
-vizreel will be published on PyPI when it reaches v0.1.0. Until then, install from source.
-
-**Requirements:** Python 3.11 or newer. Windows and Linux are tested; macOS is expected to work but is untested.
-
-Using [uv](https://docs.astral.sh/uv/) (recommended):
-
-```bash
-git clone <this repository's URL>
-cd vizreel
-uv sync
-uv run vizreel --help
-```
-
-Using pip:
-
-```bash
-git clone <this repository's URL>
-cd vizreel
-python -m venv .venv
-# Windows: .venv\Scripts\activate    Linux/macOS: source .venv/bin/activate
-pip install -e .
-vizreel --help
-```
+`vizreel new TYPE` prints a commented template for each. Every field is documented in the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md).
 
 ## Usage
 
@@ -103,7 +123,7 @@ vizreel themes list                     # built-in themes
 vizreel theme check my-brand.yaml       # contrast and color vision checks for a theme
 ```
 
-| Option | Description |
+| `render` option | Description |
 |---|---|
 | `--out DIR` | Output folder (default `out`) |
 | `--only ID` | Render only this chart; repeat for several |
@@ -131,22 +151,33 @@ meta:
   theme: themes/my-brand.yaml
 ```
 
-Start from [`examples/themes/example-brand.yaml`](examples/themes/example-brand.yaml), and run `vizreel theme check` on your theme to test its contrast and its colors for color vision deficiency. Every field is described in the [theme reference](docs/THEMES.md).
+Start from [`examples/themes/example-brand.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/themes/example-brand.yaml), and run `vizreel theme check` on your theme to test its contrast and its colors for color vision deficiency. Every field is described in the [theme reference](https://github.com/efedalbay/vizreel/blob/main/docs/THEMES.md).
 
 ## Documentation
 
-- [Spec reference](docs/SPEC.md)
-- [Theme reference](docs/THEMES.md)
-- [Design rules](docs/DESIGN.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Roadmap](docs/ROADMAP.md)
+- [Spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md)
+- [Theme reference](https://github.com/efedalbay/vizreel/blob/main/docs/THEMES.md)
+- [Design rules](https://github.com/efedalbay/vizreel/blob/main/docs/DESIGN.md)
+- [Architecture](https://github.com/efedalbay/vizreel/blob/main/docs/ARCHITECTURE.md)
+- [Roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md)
+- [Changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md)
+
+## Development
+
+```bash
+git clone https://github.com/efedalbay/vizreel.git
+cd vizreel
+uv sync
+uv run pytest -m "not render"   # fast tests
+uv run pytest -m render         # rendering tests
+```
 
 ## Contributing
 
-Issues and pull requests are welcome. Before starting on a larger change, please open an issue to discuss it. New chart types follow the contract in the [architecture document](docs/ARCHITECTURE.md#chart-type-contract) and the rules in the [design document](docs/DESIGN.md).
+Issues and pull requests are welcome. Before starting on a larger change, please open an issue to discuss it. New chart types follow the contract in the [architecture document](https://github.com/efedalbay/vizreel/blob/main/docs/ARCHITECTURE.md#chart-type-contract) and the rules in the [design document](https://github.com/efedalbay/vizreel/blob/main/docs/DESIGN.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/efedalbay/vizreel/blob/main/LICENSE)
 
 vizreel is built on [Manim Community Edition](https://www.manim.community/). It bundles the [Inter](https://rsms.me/inter/) typeface by The Inter Project Authors, licensed under the SIL Open Font License 1.1 (see `src/vizreel/assets/fonts/Inter-OFL.txt`).
