@@ -154,6 +154,75 @@ def test_render_command(tmp_path: Path) -> None:
     assert result.stdout.strip().endswith("1 rendered, 0 failed")
 
 
+@pytest.mark.parametrize("size_px", [180, 36])
+def test_composed_numbers_match_pango_layout(tmp_path: Path, size_px: float) -> None:
+    from manim import tempconfig
+
+    from vizreel.render import elements
+    from vizreel.render.fonts import register_bundled_fonts
+    from vizreel.render.layout import px
+    from vizreel.render.numbers_text import NumberGlyphs
+    from vizreel.themes.loader import load_theme
+
+    register_bundled_fonts()
+    fonts, colors = load_theme("default", Path(".")).fonts, load_theme("default", Path(".")).colors
+    samples = ["$740M", "$123M", "1,234,567", "$2.25B", "−$9.81K", "47%", "1,111 users", "7"]
+    with tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR"}):
+        glyphs = NumberGlyphs(fonts.numbers, size_px, colors.text)
+        for sample in samples:
+            composed = glyphs(sample)
+            direct = elements.number_text(sample, fonts.numbers, size_px, colors.text)
+            assert len(composed.submobjects) == len(direct.submobjects)
+            for ours, pango in zip(composed.submobjects, direct.submobjects, strict=True):
+                assert ours.get_left()[0] == pytest.approx(pango.get_left()[0], abs=px(0.5))
+                assert ours.get_bottom()[1] == pytest.approx(pango.get_bottom()[1], abs=px(0.5))
+                assert ours.width == pytest.approx(pango.width, abs=px(0.5))
+
+
+def test_digit_pattern() -> None:
+    from vizreel.render.numbers_text import digit_pattern
+
+    assert digit_pattern("$1,234.5M users") == "$0,000.0M users"
+    assert digit_pattern("−9%") == "−0%"
+
+
+def test_long_text_is_laid_out_completely(tmp_path: Path) -> None:
+    from manim import tempconfig
+
+    from vizreel.render import elements
+    from vizreel.render.fonts import register_bundled_fonts
+    from vizreel.themes.loader import load_theme
+
+    register_bundled_fonts()
+    theme = load_theme("default", Path("."))
+    title = "Offers Northwind received from three buyers in 2015 and 2016"
+    with tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR", "pixel_width": 854}):
+        mobject = elements.text(title, theme.fonts.heading, theme.sizes.title, theme.colors.text)
+        number = elements.number_text(
+            "$1,234,567.89B users", theme.fonts.numbers, theme.sizes.big_number, theme.colors.text
+        )
+
+    assert len(mobject.submobjects) == len(title)
+    assert len(number.submobjects) == len("$1,234,567.89Busers")
+
+
+def test_text_that_pango_cannot_lay_out_completely_is_an_error(tmp_path: Path) -> None:
+    from manim import tempconfig
+
+    from vizreel.errors import RenderError
+    from vizreel.render import elements
+    from vizreel.render.fonts import register_bundled_fonts
+    from vizreel.themes.loader import load_theme
+
+    register_bundled_fonts()
+    theme = load_theme("default", Path("."))
+    with (
+        tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR"}),
+        pytest.raises(RenderError, match="could not be laid out completely"),
+    ):
+        elements.number_text("1" * 60, theme.fonts.numbers, 180, theme.colors.text)
+
+
 def test_text_uses_the_bundled_font(tmp_path: Path) -> None:
     """Inter must stay in use after the Windows font speed-up in vizreel.render.fonts."""
     from manim import Text, tempconfig

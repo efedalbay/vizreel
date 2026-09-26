@@ -69,6 +69,8 @@ vizreel/
 │   │   ├── scene.py         ← generic Manim Scene that hosts one chart
 │   │   ├── layout.py        ← frame geometry in scene units (pure functions)
 │   │   ├── elements.py      ← shared Manim building blocks: text, panel, easing
+│   │   ├── numbers_text.py  ← counting numbers composed from cached glyphs
+│   │   ├── scales.py        ← axis ranges, ticks, label placement (pure functions)
 │   │   └── fonts.py         ← register bundled fonts with Pango
 │   ├── format/
 │   │   └── numbers.py       ← number/currency/date formatting (pure functions)

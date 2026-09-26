@@ -37,6 +37,7 @@ class StatChartType(ChartType):
         )
 
         from vizreel.render import elements
+        from vizreel.render.numbers_text import NumberGlyphs
 
         chart = self.chart
         assert isinstance(chart, StatChart)
@@ -58,11 +59,10 @@ class StatChartType(ChartType):
             update={"decimals": decimals_for([chart.start, chart.value], chart.number)}
         )
 
+        glyphs = NumberGlyphs(fonts.numbers, sizes.big_number, number_color[chart.trend])
+
         def number(value: float) -> "VMobject":
-            content = format_number(value, number_format)
-            return elements.number_text(
-                content, fonts.numbers, sizes.big_number, number_color[chart.trend]
-            )
+            return glyphs(format_number(value, number_format))
 
         header = line(chart.title, fonts.heading, sizes.title, colors.text) + line(
             chart.subtitle, fonts.body, sizes.subtitle, colors.muted
