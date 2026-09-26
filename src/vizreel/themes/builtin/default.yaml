@@ -9,7 +9,7 @@ colors:
   positive: "#3FB950"
   negative: "#F85149"
   highlight: "#F2B53A"
-  series: ["#58A6FF", "#3DD6C6", "#D2A8FF"]
+  series: ["#58A6FF", "#3DD6C6", "#DB61A2"]
   dim_opacity: 0.55
 
 fonts:
