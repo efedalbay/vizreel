@@ -193,27 +193,51 @@ class TimelineChartType(ChartType):
             [event.date for event in events], [event.label for event in events], content.width, fits
         )
 
-        def block(index: int) -> "VMobject":
-            date = elements.text(events[index].date, fonts.heading, sizes.label, colors.text)
-            description = elements.paragraph(
-                plan.lines[index], fonts.body, sizes.label, colors.muted
-            )
-            return VGroup(date, description).arrange(DOWN, buff=gap / 2)
+        date_metrics = elements.line_metrics(fonts.heading, sizes.label)
+        label_metrics = elements.line_metrics(fonts.body, sizes.label)
 
-        blocks = [block(index) for index in range(count)]
+        def block(index: int) -> tuple["VMobject", float, float]:
+            """Build an event's date and label, and return it with its top and bottom.
+
+            Lines sit on their baselines, and the top and bottom come from the font, not the
+            ink, so a dotted capital I or a descender does not move a label off its row.
+            """
+            lines = plan.lines[index]
+            date = elements.text(events[index].date, fonts.heading, sizes.label, colors.text)
+            description = elements.paragraph(lines, fonts.body, sizes.label, colors.muted)
+            description.next_to(date, DOWN)
+            date_baseline = elements.baseline(date, events[index].date, fonts.heading, sizes.label)
+            first_baseline = date_baseline - gap / 2 - label_metrics.ascent
+            description.shift(
+                (
+                    0.0,
+                    first_baseline
+                    - elements.baseline(description[0], lines[0], fonts.body, sizes.label),
+                    0.0,
+                )
+            )
+            last_baseline = elements.baseline(description[-1], lines[-1], fonts.body, sizes.label)
+            top = date_baseline + date_metrics.ascent
+            bottom = last_baseline - label_metrics.descent
+            return VGroup(date, description), top, bottom
+
+        built = [block(index) for index in range(count)]
+        blocks = [event_block for event_block, _, _ in built]
+        heights = [top - bottom for _, top, bottom in built]
         sides = [side_of(index, plan.alternate) for index in range(count)]
-        above = max((b.height for b, s in zip(blocks, sides, strict=True) if s > 0), default=0.0)
-        below = max((b.height for b, s in zip(blocks, sides, strict=True) if s < 0), default=0.0)
+        above = max((h for h, s in zip(heights, sides, strict=True) if s > 0), default=0.0)
+        below = max((h for h, s in zip(heights, sides, strict=True) if s < 0), default=0.0)
         above_height = stem_length + above if above else dot_radius
         below_height = stem_length + below if below else dot_radius
         axis_y = content.center[1] + (below_height - above_height) / 2
         if above_height + below_height > content.height:
             raise RenderError("not enough room for the timeline; shorten the labels or the title")
 
-        for index, (event_block, side) in enumerate(zip(blocks, sides, strict=True)):
+        for index, ((event_block, top, bottom), side) in enumerate(zip(built, sides, strict=True)):
             x = clamp_center(xs[index], event_block.width, content.left, content.right)
-            y = axis_y + side * (stem_length + event_block.height / 2)
-            event_block.move_to((x, y, 0.0))
+            stem_end = axis_y + side * stem_length
+            dy = stem_end - bottom if side > 0 else stem_end - top
+            event_block.shift((x - event_block.get_center()[0], dy, 0.0))
 
         axis_width = stroke_width(sizes.line)
 

@@ -442,6 +442,39 @@ def test_text_that_pango_cannot_lay_out_completely_is_an_error(tmp_path: Path) -
         elements.number_text("1" * 60, theme.fonts.numbers, 180, theme.colors.text)
 
 
+def test_baseline_ignores_dots_accents_and_descenders(tmp_path: Path) -> None:
+    from manim import tempconfig
+
+    from vizreel.render import elements
+    from vizreel.render.fonts import register_bundled_fonts
+    from vizreel.render.layout import px
+    from vizreel.themes.loader import load_theme
+
+    register_bundled_fonts()
+    theme = load_theme("default", Path("."))
+    style, size, white = theme.fonts.body, theme.sizes.label, theme.colors.text
+    with tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR"}):
+        # One text puts every word on the same baseline; each word is then measured alone.
+        words = ["Ilk", "İlk", "grafiği", "Âma", "ama"]
+        row = elements.text(" ".join(words), style, size, white)
+        metrics = elements.line_metrics(style, size)
+        start = 0
+        baselines = []
+        for word in words:
+            glyphs = row[start : start + len(word)]
+            baselines.append(elements.baseline(glyphs, word, style, size))
+            start += len(word) + 1
+        paragraph = elements.paragraph(["İlk grafik", "Northwind"], style, size, white)
+        first, second = (
+            elements.baseline(paragraph[i], line, style, size)
+            for i, line in enumerate(["İlk grafik", "Northwind"])
+        )
+
+    assert max(baselines) - min(baselines) < px(0.5)
+    assert metrics.ascent > metrics.descent > 0
+    assert first - second > metrics.ascent + metrics.descent
+
+
 def test_text_uses_the_bundled_font(tmp_path: Path) -> None:
     """Inter must stay in use after the Windows font speed-up in vizreel.render.fonts."""
     from manim import Text, tempconfig

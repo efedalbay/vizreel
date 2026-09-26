@@ -4,6 +4,8 @@ Imports Manim at the top. Chart modules import this module inside `build`.
 """
 
 from collections.abc import Callable
+from dataclasses import dataclass
+from functools import cache
 from xml.sax.saxutils import escape
 
 from manim import (
@@ -23,7 +25,7 @@ from manim import (
 
 from vizreel.errors import RenderError
 from vizreel.render.layout import Box, Layout, font_size, px, stack_gap
-from vizreel.themes.models import FontStyle, Theme
+from vizreel.themes.models import FontStyle, FontWeight, Theme
 
 _PANGO_WEIGHTS = {"regular": "NORMAL", "semibold": "SEMIBOLD", "bold": "BOLD"}
 PANEL_Z_INDEX = -1
@@ -107,6 +109,51 @@ def number_text(content: str, style: FontStyle, size_px: float, hex_color: str) 
     # MarkupText has one submobject per visible character.
     _check_complete(mobject, content, sum(1 for char in content if not char.isspace()))
     return mobject.scale(1 / oversample)
+
+
+@dataclass(frozen=True)
+class LineMetrics:
+    """Vertical extent of a line of text in a font, measured from its baseline.
+
+    Attributes:
+        ascent: From the baseline to the top of capitals and ascenders.
+        descent: From the baseline down to the bottom of descenders.
+    """
+
+    ascent: float
+    descent: float
+
+
+def line_metrics(style: FontStyle, size_px: float) -> LineMetrics:
+    """Measure the ascent and descent of a font at a size."""
+    return _line_metrics(style.family, style.weight, size_px)
+
+
+@cache
+def _line_metrics(family: str, weight: FontWeight, size_px: float) -> LineMetrics:
+    style = FontStyle(family=family, weight=weight)
+    capital, ascender, descender = text("Hdg", style, size_px, "#000000")
+    baseline = float(capital.get_bottom()[1])
+    top = max(float(capital.get_top()[1]), float(ascender.get_top()[1]))
+    return LineMetrics(ascent=top - baseline, descent=baseline - float(descender.get_bottom()[1]))
+
+
+def baseline(line: Mobject, content: str, style: FontStyle, size_px: float) -> float:
+    """Return the y of the baseline of `line`, a line of text built from `content`.
+
+    Text is positioned by its ink, which moves with the letters: a dotted capital I or an
+    accent reaches higher, a descender lower. The baseline stays put.
+    """
+    below = _ink_below_baseline(content.strip(), style.family, style.weight, size_px)
+    return float(line.get_bottom()[1]) + below
+
+
+@cache
+def _ink_below_baseline(content: str, family: str, weight: FontWeight, size_px: float) -> float:
+    # "x" sits exactly on the baseline, so the ink of the rest is measured against it.
+    style = FontStyle(family=family, weight=weight)
+    reference, *rest = text("x" + content, style, size_px, "#000000")
+    return float(reference.get_bottom()[1]) - float(VGroup(*rest).get_bottom()[1])
 
 
 def _check_complete(mobject: VMobject, content: str, expected: int) -> None:

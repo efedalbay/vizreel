@@ -13,6 +13,7 @@ All notable changes to vizreel are documented here. The format follows
 ### Fixed
 
 - The first render after installing no longer prints `SyntaxWarning: invalid escape sequence` warnings from pydub, a Manim dependency.
+- Timeline labels sit on a common baseline. A dotted capital İ, an accent or a descender used to move a label a few pixels off its row.
 
 ## [0.1.0] - 2026-09-26
 
