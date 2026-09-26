@@ -169,8 +169,16 @@ class LineChartType(ChartType):
             parts: list[VMobject] = []
             if name is not None:
                 parts += [Dot(radius=dot_radius, color=series_colors[index]), name.copy()]
-            parts.append(value_text(value, lasts[index]))
-            return VGroup(*parts).arrange(RIGHT, buff=gap / 2)
+            number = value_text(value, lasts[index])
+            parts.append(number)
+            label = VGroup(*parts).arrange(RIGHT, buff=gap / 2)
+            if name is not None:
+                # Figures sit on the baseline, so the name goes on the baseline of the number.
+                name_baseline = elements.baseline(
+                    parts[1], chart.series[index].name or "", fonts.body, sizes.label
+                )
+                parts[1].shift((0.0, number.get_bottom()[1] - name_baseline, 0.0))
+            return label
 
         # Plot area: the content band minus axis labels, end labels and callout room.
         values = [value for series_values in present for value in series_values]
@@ -179,7 +187,10 @@ class LineChartType(ChartType):
             elements.number_text(text, fonts.body, sizes.label, colors.muted)
             for text in format_numbers(list(axis.ticks), chart.number)
         ]
-        x_labels = [elements.text(text, fonts.body, sizes.label, colors.muted) for text in chart.x]
+        x_blocks = [
+            elements.text_block(text, fonts.body, sizes.label, colors.muted) for text in chart.x
+        ]
+        x_labels = [block.mobject for block in x_blocks]
         end_widths = [end_label(index, lasts[index]).width for index in range(count)]
         callout_label = (
             elements.text(chart.highlight.label, fonts.body, sizes.label, colors.text)
@@ -192,7 +203,7 @@ class LineChartType(ChartType):
         x_label_gap = gap + max(label.height for label in tick_labels) / 2
         plot = Box(
             content.left + max(label.width for label in tick_labels) + gap,
-            content.bottom + max(label.height for label in x_labels) + x_label_gap,
+            content.bottom + max(block.height for block in x_blocks) + x_label_gap,
             content.right - dot_radius - gap - max(end_widths) * END_LABEL_ROOM,
             content.top - callout_height - gap,
         )
@@ -221,8 +232,8 @@ class LineChartType(ChartType):
             label.move_to((plot.left - gap - label.width / 2, y_of(tick), 0.0))
         shown_x = thin_labels(xs, [label.width for label in x_labels], gap * 2)
         for index in shown_x:
-            label = x_labels[index]
-            label.move_to((xs[index], plot.bottom - x_label_gap - label.height / 2, 0.0))
+            x_blocks[index].move_top_to(plot.bottom - x_label_gap)
+            x_labels[index].set_x(xs[index])
         axis_labels = VGroup(*tick_labels, *(x_labels[index] for index in shown_x))
 
         def series_line(index: int, x_cut: float) -> "VMobject":

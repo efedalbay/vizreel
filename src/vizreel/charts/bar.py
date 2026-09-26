@@ -87,28 +87,32 @@ class BarChartType(ChartType):
         centers = band_centers(count, content.left, content.right)
         label_gap = stack_gap(sizes.label, sizes.label)
 
-        def category_label(content_text: str) -> "VMobject":
+        def category_label(content_text: str) -> elements.TextBlock:
             max_width = slot * LABEL_FILL
-            single = elements.text(content_text, fonts.body, sizes.label, colors.muted)
-            if single.width <= max_width:
-                return VGroup(single)
+            single = elements.text_block(content_text, fonts.body, sizes.label, colors.muted)
+            if single.mobject.width <= max_width:
+                return single
             for split in two_line_splits(content_text):
                 lines = [
                     elements.text(part, fonts.body, sizes.label, colors.muted) for part in split
                 ]
                 if all(line.width <= max_width for line in lines):
-                    return elements.paragraph(list(split), fonts.body, sizes.label, colors.muted)
+                    return elements.paragraph_block(
+                        list(split), fonts.body, sizes.label, colors.muted
+                    )
             raise RenderError(
                 f'bar label "{content_text}" is too long for {count} bars; shorten it'
             )
 
         header = elements.header(chart.title, chart.subtitle, theme, layout)
         source = elements.source_line(chart.source, theme, layout)
-        labels = [category_label(bar.label) for bar in bars]
-        labels_height = max(label.height for label in labels)
+        label_blocks = [category_label(bar.label) for bar in bars]
+        labels_height = max(block.height for block in label_blocks)
         baseline = content.bottom + labels_height + label_gap
-        for label, center in zip(labels, centers, strict=True):
-            label.move_to((center, baseline - label_gap - label.height / 2, 0.0))
+        for block, center in zip(label_blocks, centers, strict=True):
+            block.move_top_to(baseline - label_gap)
+            block.mobject.set_x(center)
+        labels = [block.mobject for block in label_blocks]
 
         value_formats = [
             chart.number.model_copy(update={"decimals": places})

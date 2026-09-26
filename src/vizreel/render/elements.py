@@ -11,7 +11,6 @@ from xml.sax.saxutils import escape
 from manim import (
     DOWN,
     LEFT,
-    UP,
     ManimColor,
     MarkupText,
     Mobject,
@@ -156,6 +155,63 @@ def _ink_below_baseline(content: str, family: str, weight: FontWeight, size_px: 
     return float(reference.get_bottom()[1]) - float(VGroup(*rest).get_bottom()[1])
 
 
+@dataclass(frozen=True)
+class TextBlock:
+    """Text placed by the extent of its font instead of the extent of its ink.
+
+    The top is the first line's ascent above its baseline and the bottom the last line's
+    descent below its baseline, so where a block sits does not depend on its letters.
+
+    Attributes:
+        mobject: A line of text from `text`, or lines of text from `paragraph`.
+        lines: The content of each line.
+        style: The font of the text.
+        size_px: The font size of the text.
+    """
+
+    mobject: VMobject
+    lines: tuple[str, ...]
+    style: FontStyle
+    size_px: float
+
+    def _baseline(self, index: int) -> float:
+        line = self.mobject if isinstance(self.mobject, Text) else self.mobject[index]
+        return baseline(line, self.lines[index], self.style, self.size_px)
+
+    def top(self) -> float:
+        """The y of the top of the first line."""
+        return self._baseline(0) + line_metrics(self.style, self.size_px).ascent
+
+    def bottom(self) -> float:
+        """The y of the bottom of the last line."""
+        return self._baseline(-1) - line_metrics(self.style, self.size_px).descent
+
+    @property
+    def height(self) -> float:
+        """The distance from the top to the bottom."""
+        return self.top() - self.bottom()
+
+    def move_top_to(self, y: float) -> None:
+        """Move the block vertically so that its top is at `y`."""
+        self.mobject.shift((0.0, y - self.top(), 0.0))
+
+    def move_bottom_to(self, y: float) -> None:
+        """Move the block vertically so that its bottom is at `y`."""
+        self.mobject.shift((0.0, y - self.bottom(), 0.0))
+
+
+def text_block(content: str, style: FontStyle, size_px: float, hex_color: str) -> TextBlock:
+    """Build a line of text, as `text` does, to be placed by its font's extent."""
+    return TextBlock(text(content, style, size_px, hex_color), (content,), style, size_px)
+
+
+def paragraph_block(
+    lines: list[str], style: FontStyle, size_px: float, hex_color: str
+) -> TextBlock:
+    """Build lines of text, as `paragraph` does, to be placed by their font's extent."""
+    return TextBlock(paragraph(lines, style, size_px, hex_color), tuple(lines), style, size_px)
+
+
 def _check_complete(mobject: VMobject, content: str, expected: int) -> None:
     """Check that Pango laid out every character, not only the ones that fit its surface."""
     if len(mobject.submobjects) != expected:
@@ -224,30 +280,23 @@ def header(title: str | None, subtitle: str | None, theme: Theme, layout: Layout
     Raises:
         RenderError: The title or subtitle is too wide for the frame.
     """
-    lines: list[tuple[VMobject, float]] = []
+    blocks: list[tuple[TextBlock, str]] = []
     if title:
-        lines.append(
-            (
-                text(title, theme.fonts.heading, theme.sizes.title, theme.colors.text),
-                theme.sizes.title,
-            )
-        )
+        heading = text_block(title, theme.fonts.heading, theme.sizes.title, theme.colors.text)
+        blocks.append((heading, "the title"))
     if subtitle:
-        lines.append(
-            (
-                text(subtitle, theme.fonts.body, theme.sizes.subtitle, theme.colors.muted),
-                theme.sizes.subtitle,
-            )
-        )
+        sub = text_block(subtitle, theme.fonts.body, theme.sizes.subtitle, theme.colors.muted)
+        blocks.append((sub, "the subtitle"))
     group = VGroup()
-    for index, (mobject, size) in enumerate(lines):
-        check_fits(mobject, layout.title, "the title" if index == 0 and title else "the subtitle")
-        if index == 0:
-            mobject.align_to((layout.title.left, layout.title.top, 0.0), UP + LEFT)
-        else:
-            previous, previous_size = lines[index - 1]
-            mobject.next_to(previous, DOWN, buff=stack_gap(previous_size, size), aligned_edge=LEFT)
-        group.add(mobject)
+    top = layout.title.top
+    for index, (block, what) in enumerate(blocks):
+        check_fits(block.mobject, layout.title, what)
+        if index:
+            previous = blocks[index - 1][0]
+            top = previous.bottom() - stack_gap(previous.size_px, block.size_px)
+        block.move_top_to(top)
+        block.mobject.align_to((layout.title.left, 0.0, 0.0), LEFT)
+        group.add(block.mobject)
     return group
 
 
@@ -259,6 +308,7 @@ def source_line(source: str | None, theme: Theme, layout: Layout) -> VMobject | 
     """
     if not source:
         return None
-    mobject = text(source, theme.fonts.body, theme.sizes.caption, theme.colors.muted)
-    check_fits(mobject, layout.source, "the source")
-    return mobject.align_to((layout.source.left, layout.source.bottom, 0.0), DOWN + LEFT)
+    block = text_block(source, theme.fonts.body, theme.sizes.caption, theme.colors.muted)
+    check_fits(block.mobject, layout.source, "the source")
+    block.move_bottom_to(layout.source.bottom)
+    return block.mobject.align_to((layout.source.left, 0.0, 0.0), LEFT)

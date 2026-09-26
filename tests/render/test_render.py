@@ -475,6 +475,34 @@ def test_baseline_ignores_dots_accents_and_descenders(tmp_path: Path) -> None:
     assert first - second > metrics.ascent + metrics.descent
 
 
+def test_text_blocks_are_placed_by_the_font_not_the_ink(tmp_path: Path) -> None:
+    from manim import tempconfig
+
+    from vizreel.render import elements
+    from vizreel.render.fonts import register_bundled_fonts
+    from vizreel.render.layout import px
+    from vizreel.themes.loader import load_theme
+
+    register_bundled_fonts()
+    theme = load_theme("default", Path("."))
+    style, size, white = theme.fonts.body, theme.sizes.label, theme.colors.text
+    with tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR"}):
+        blocks = [elements.text_block(word, style, size, white) for word in ["spec", "Ölç", "am"]]
+        for block in blocks:
+            block.move_top_to(1.0)
+        baselines = [
+            elements.baseline(block.mobject, block.lines[0], style, size) for block in blocks
+        ]
+        two_lines = elements.paragraph_block(["Buyer A", "(2015)"], style, size, white)
+        two_lines.move_bottom_to(-1.0)
+
+    assert max(baselines) - min(baselines) < px(0.5)
+    assert max(b.height for b in blocks) - min(b.height for b in blocks) < px(0.5)
+    assert all(block.top() == pytest.approx(1.0) for block in blocks)
+    assert two_lines.bottom() == pytest.approx(-1.0)
+    assert two_lines.height > 2 * blocks[0].height - px(size)
+
+
 def test_text_uses_the_bundled_font(tmp_path: Path) -> None:
     """Inter must stay in use after the Windows font speed-up in vizreel.render.fonts."""
     from manim import Text, tempconfig

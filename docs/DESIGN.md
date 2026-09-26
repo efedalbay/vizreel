@@ -65,6 +65,7 @@ Motion guides the eye to the message. It is never decoration.
 - Built-in themes use bundled open-license fonts, so output looks the same on every machine.
 - Titles in sentence case. No all-caps paragraphs; all-caps is allowed only for very short labels (1–2 words).
 - Numbers are formatted by `format/numbers.py` only: thousands separators, compact notation (`$740M`), consistent decimals within one chart.
+- **Text sits on baselines.** Labels in a row share a baseline, and gaps between lines of text are measured from the font's ascent and descent, not from the ink. A dotted capital İ, an accent or a descender never moves a label off its row or changes a gap.
 
 ## 6. Checking a chart
 
