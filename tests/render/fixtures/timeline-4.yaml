@@ -1,0 +1,12 @@
+# Four events. All data is fictional.
+version: 1
+charts:
+  - id: timeline-4
+    type: timeline
+    title: How Northwind grew
+    source: "Source: example data"
+    events:
+      - { date: "2016", label: "Founded" }
+      - { date: "2017", label: "Raises a $12M seed round" }
+      - { date: "2018", label: "Opens offices in three countries", emphasis: true }
+      - { date: "2019", label: "Reaches one million users" }

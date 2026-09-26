@@ -1,0 +1,9 @@
+# Two events. All data is fictional.
+version: 1
+charts:
+  - id: timeline-2
+    type: timeline
+    title: Northwind's first year
+    events:
+      - { date: "Mar 2016", label: "Founded in a garage" }
+      - { date: "Dec 2016", label: "First paying customer", emphasis: true }

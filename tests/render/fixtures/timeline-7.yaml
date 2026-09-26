@@ -1,0 +1,16 @@
+# Seven events with long labels. All data is fictional.
+version: 1
+charts:
+  - id: timeline-7
+    type: timeline
+    title: Northwind from start to finish
+    duration: 9
+    source: "Source: example data"
+    events:
+      - { date: "Mar 2016", label: "Founded by two friends in a rented garage" }
+      - { date: "Jan 2017", label: "Raises a $12M seed round" }
+      - { date: "Sep 2017", label: "Launches its mobile app worldwide" }
+      - { date: "2018", label: "Raises $865M at a record valuation", emphasis: true }
+      - { date: "2019", label: "Expands into twelve new markets" }
+      - { date: "2020", label: "Revenue reaches $1.75B" }
+      - { date: "Jun 2021", label: "Files for bankruptcy" }

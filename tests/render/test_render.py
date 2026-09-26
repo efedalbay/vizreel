@@ -257,6 +257,51 @@ def test_clip_has_exactly_the_frames_of_its_duration(
     assert len(frames_rgba(result.video)) == frames
 
 
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+@pytest.mark.parametrize(
+    ("name", "seconds"), [("timeline-2", 7), ("timeline-4", 7), ("timeline-7", 9)]
+)
+def test_timeline_renders_with_exact_length_and_still_hold(
+    tmp_path: Path, name: str, seconds: int
+) -> None:
+    result = render_one(FIXTURES / f"{name}.yaml", tmp_path, name)
+
+    assert result.error is None
+    assert result.video is not None
+    frames = frames_rgba(result.video)
+    assert len(frames) == seconds * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+
+
+def test_timeline_emphasis_marks_the_emphasized_event(tmp_path: Path) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    result = render_one(FIXTURES / "timeline-4.yaml", tmp_path, "timeline-4")
+    assert result.still is not None
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    columns = np.nonzero(np.all(np.abs(rgb - hex_rgb(colors.highlight)) <= 12, axis=2))[1]
+
+    # The third of four events sits in the third quarter of the frame.
+    assert columns.size > 20
+    assert PREVIEW[0] * 0.5 < np.median(columns) < PREVIEW[0] * 0.75
+
+
+def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
+    long = "Northwind signs a partnership with every airline in the region at once"
+    events = ", ".join(f'{{ date: "{2010 + i}", label: "{long}" }}' for i in range(7))
+    spec = tmp_path / "timeline.yaml"
+    spec.write_text(f"version: 1\ncharts:\n  - {{ id: t, type: timeline, events: [{events}] }}\n")
+
+    [result] = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+
+    assert result.error is not None
+    assert "is too long for 7 events; shorten it" in result.error
+
+
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     too_wide = "Northwind " * 20
     spec = tmp_path / "spec.yaml"
