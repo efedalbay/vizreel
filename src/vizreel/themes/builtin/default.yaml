@@ -10,6 +10,7 @@ colors:
   negative: "#F85149"
   highlight: "#F2B53A"
   series: ["#58A6FF", "#F2B53A", "#D2A8FF"]
+  dim_opacity: 0.4
 
 fonts:
   heading: { family: Inter, weight: semibold }
@@ -25,6 +26,9 @@ sizes:
   caption: 26
   panel_radius: 32
   panel_padding: 64
+  line: 6
+  grid_line: 2
+  dot: 16
 
 motion:
   easing: ease_out_cubic

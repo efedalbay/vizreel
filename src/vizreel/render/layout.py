@@ -16,6 +16,8 @@ REFERENCE_HEIGHT_PX = 1080
 """Frame height in pixels that theme sizes refer to."""
 POINTS_PER_UNIT = 72
 """Manim's `Text` measures `font_size` in points, 72 per scene unit."""
+STROKE_UNITS_PER_SCENE_UNIT = 100
+"""Manim's `stroke_width` is measured in hundredths of a scene unit."""
 SAFE_MARGIN = 0.05
 """Share of the frame kept empty on every side (docs/DESIGN.md §2)."""
 LINE_HEIGHT = 1.3
@@ -29,6 +31,14 @@ STACK_GAP = 0.45
 def px(pixels: float) -> float:
     """Convert pixels at 1080p to scene units."""
     return pixels * FRAME_HEIGHT / REFERENCE_HEIGHT_PX
+
+
+def stroke_width(pixels: float) -> float:
+    """Convert a stroke width in pixels at 1080p to Manim's `stroke_width`.
+
+    Manim draws strokes `stroke_width` hundredths of a scene unit wide.
+    """
+    return px(pixels) * STROKE_UNITS_PER_SCENE_UNIT
 
 
 def stack_gap(above_px: float, below_px: float) -> float:

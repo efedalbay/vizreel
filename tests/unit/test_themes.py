@@ -131,6 +131,19 @@ def test_invalid_theme_reports_every_error(tmp_path: Path) -> None:
     ]
 
 
+def test_stroke_widths_and_dim_opacity_must_be_positive(tmp_path: Path) -> None:
+    path = write_theme(
+        tmp_path / "strokes.yaml",
+        {"colors": {"dim_opacity": 1.5}, "sizes": {"line": 0, "dot": -2}},
+    )
+
+    assert theme_errors(path) == [
+        "colors.dim_opacity: must be at most 1, got 1.5",
+        "sizes.line: must be greater than 0, got 0",
+        "sizes.dot: must be greater than 0, got -2",
+    ]
+
+
 def test_theme_with_three_font_families_is_rejected(tmp_path: Path) -> None:
     path = write_theme(
         tmp_path / "fonts.yaml",

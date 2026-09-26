@@ -10,6 +10,7 @@ from vizreel.render.layout import (
     build_layout,
     font_size,
     px,
+    stroke_width,
 )
 from vizreel.themes.loader import load_theme
 
@@ -30,6 +31,11 @@ def test_pixels_at_1080p_convert_to_scene_units() -> None:
 def test_font_size_uses_72_points_per_scene_unit() -> None:
     assert font_size(56) == pytest.approx(56 * 8 / 1080 * 72)
     assert font_size(135) == pytest.approx(72)
+
+
+def test_stroke_width_is_hundredths_of_a_scene_unit() -> None:
+    assert stroke_width(13.5) == pytest.approx(10)
+    assert stroke_width(135) == pytest.approx(100)
 
 
 def test_frame_is_16_by_9_around_origin() -> None:

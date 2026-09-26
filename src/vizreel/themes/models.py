@@ -55,6 +55,8 @@ class ThemeColors(ThemeModel):
     """The one element that carries the message."""
     series: list[Color] = Field(min_length=3)
     """Series colors, used in this order. At least three, one per line chart series."""
+    dim_opacity: float = Field(gt=0, le=1)
+    """Opacity of everything except the highlighted element during the highlight beat."""
 
 
 class FontStyle(ThemeModel):
@@ -96,7 +98,7 @@ class ThemeFonts(ThemeModel):
 
 
 class ThemeSizes(ThemeModel):
-    """Font sizes and panel geometry, in pixels at 1080p."""
+    """Font sizes, panel geometry and stroke widths, in pixels at 1080p."""
 
     title: float = Field(ge=56)
     """Chart title. At least 56."""
@@ -114,6 +116,12 @@ class ThemeSizes(ThemeModel):
     """Corner radius of the background panel."""
     panel_padding: float = Field(ge=0)
     """Space between the panel edge and its content."""
+    line: float = Field(gt=0)
+    """Stroke width of data lines."""
+    grid_line: float = Field(gt=0)
+    """Stroke width of grid lines and axes."""
+    dot: float = Field(gt=0)
+    """Diameter of data point markers."""
 
 
 class ThemeMotion(ThemeModel):

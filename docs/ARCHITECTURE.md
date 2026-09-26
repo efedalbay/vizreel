@@ -143,13 +143,13 @@ Adding a new chart type = one module in `charts/` + one Pydantic model + one sec
 
 A theme is a YAML file validated by `themes/models.py`. It contains:
 
-- `colors`: named roles (`background`, `surface`, `text`, `muted`, `grid`, `accent`, `positive`, `negative`, `highlight`, `series` list of at least 3).
+- `colors`: named roles (`background`, `surface`, `text`, `muted`, `grid`, `accent`, `positive`, `negative`, `highlight`, `series` list of at least 3), and `dim_opacity` for everything except the highlighted element during the highlight beat.
 - `fonts`: `heading`, `body`, `numbers`, each a `family` and a `weight` (`regular`, `semibold`, `bold`). At most two families. Bundled fonts are registered with ManimPango at startup.
-- `sizes`: `title`, `subtitle`, `big_number`, `label`, `value`, `caption`, `panel_radius`, `panel_padding`.
+- `sizes`: `title`, `subtitle`, `big_number`, `label`, `value`, `caption`, `panel_radius`, `panel_padding`, and the stroke widths `line`, `grid_line` and the marker diameter `dot`.
 - `motion`: `easing` (ease-out curves only), `title_fade`, `structure`, `stagger`, `highlight`, `hold`, in seconds.
 - `background_panel`: whether to draw a rounded panel behind the chart when rendering with transparency.
 
-Sizes are **font sizes in pixels at 1080p**, the unit `docs/DESIGN.md` uses, so a theme can be checked against the design rules directly. They scale with the output resolution; the layout converts them to scene units in one place. The theme model enforces the minimum sizes of `docs/DESIGN.md` §2 and a final hold of at least 1.5 seconds.
+Sizes are **pixels at 1080p** (font sizes for text), the unit `docs/DESIGN.md` uses, so a theme can be checked against the design rules directly. They scale with the output resolution; the layout converts them to scene units in one place. The theme model enforces the minimum sizes of `docs/DESIGN.md` §2 and a final hold of at least 1.5 seconds.
 
 Resolution order for `meta.theme`: built-in name → path relative to the spec file → absolute path. Missing theme = clear error.
 
