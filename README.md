@@ -134,4 +134,4 @@ Issues and pull requests are welcome. Before starting on a larger change, please
 
 [MIT](LICENSE)
 
-vizreel is built on [Manim Community Edition](https://www.manim.community/).
+vizreel is built on [Manim Community Edition](https://www.manim.community/). It bundles the [Inter](https://rsms.me/inter/) typeface by The Inter Project Authors, licensed under the SIL Open Font License 1.1 (see `src/vizreel/assets/fonts/Inter-OFL.txt`).

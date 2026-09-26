@@ -28,6 +28,10 @@ class OutputError(VizreelError):
     """An output file could not be written."""
 
 
+class RenderError(VizreelError):
+    """A chart could not be rendered."""
+
+
 class InputFileError(VizreelError):
     """An input file could not be read or is not valid.
 

@@ -79,5 +79,5 @@ module = ["vizreel.spec.*", "vizreel.themes.*", "vizreel.format.*"]
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["manim.*"]
+module = ["manim.*", "manimpango.*"]
 ignore_missing_imports = true
