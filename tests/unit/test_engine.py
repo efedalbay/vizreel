@@ -3,7 +3,13 @@ from pathlib import Path
 import pytest
 
 from vizreel.errors import RenderError
-from vizreel.render.engine import FrameSettings, RenderOptions, frame_settings, select_charts
+from vizreel.render.engine import (
+    FrameSettings,
+    RenderOptions,
+    frame_settings,
+    output_paths,
+    select_charts,
+)
 from vizreel.spec.loader import load_spec, parse_spec
 from vizreel.spec.models import Spec
 
@@ -48,6 +54,28 @@ def test_format_option_overrides_meta() -> None:
 )
 def test_transparency_depends_on_format(output_format: str, transparent: bool) -> None:
     assert FrameSettings(1, 1, 30, output_format).transparent is transparent  # type: ignore[arg-type]
+
+
+def test_final_output_paths_use_the_chart_id() -> None:
+    options = RenderOptions(out_dir=Path("clips"), still=True)
+
+    assert output_paths("offers", options, "mov") == (
+        Path("clips/offers.mov"),
+        Path("clips/offers.png"),
+    )
+
+
+def test_preview_output_paths_have_a_suffix() -> None:
+    options = RenderOptions(out_dir=Path("clips"), quality="preview", still=True)
+
+    assert output_paths("offers", options, "webm") == (
+        Path("clips/offers.preview.webm"),
+        Path("clips/offers.preview.png"),
+    )
+
+
+def test_no_still_path_without_still() -> None:
+    assert output_paths("offers", RenderOptions(), "mp4") == (Path("out/offers.mp4"), None)
 
 
 def test_select_all_charts_in_spec_order() -> None:

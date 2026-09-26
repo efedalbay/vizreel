@@ -28,6 +28,7 @@ RESOLUTIONS: dict[str, tuple[int, int]] = {
 }
 PREVIEW_SIZE = (854, 480)
 PREVIEW_FPS = 15
+PREVIEW_SUFFIX = ".preview"
 TRANSPARENT_FORMATS = frozenset({"mov", "webm"})
 
 
@@ -91,6 +92,19 @@ def frame_settings(spec: Spec, options: RenderOptions) -> FrameSettings:
         return FrameSettings(*PREVIEW_SIZE, PREVIEW_FPS, output_format)
     width, height = RESOLUTIONS[spec.meta.resolution]
     return FrameSettings(width, height, spec.meta.fps, output_format)
+
+
+def output_paths(
+    chart_id: str, options: RenderOptions, output_format: OutputFormat
+) -> tuple[Path, Path | None]:
+    """Return the clip path and, if a still is requested, the PNG path for a chart.
+
+    Preview files get a `.preview` suffix, so a preview never replaces a final clip.
+    """
+    stem = chart_id + (PREVIEW_SUFFIX if options.quality == "preview" else "")
+    video = options.out_dir / f"{stem}.{output_format}"
+    still = options.out_dir / f"{stem}.png" if options.still else None
+    return video, still
 
 
 def select_charts(spec: Spec, only: tuple[str, ...]) -> list[BaseChart]:
@@ -164,8 +178,9 @@ def _render_safely(
     reraise: bool,
 ) -> ChartResult:
     started = time.perf_counter()
+    video, still = output_paths(chart.id, options, settings.format)
     try:
-        video, still = render_chart(chart, theme, settings, options.out_dir, still=options.still)
+        render_chart(chart, theme, settings, video, still)
     except VizreelError as exc:
         return ChartResult(chart.id, error=str(exc), seconds=time.perf_counter() - started)
     except Exception as exc:
@@ -177,9 +192,13 @@ def _render_safely(
 
 
 def render_chart(
-    chart: BaseChart, theme: Theme, settings: FrameSettings, out_dir: Path, *, still: bool
-) -> tuple[Path, Path | None]:
-    """Render one chart to `out_dir/<id>.<format>` and, if `still`, `out_dir/<id>.png`.
+    chart: BaseChart,
+    theme: Theme,
+    settings: FrameSettings,
+    video_path: Path,
+    still_path: Path | None,
+) -> None:
+    """Render one chart to `video_path` and, if given, its last frame to `still_path`.
 
     Manim's cache and partial movie files go to a temporary folder that is removed afterwards.
     """
@@ -195,9 +214,6 @@ def render_chart(
         subtitle_lines=1 if chart.subtitle else 0,
         source_lines=1 if chart.source else 0,
     )
-    video_path = out_dir / f"{chart.id}.{settings.format}"
-    still_path = out_dir / f"{chart.id}.png" if still else None
-
     with tempfile.TemporaryDirectory(prefix="vizreel-", ignore_cleanup_errors=True) as media_dir:
         manim_config = {
             "verbosity": "ERROR",
@@ -223,7 +239,6 @@ def render_chart(
                 camera = scene.renderer.camera
                 assert isinstance(camera, Camera)
                 camera.get_image().save(still_path)
-    return video_path, still_path
 
 
 def _move(source: Path, target: Path) -> None:

@@ -46,7 +46,7 @@ def stat_mov(tmp_path_factory: pytest.TempPathFactory) -> ChartResult:
 def test_stat_mov_has_expected_size_rate_and_duration(stat_mov: ChartResult) -> None:
     assert stat_mov.error is None
     assert stat_mov.video is not None
-    assert stat_mov.video.name == f"{STAT_ID}.mov"
+    assert stat_mov.video.name == f"{STAT_ID}.preview.mov"
     with av.open(str(stat_mov.video)) as container:
         stream = container.streams.video[0]
         assert (stream.width, stream.height) == PREVIEW
@@ -77,7 +77,7 @@ def test_stat_final_hold_is_still(stat_mov: ChartResult) -> None:
 def test_stat_still_is_last_frame_with_alpha(stat_mov: ChartResult) -> None:
     assert stat_mov.still is not None
     assert stat_mov.video is not None
-    assert stat_mov.still.name == f"{STAT_ID}.png"
+    assert stat_mov.still.name == f"{STAT_ID}.preview.png"
     still = image_rgba(stat_mov.still)
 
     assert still.shape == (PREVIEW[1], PREVIEW[0], 4)
@@ -345,8 +345,8 @@ def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     assert results[0].error is None
     assert results[2].error is None
     assert results[1].error
-    assert (tmp_path / "first.mov").is_file()
-    assert (tmp_path / "last.mov").is_file()
+    assert (tmp_path / "first.preview.mov").is_file()
+    assert (tmp_path / "last.preview.mov").is_file()
 
 
 def test_render_command(tmp_path: Path) -> None:
@@ -368,8 +368,8 @@ def test_render_command(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
-    assert (tmp_path / f"{STAT_ID}.mov").is_file()
-    assert (tmp_path / f"{STAT_ID}.png").is_file()
+    assert (tmp_path / f"{STAT_ID}.preview.mov").is_file()
+    assert (tmp_path / f"{STAT_ID}.preview.png").is_file()
     assert result.stdout.strip().endswith("1 rendered, 0 failed")
 
 

@@ -56,11 +56,11 @@ vizreel render chart.yaml --quality preview --still
 
 ```
 out/
-├── customers.mov    ← the clip, with a transparent background
-└── customers.png    ← its last frame
+├── customers.preview.mov    ← a quick, low-resolution clip with a transparent background
+└── customers.preview.png    ← its last frame
 ```
 
-Open `chart.yaml`, change the number and the label, and render again. Without `--quality preview`, the clip renders at full quality: 1080p at 60 fps unless the spec says otherwise.
+Open `chart.yaml`, change the number and the label, and render again. When the preview looks right, render without `--quality preview` for the clip you edit with, `customers.mov`: 1080p at 60 fps unless the spec says otherwise. Preview files have their own names, so they never replace a final clip.
 
 ## Example
 
@@ -127,7 +127,7 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 |---|---|
 | `--out DIR` | Output folder (default `out`) |
 | `--only ID` | Render only this chart; repeat for several |
-| `--quality preview\|final` | `preview` is low resolution and fast; `final` uses the spec settings |
+| `--quality preview\|final` | `preview` is low resolution and fast, and writes `ID.preview.mov`; `final` uses the spec settings |
 | `--format mov\|webm\|mp4` | `mov` and `webm` keep transparency; `mp4` uses the theme background |
 | `--still` | Also save the final frame as a PNG |
 

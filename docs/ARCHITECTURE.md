@@ -167,7 +167,7 @@ Resolution order for `meta.theme`: built-in name → path relative to the spec f
 ## Rendering
 
 - Resolution presets: `720p`, `1080p` (default), `1440p`, `4k`. Aspect ratio 16:9. Vertical `1080x1920` preset for Shorts is planned (see roadmap).
-- Quality flag: `--quality preview` (low resolution, 15 fps, fast) or `final` (spec resolution and fps).
+- Quality flag: `--quality preview` (low resolution, 15 fps, fast) or `final` (spec resolution and fps). A chart renders to `<id>.<format>`; preview files are named `<id>.preview.<format>` so that a preview never replaces a final clip that may already be in an editor project.
 - Formats: `mov` with alpha (default), `webm` with alpha, `mp4` opaque (uses theme background). Alpha compatibility with common editors is verified in milestone M2 and documented in the README.
 - A clip has exactly `round(duration × fps)` frames. Manim rounds every animation up to whole frames, so `ChartScene` rounds each animation through a frame clock that keeps the running total on the wanted time. Every `scene.play` in a chart passes an explicit `run_time`; the final hold is a frozen frame, so nothing can move during it.
 - `--still` also writes the final frame as PNG. This is how both humans and Claude Code check a chart visually without playing video.
