@@ -1,7 +1,7 @@
 """Axis ranges, value-to-position mapping and label placement. Pure functions, no Manim import."""
 
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -193,6 +193,38 @@ def _group_bottom(
     height = _group_height(group, heights, gap)
     center = sum(desired[i] for i in group) / len(group)
     return min(max(center - height / 2, low), high - height)
+
+
+def wrap_text(text: str, fits: Callable[[str], bool], max_lines: int) -> list[str] | None:
+    """Break `text` into lines at spaces, putting as many words on each line as fit.
+
+    Args:
+        text: The text to wrap.
+        fits: Whether a line of text fits the available width.
+        max_lines: Most lines allowed.
+
+    Returns:
+        The lines, or None if a word does not fit on its own or more lines are needed.
+    """
+    lines: list[str] = []
+    current = ""
+    for word in text.split():
+        candidate = f"{current} {word}" if current else word
+        if fits(candidate):
+            current = candidate
+            continue
+        if not current or not fits(word):
+            return None
+        lines.append(current)
+        current = word
+    if current:
+        lines.append(current)
+    return lines if len(lines) <= max_lines else None
+
+
+def clamp_center(center: float, width: float, low: float, high: float) -> float:
+    """Move a span of `width` centered at `center` as little as needed to lie in low..high."""
+    return min(max(center, low + width / 2), high - width / 2)
 
 
 def two_line_splits(text: str) -> list[tuple[str, str]]:

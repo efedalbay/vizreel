@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import pytest
 
 from vizreel.render.scales import (
@@ -5,11 +7,13 @@ from vizreel.render.scales import (
     Axis,
     LinearScale,
     band_centers,
+    clamp_center,
     point_positions,
     spread_labels,
     thin_labels,
     two_line_splits,
     value_axis,
+    wrap_text,
 )
 
 
@@ -146,6 +150,47 @@ def test_spread_labels_merges_groups_that_touch_after_moving() -> None:
 def test_spread_labels_that_cannot_fit() -> None:
     with pytest.raises(ValueError, match="labels do not fit"):
         spread_labels([0, 0, 0], [1, 1, 1], gap=0.5, low=0, high=2)
+
+
+def at_most(characters: int) -> Callable[[str], bool]:
+    return lambda line: len(line) <= characters
+
+
+def test_wrap_text_fills_each_line() -> None:
+    assert wrap_text("Files for bankruptcy in June", at_most(12), 3) == [
+        "Files for",
+        "bankruptcy",
+        "in June",
+    ]
+
+
+def test_wrap_text_keeps_short_text_on_one_line() -> None:
+    assert wrap_text("Raises $865M", at_most(20), 2) == ["Raises $865M"]
+
+
+def test_wrap_text_collapses_repeated_spaces() -> None:
+    assert wrap_text("  Raises   $865M ", at_most(20), 1) == ["Raises $865M"]
+
+
+def test_wrap_text_fails_when_a_word_is_too_long() -> None:
+    assert wrap_text("Northwind incorporated", at_most(8), 3) is None
+
+
+def test_wrap_text_fails_when_too_many_lines_are_needed() -> None:
+    assert wrap_text("one two three four", at_most(5), 3) is None
+    assert wrap_text("one two three four", at_most(5), 4) == ["one", "two", "three", "four"]
+
+
+def test_wrap_text_of_empty_text() -> None:
+    assert wrap_text("", at_most(5), 1) == []
+
+
+@pytest.mark.parametrize(
+    ("center", "expected"),
+    [(5, 5), (0.5, 1.5), (9.8, 8.5), (-3, 1.5)],
+)
+def test_clamp_center_keeps_the_span_inside(center: float, expected: float) -> None:
+    assert clamp_center(center, width=3, low=0, high=10) == expected
 
 
 def test_two_line_splits_most_balanced_first() -> None:
