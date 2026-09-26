@@ -171,9 +171,12 @@ class LineChartType(ChartType):
             else None
         )
         callout_height = glyphs("0").height + (callout_label.height + gap if callout_label else 0)
+        # The lowest tick label is centered on the plot's bottom edge and reaches half its
+        # height below it, so the x labels start below that.
+        x_label_gap = gap + max(label.height for label in tick_labels) / 2
         plot = Box(
             content.left + max(label.width for label in tick_labels) + gap,
-            content.bottom + max(label.height for label in x_labels) + gap,
+            content.bottom + max(label.height for label in x_labels) + x_label_gap,
             content.right - dot_radius - gap - max(end_widths) * END_LABEL_ROOM,
             content.top - callout_height - gap,
         )
@@ -203,7 +206,7 @@ class LineChartType(ChartType):
         shown_x = thin_labels(xs, [label.width for label in x_labels], gap * 2)
         for index in shown_x:
             label = x_labels[index]
-            label.move_to((xs[index], plot.bottom - gap - label.height / 2, 0.0))
+            label.move_to((xs[index], plot.bottom - x_label_gap - label.height / 2, 0.0))
         axis_labels = VGroup(*tick_labels, *(x_labels[index] for index in shown_x))
 
         def series_line(index: int, x_cut: float) -> "VMobject":
