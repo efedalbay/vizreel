@@ -15,6 +15,7 @@ All notable changes to vizreel are documented here. The format follows
 - The first render after installing no longer prints `SyntaxWarning: invalid escape sequence` warnings from pydub, a Manim dependency.
 - Timeline labels sit on a common baseline. A dotted capital İ, an accent or a descender used to move a label a few pixels off its row.
 - The same holds for bar labels, the x labels of line charts and the series names next to their values. The gap between a title and its subtitle no longer depends on whether the title has descenders.
+- The first-value labels of a line chart no longer overlap each other or a line. Each goes above or below its point, wherever it is clear of labels and lines; if neither side is clear, the labels stack above the lines.
 
 ## [0.1.0] - 2026-09-26
 

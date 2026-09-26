@@ -1,5 +1,7 @@
 """Values over time."""
 
+import itertools
+import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -70,6 +72,127 @@ def tip(series_runs: list[list[Point]], x_cut: float) -> Point | None:
     """Where the pen of a series is: the last drawn point, or None before the first point."""
     parts = drawn(series_runs, x_cut)
     return parts[-1][-1] if parts else None
+
+
+def place_first_labels(
+    anchors: list[Point],
+    sizes: list[tuple[float, float]],
+    polylines: list[list[Point]],
+    gap: float,
+    bounds: Box,
+) -> list[Box]:
+    """Place each first-value label above or below the first point of its series.
+
+    Every choice of sides is tried, fewest labels below first, and among those the ones that
+    put the lower points' labels below. The first choice where no label comes near another
+    label or a line, and every label stays inside `bounds`, wins. If there is none, the
+    labels are stacked above the lines, the label of the lowest point at the bottom.
+
+    Args:
+        anchors: The first point of each labeled series, in scene coordinates.
+        sizes: The width and height of each label.
+        polylines: Every line of the chart, as points in scene coordinates.
+        gap: Space between a label and its point; a quarter of it is kept clear around
+            each label.
+        bounds: Where labels may go.
+
+    Returns:
+        The box of each label, in the order given. A label starts at its point's x.
+    """
+
+    def box(index: int, side: int) -> Box:
+        (x, y), (width, height) = anchors[index], sizes[index]
+        near = y + side * gap
+        far = near + side * height
+        return Box(x, min(near, far), x + width, max(near, far))
+
+    def clear(boxes: list[Box]) -> bool:
+        padded = [label.inset(-gap / 4) for label in boxes]
+        return (
+            all(_inside(label, bounds) for label in boxes)
+            and not any(_overlap(a, b) for i, a in enumerate(padded) for b in padded[i + 1 :])
+            and not any(
+                _segment_hits_box(start, end, label)
+                for label in padded
+                for line in polylines
+                for start, end in zip(line, line[1:], strict=False)
+            )
+        )
+
+    def preference(sides: tuple[int, ...]) -> tuple[int, float]:
+        below = [anchors[index][1] for index, side in enumerate(sides) if side < 0]
+        return len(below), sum(below)
+
+    for sides in sorted(itertools.product((1, -1), repeat=len(anchors)), key=preference):
+        boxes = [box(index, side) for index, side in enumerate(sides)]
+        if clear(boxes):
+            return boxes
+    return _stacked_above_lines(anchors, sizes, polylines, gap)
+
+
+def _stacked_above_lines(
+    anchors: list[Point], sizes: list[tuple[float, float]], polylines: list[list[Point]], gap: float
+) -> list[Box]:
+    stacked: dict[int, Box] = {}
+    floor = -math.inf
+    for index in sorted(range(len(anchors)), key=lambda i: anchors[i][1]):
+        (x, y), (width, height) = anchors[index], sizes[index]
+        bottom = max(y + gap, _highest(polylines, x, x + width) + gap / 2, floor + gap / 2)
+        stacked[index] = Box(x, bottom, x + width, bottom + height)
+        floor = bottom + height
+    return [stacked[index] for index in range(len(anchors))]
+
+
+def _highest(polylines: list[list[Point]], left: float, right: float) -> float:
+    """The highest y that any line reaches between `left` and `right`."""
+    highest = -math.inf
+    for line in polylines:
+        for (x0, y0), (x1, y1) in zip(line, line[1:], strict=False):
+            start, end = max(x0, left), min(x1, right)
+            if start > end:
+                continue
+            for x in (start, end):
+                share = (x - x0) / (x1 - x0) if x1 != x0 else 0.0
+                highest = max(highest, y0 + (y1 - y0) * share)
+    return highest
+
+
+def _inside(inner: Box, outer: Box) -> bool:
+    return (
+        inner.left >= outer.left
+        and inner.right <= outer.right
+        and inner.bottom >= outer.bottom
+        and inner.top <= outer.top
+    )
+
+
+def _overlap(a: Box, b: Box) -> bool:
+    return a.left < b.right and b.left < a.right and a.bottom < b.top and b.bottom < a.top
+
+
+def _segment_hits_box(start: Point, end: Point, box: Box) -> bool:
+    """Whether the segment from `start` to `end` passes through `box` (Liang-Barsky)."""
+    (x0, y0), (x1, y1) = start, end
+    dx, dy = x1 - x0, y1 - y0
+    low, high = 0.0, 1.0
+    for direction, distance in (
+        (-dx, x0 - box.left),
+        (dx, box.right - x0),
+        (-dy, y0 - box.bottom),
+        (dy, box.top - y0),
+    ):
+        if direction == 0:
+            if distance < 0:
+                return False
+            continue
+        share = distance / direction
+        if direction < 0:
+            low = max(low, share)
+        else:
+            high = min(high, share)
+        if low > high:
+            return False
+    return True
 
 
 @register
@@ -282,12 +405,25 @@ class LineChartType(ChartType):
             value_text(firsts[index], firsts[index]) if len(present[index]) > 1 else None
             for index in range(count)
         ]
-        for index, first_label in enumerate(first_labels):
-            if first_label is not None:
-                x, value = series_runs[index][0][0]
-                first_label.move_to(
-                    (x + first_label.width / 2, y_of(value) + gap + first_label.height / 2, 0.0)
-                )
+        labeled_first = {
+            index: label for index, label in enumerate(first_labels) if label is not None
+        }
+        first_boxes = place_first_labels(
+            [
+                (series_runs[index][0][0][0], y_of(series_runs[index][0][0][1]))
+                for index in labeled_first
+            ],
+            [(label.width, label.height) for label in labeled_first.values()],
+            [
+                [(x, y_of(value)) for x, value in run]
+                for series_run in series_runs
+                for run in series_run
+            ],
+            gap,
+            Box(plot.left, plot.bottom, plot.right, content.top),
+        )
+        for label, first_box in zip(labeled_first.values(), first_boxes, strict=True):
+            label.move_to((*first_box.center, 0.0))
 
         def first_labels_at(x_cut: float) -> "VMobject":
             group = VGroup()

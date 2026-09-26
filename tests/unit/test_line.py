@@ -1,6 +1,7 @@
 import pytest
 
-from vizreel.charts.line import drawn, runs, tip
+from vizreel.charts.line import drawn, place_first_labels, runs, tip
+from vizreel.render.layout import Box
 
 XS = [0.0, 1.0, 2.0, 3.0, 4.0]
 
@@ -55,3 +56,48 @@ def test_tip_is_the_last_drawn_point() -> None:
 
 def test_tip_before_the_first_point_is_none() -> None:
     assert tip(runs(XS, [None, 1, 2, 3, 4]), 0.5) is None
+
+
+BOUNDS = Box(0.0, 0.0, 10.0, 10.0)
+LABEL = (1.0, 1.0)
+GAP = 0.2
+
+
+def test_a_lone_first_label_goes_above_its_point() -> None:
+    [box] = place_first_labels([(1.0, 3.0)], [LABEL], [[(1.0, 3.0), (9.0, 4.0)]], GAP, BOUNDS)
+
+    assert box == Box(1.0, 3.2, 2.0, 4.2)
+
+
+def test_close_first_labels_go_above_and_below() -> None:
+    upper = [(1.0, 5.0), (9.0, 5.5)]
+    lower = [(1.0, 4.0), (9.0, 4.5)]
+
+    high, low = place_first_labels(
+        [upper[0], lower[0]], [LABEL, LABEL], [upper, lower], GAP, BOUNDS
+    )
+
+    assert high.bottom == pytest.approx(5.2)
+    assert low.top == pytest.approx(3.8)
+
+
+def test_a_label_goes_below_when_its_line_rises_steeply() -> None:
+    steep = [(1.0, 5.0), (2.0, 9.0)]
+
+    [box] = place_first_labels([steep[0]], [LABEL], [steep], GAP, BOUNDS)
+
+    assert box.top == pytest.approx(4.8)
+
+
+def test_labels_stack_above_the_lines_when_nothing_else_fits() -> None:
+    # The lower line starts at the bottom edge, so its label cannot go below it, and the
+    # upper line is too close above it.
+    upper = [(1.0, 1.0), (9.0, 6.0)]
+    lower = [(1.0, 0.2), (9.0, 3.0)]
+
+    high, low = place_first_labels(
+        [upper[0], lower[0]], [LABEL, LABEL], [upper, lower], GAP, BOUNDS
+    )
+
+    assert low.bottom > 1.0 + (6.0 - 1.0) / 8
+    assert high.bottom >= low.top + GAP / 2 - 1e-9
