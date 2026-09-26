@@ -141,6 +141,52 @@ def test_render_rejects_unknown_quality() -> None:
     assert result.exit_code == 2
 
 
+def test_themes_list_shows_names_and_descriptions() -> None:
+    result = runner.invoke(app, ["themes", "list"])
+
+    assert result.exit_code == 0
+    assert "default  Dark panel, light text and an amber highlight." in result.stdout
+
+
+def test_theme_check_passing_theme() -> None:
+    result = runner.invoke(app, ["theme", "check", "default"])
+
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "default: all 46 checks passed"
+
+
+def test_theme_check_verbose_lists_every_check() -> None:
+    result = runner.invoke(app, ["theme", "check", "default", "--verbose"])
+
+    lines = result.stdout.splitlines()
+    assert result.exit_code == 0
+    assert len([line for line in lines if line.startswith("  PASS  ")]) == 46
+    assert "  PASS  colors.text on colors.surface: contrast 15.53:1, needs at least 4.5:1" in lines
+
+
+def test_theme_check_failing_theme(tmp_path: Path) -> None:
+    from vizreel.themes.loader import BUILTIN_DIR
+
+    text = (BUILTIN_DIR / "default.yaml").read_text(encoding="utf-8")
+    path = tmp_path / "grey.yaml"
+    path.write_text(text.replace('muted: "#9BA4AE"', 'muted: "#30363D"'), encoding="utf-8")
+
+    result = runner.invoke(app, ["theme", "check", str(path)])
+
+    assert result.exit_code == 1
+    assert "  FAIL  colors.muted on colors.surface: contrast 1.42:1, needs at least 4.5:1" in (
+        result.stdout.splitlines()
+    )
+    assert "checks failed" in result.stderr
+
+
+def test_theme_check_missing_theme() -> None:
+    result = runner.invoke(app, ["theme", "check", "nope"])
+
+    assert result.exit_code == 1
+    assert 'theme "nope" not found' in result.stderr
+
+
 def test_schema_prints_json_schema() -> None:
     result = runner.invoke(app, ["schema"])
 

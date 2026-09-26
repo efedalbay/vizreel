@@ -144,6 +144,8 @@ class ThemeMotion(ThemeModel):
 class Theme(ThemeModel):
     """A complete visual theme."""
 
+    description: Annotated[str, Field(min_length=1)] | None = None
+    """One line describing the theme, shown by `vizreel themes list`."""
     colors: ThemeColors
     """Color roles."""
     fonts: ThemeFonts

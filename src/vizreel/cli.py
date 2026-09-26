@@ -17,6 +17,8 @@ from vizreel import __version__
 from vizreel.errors import InputFileError, OutputError, VizreelError
 from vizreel.render.engine import ChartResult, RenderOptions, render_spec
 from vizreel.spec.loader import load_spec, spec_json_schema
+from vizreel.themes.check import check_theme
+from vizreel.themes.loader import describe_builtin_themes, load_theme
 
 app = typer.Typer(
     name="vizreel",
@@ -166,6 +168,50 @@ def schema(
     with _reporting_errors(ctx):
         _write_text(output, text)
     _stdout().print(f"Wrote JSON Schema to {escape(str(output))}")
+
+
+themes_app = typer.Typer(help="Built-in themes.", no_args_is_help=True)
+app.add_typer(themes_app, name="themes")
+theme_app = typer.Typer(help="Work with one theme.", no_args_is_help=True)
+app.add_typer(theme_app, name="theme")
+
+
+@themes_app.command("list")
+def themes_list(ctx: typer.Context) -> None:
+    """List the built-in themes."""
+    with _reporting_errors(ctx):
+        themes = describe_builtin_themes()
+    console = _stdout()
+    for name, description in themes:
+        console.print(f"[bold]{escape(name)}[/]  {escape(description or '')}".rstrip())
+
+
+@theme_app.command("check")
+def theme_check(
+    ctx: typer.Context,
+    theme: Annotated[
+        str,
+        typer.Argument(
+            help="Built-in theme name, or path to a theme YAML file.", show_default=False
+        ),
+    ],
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="List every check, not only failures.")
+    ] = False,
+) -> None:
+    """Check a theme for text contrast and color vision separation."""
+    with _reporting_errors(ctx):
+        results = check_theme(load_theme(theme, Path.cwd()))
+    console = _stdout()
+    for result in results:
+        if verbose or not result.passed:
+            status = "[green]PASS[/]" if result.passed else "[red]FAIL[/]"
+            console.print(f"  {status}  {escape(str(result))}")
+    failed = sum(1 for result in results if not result.passed)
+    if failed:
+        _stderr().print(f"[red]{escape(theme)}: {failed} of {len(results)} checks failed[/]")
+        raise typer.Exit(1)
+    console.print(f"[green]{escape(theme)}: all {len(results)} checks passed[/]")
 
 
 def _write_text(path: Path, text: str) -> None:

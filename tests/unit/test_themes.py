@@ -8,20 +8,6 @@ from vizreel.themes.loader import BUILTIN_DIR, builtin_theme_names, load_theme, 
 from vizreel.themes.models import Theme
 
 
-def relative_luminance(color: str) -> float:
-    """WCAG 2.x relative luminance of a #RRGGBB color."""
-    channels = [int(color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
-    linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
-    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
-
-
-def contrast(foreground: str, background: str) -> float:
-    lighter, darker = sorted(
-        (relative_luminance(foreground), relative_luminance(background)), reverse=True
-    )
-    return (lighter + 0.05) / (darker + 0.05)
-
-
 def default_theme_data() -> dict[str, object]:
     data: dict[str, object] = yaml.safe_load(
         (BUILTIN_DIR / "default.yaml").read_text(encoding="utf-8")
@@ -58,29 +44,6 @@ def test_default_theme_loads() -> None:
     assert theme.background_panel is True
 
 
-@pytest.mark.parametrize("role", ["text", "muted"])
-def test_default_text_colors_have_enough_contrast(role: str) -> None:
-    theme = load_theme("default", Path("."))
-    color = getattr(theme.colors, role)
-
-    assert contrast(color, theme.colors.surface) >= 4.5
-    assert contrast(color, theme.colors.background) >= 4.5
-
-
-@pytest.mark.parametrize("role", ["accent", "positive", "negative", "highlight"])
-def test_default_large_text_colors_have_enough_contrast(role: str) -> None:
-    theme = load_theme("default", Path("."))
-    color = getattr(theme.colors, role)
-
-    assert contrast(color, theme.colors.surface) >= 3
-    assert contrast(color, theme.colors.background) >= 3
-
-
-def test_contrast_helper_matches_wcag_reference() -> None:
-    assert contrast("#000000", "#FFFFFF") == pytest.approx(21)
-    assert contrast("#777777", "#FFFFFF") == pytest.approx(4.48, abs=0.01)
-
-
 def test_resolve_builtin_name() -> None:
     assert resolve_theme_path("default", Path("anywhere")) == BUILTIN_DIR / "default.yaml"
 
@@ -106,7 +69,7 @@ def test_missing_theme_lists_builtin_themes(tmp_path: Path) -> None:
     assert caught.value.source == str(tmp_path / "dark")
     assert [str(issue) for issue in caught.value.issues] == [
         'theme "dark" not found. Built-in themes: default. '
-        "A custom theme is a path to a YAML file, relative to the spec file"
+        f"A custom theme is a path to a YAML file; a relative path is looked up in {tmp_path}"
     ]
 
 

@@ -98,6 +98,8 @@ vizreel validate charts.yaml            # check a spec and list every error
 vizreel render charts.yaml              # render all charts to ./out
 vizreel render charts.yaml --only offers --quality preview --still
 vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
+vizreel themes list                     # built-in themes
+vizreel theme check my-brand.yaml       # contrast and color vision checks for a theme
 ```
 
 | Option | Description |

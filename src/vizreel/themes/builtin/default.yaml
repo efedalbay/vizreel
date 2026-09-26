@@ -1,4 +1,5 @@
-# The default vizreel theme: dark panel, light text, amber highlight.
+description: Dark panel, light text and an amber highlight.
+
 colors:
   background: "#0E1116"
   surface: "#161B22"

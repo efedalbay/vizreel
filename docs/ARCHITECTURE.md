@@ -150,6 +150,9 @@ A theme is a YAML file validated by `themes/models.py`. It contains:
 - `sizes`: `title`, `subtitle`, `big_number`, `label`, `value`, `caption`, `panel_radius`, `panel_padding`, and the stroke widths `line`, `grid_line` and the marker diameter `dot`.
 - `motion`: `easing` (ease-out curves only), `title_fade`, `structure`, `stagger`, `highlight`, `hold`, in seconds.
 - `background_panel`: whether to draw a rounded panel behind the chart when rendering with transparency.
+- `description`: optional one line shown by `vizreel themes list`.
+
+`themes/check.py` checks a theme with pure functions: WCAG contrast of text and data colors against the panel and background, and the CIEDE2000 difference between colors that appear side by side, with normal vision and simulated protanopia, deuteranopia and tritanopia. `vizreel theme check` runs it; built-in themes must pass.
 
 Sizes are **pixels at 1080p** (font sizes for text), the unit `docs/DESIGN.md` uses, so a theme can be checked against the design rules directly. They scale with the output resolution; the layout converts them to scene units in one place. The theme model enforces the minimum sizes of `docs/DESIGN.md` §2 and a final hold of at least 1.5 seconds.
 

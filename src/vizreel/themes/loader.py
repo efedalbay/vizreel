@@ -20,12 +20,18 @@ def builtin_theme_names() -> list[str]:
     return sorted(path.stem for path in BUILTIN_DIR.glob("*.yaml"))
 
 
-def resolve_theme_path(ref: str, spec_dir: Path) -> Path:
+def describe_builtin_themes() -> list[tuple[str, str | None]]:
+    """Return the name and description of each built-in theme, sorted by name."""
+    return [(name, load_theme(name, BUILTIN_DIR).description) for name in builtin_theme_names()]
+
+
+def resolve_theme_path(ref: str, base_dir: Path) -> Path:
     """Find the file of a theme.
 
     Args:
         ref: `meta.theme` from the spec: a built-in name or a path to a YAML file.
-        spec_dir: Folder of the spec file. Relative paths are resolved from here.
+        base_dir: Folder that relative paths start from: the spec's folder, or the
+            current folder for `vizreel theme check`.
 
     Raises:
         ThemeError: No built-in theme has that name and no file exists at that path.
@@ -34,7 +40,7 @@ def resolve_theme_path(ref: str, spec_dir: Path) -> Path:
         return BUILTIN_DIR / f"{ref}.yaml"
     path = Path(ref)
     if not path.is_absolute():
-        path = spec_dir / path
+        path = base_dir / path
     if path.is_file():
         return path
     raise ThemeError(
@@ -43,23 +49,25 @@ def resolve_theme_path(ref: str, spec_dir: Path) -> Path:
             InputIssue(
                 "",
                 f'theme "{ref}" not found. Built-in themes: {", ".join(builtin_theme_names())}. '
-                "A custom theme is a path to a YAML file, relative to the spec file",
+                "A custom theme is a path to a YAML file; "
+                f"a relative path is looked up in {base_dir}",
             )
         ],
     )
 
 
-def load_theme(ref: str, spec_dir: Path) -> Theme:
+def load_theme(ref: str, base_dir: Path) -> Theme:
     """Resolve and validate a theme.
 
     Args:
         ref: `meta.theme` from the spec: a built-in name or a path to a YAML file.
-        spec_dir: Folder of the spec file. Relative paths are resolved from here.
+        base_dir: Folder that relative paths start from: the spec's folder, or the
+            current folder for `vizreel theme check`.
 
     Raises:
         ThemeError: The theme cannot be found, read or validated.
     """
-    path = resolve_theme_path(ref, spec_dir)
+    path = resolve_theme_path(ref, base_dir)
     data = read_yaml_mapping(path, ThemeError, _KIND, _REQUIRED)
     try:
         return Theme.model_validate(data)

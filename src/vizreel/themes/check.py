@@ -7,6 +7,7 @@ applied in linear RGB. Color difference is CIEDE2000.
 
 import math
 from dataclasses import dataclass
+from typing import Literal
 
 from vizreel.themes.models import Theme
 
@@ -54,16 +55,25 @@ class CheckResult:
     """The outcome of one check.
 
     Attributes:
+        kind: "contrast" for a WCAG contrast ratio, "difference" for a CIEDE2000 difference.
         passed: Whether the value reaches the minimum.
         value: What was measured: a contrast ratio or a color difference.
         minimum: The least value that passes.
         description: What was checked, e.g. "colors.text on colors.surface".
     """
 
+    kind: Literal["contrast", "difference"]
     passed: bool
     value: float
     minimum: float
     description: str
+
+    def __str__(self) -> str:
+        if self.kind == "contrast":
+            measured = f"contrast {self.value:.2f}:1, needs at least {self.minimum:g}:1"
+        else:
+            measured = f"color difference {self.value:.1f}, needs at least {self.minimum:g}"
+        return f"{self.description}: {measured}"
 
 
 def linear_rgb(hex_color: str) -> Rgb:
@@ -192,7 +202,9 @@ def check_theme(theme: Theme) -> list[CheckResult]:
             for background_role, background in backgrounds.items():
                 ratio = contrast_ratio(color, background)
                 results.append(
-                    CheckResult(ratio >= minimum, ratio, minimum, f"{role} on {background_role}")
+                    CheckResult(
+                        "contrast", ratio >= minimum, ratio, minimum, f"{role} on {background_role}"
+                    )
                 )
 
     series = {f"colors.series[{i}]": color for i, color in enumerate(colors.series)}
@@ -211,6 +223,7 @@ def check_theme(theme: Theme) -> list[CheckResult]:
             difference = color_difference(palette[first], palette[second], matrix)
             results.append(
                 CheckResult(
+                    "difference",
                     difference >= MIN_DIFFERENCE,
                     difference,
                     MIN_DIFFERENCE,
