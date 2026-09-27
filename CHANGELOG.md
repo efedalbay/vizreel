@@ -4,6 +4,18 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-09-28
+
+### Added
+
+- Number locales: `meta.locale` takes `tr-TR`, `es-ES`, `pt-BR` and `fr-FR` besides `en-US`. Each writes numbers the way its readers expect, following the Unicode CLDR: its separators (`1.846,5`, `1 846,5`), the place of the percent sign (`%47`, `47 %`) and the names of the compact units (`740 milyon`, `1,5 milhão`, `2 millions`), agreeing in number where the language has a plural.
+- `compact: long` and `compact: short` choose full unit names or abbreviations in any locale: `740 million` or `740M`, `740 milyon` or `740 Mn`. `compact: true` keeps each locale's usual names.
+- `examples/showcase-tr.yaml`: every chart type in Turkish.
+
+### Changed
+
+- The big number of a stat and the values of a compare shrink to fit when they are too wide for the frame, down to half their size, instead of being an error. The size fits the widest text the count shows and stays the same while it counts.
+
 ## [0.5.0] - 2026-09-28
 
 ### Added
@@ -92,6 +104,7 @@ The first release.
 - `vizreel new TYPE` prints a commented template for each chart type.
 - The Inter typeface, bundled so that output looks the same on every machine.
 
+[0.6.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.6.0
 [0.5.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.5.0
 [0.4.4]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.4
 [0.4.3]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.3
