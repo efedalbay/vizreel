@@ -3,7 +3,8 @@
 import itertools
 import math
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from vizreel.charts.base import ChartType, check_reading_time, split_duration
 from vizreel.charts.registry import register
@@ -17,10 +18,10 @@ from vizreel.render.scales import (
     thin_labels,
     value_axis,
 )
-from vizreel.spec.models import LineChart, NumberFormat
+from vizreel.spec.models import LineChart, LineHighlight, NumberFormat
 
 if TYPE_CHECKING:
-    from manim import Animation, Scene, VMobject
+    from manim import Animation, Mobject, Scene, VMobject
 
 Point = tuple[float, float]
 """A data point as (horizontal position, value)."""
@@ -195,6 +196,23 @@ def _segment_hits_box(start: Point, end: Point, box: Box) -> bool:
     return True
 
 
+def marked_points(chart: LineChart) -> list[LineHighlight]:
+    """Every point the chart marks."""
+    return [chart.highlight] if chart.highlight else []
+
+
+@dataclass
+class _LineFinal:
+    """The drawn chart, which the emphasis changes: its lines, their end dots and the marks."""
+
+    lines: list["VMobject"]
+    tips: list["Mobject"]
+    colors: list[str]
+    marks: Callable[[LineHighlight], tuple["VMobject", "VMobject", "VMobject | None"]]
+    shown: "VMobject | None" = None
+    """The guide line, dots and callout of the point marked last."""
+
+
 @register
 class LineChartType(ChartType):
     """One to three series drawn from left to right.
@@ -234,12 +252,10 @@ class LineChartType(ChartType):
             Dot,
             FadeIn,
             Line,
-            ManimColor,
             ValueTracker,
             VGroup,
             VMobject,
             always_redraw,
-            interpolate_color,
             linear,
         )
 
@@ -260,17 +276,20 @@ class LineChartType(ChartType):
         header = elements.header(chart.title, chart.subtitle, theme, layout)
         source = elements.source_line(chart.source, theme, layout)
 
-        # Values that get a label: first, last and highlighted. They share decimals.
+        # Values that get a label: first, last and highlighted. They share decimals. A chart
+        # told as a sequence counts every point it will mark, so that all its clips share one
+        # layout and one number format and cut together seamlessly.
         present = [[v for v in series.values if v is not None] for series in chart.series]
         firsts = [values[0] for values in present]
         lasts = [values[-1] for values in present]
-        highlight_index = chart.x.index(chart.highlight.x) if chart.highlight else None
-        highlighted = (
-            [series.values[highlight_index] for series in chart.series]
-            if highlight_index is not None
-            else []
-        )
-        labeled = firsts + lasts + [value for value in highlighted if value is not None]
+        marked = marked_points(chart)
+        highlighted = [
+            value
+            for point in marked
+            for series in chart.series
+            if (value := series.values[chart.x.index(point.x)]) is not None
+        ]
+        labeled = firsts + lasts + highlighted
         formats: dict[float, NumberFormat] = {
             value: chart.number.model_copy(update={"decimals": places})
             for value, places in zip(labeled, shared_decimals(labeled, chart.number), strict=True)
@@ -315,12 +334,14 @@ class LineChartType(ChartType):
         ]
         x_labels = [block.mobject for block in x_blocks]
         end_widths = [end_label(index, lasts[index]).width for index in range(count)]
-        callout_label = (
-            elements.text(chart.highlight.label, fonts.body, sizes.label, colors.text)
-            if chart.highlight and chart.highlight.label
-            else None
+        callout_labels = [
+            elements.text(point.label, fonts.body, sizes.label, colors.text)
+            for point in marked
+            if point.label
+        ]
+        callout_height = glyphs("0").height + (
+            max(label.height for label in callout_labels) + gap if callout_labels else 0
         )
-        callout_height = glyphs("0").height + (callout_label.height + gap if callout_label else 0)
         # The lowest tick label is centered on the plot's bottom edge and reaches half its
         # height below it, so the x labels start below that.
         x_label_gap = gap + max(label.height for label in tick_labels) / 2
@@ -502,24 +523,28 @@ class LineChartType(ChartType):
         final_tips = tips_with_labels(sweep_end)
         scene.add(*final_lines, first_labels_at(sweep_end), final_tips)
 
-        def highlight_beat() -> None:
-            assert highlight_index is not None
-            backdrop = ManimColor(colors.surface if layout.panel else colors.background)
-            x = xs[highlight_index]
+        def marks(item: LineHighlight) -> tuple["VMobject", "VMobject", "VMobject | None"]:
+            """The guide line, the dots and the callout that mark the point `item`."""
+            index = chart.x.index(item.x)
+            x = xs[index]
             points = [
-                (index, value) for index, value in enumerate(highlighted) if value is not None
+                value
+                for value in (series.values[index] for series in chart.series)
+                if value is not None
             ]
             dots = VGroup(
                 *(
                     Dot((x, y_of(value), 0.0), radius=dot_radius, color=colors.highlight)
-                    for _, value in points
+                    for value in points
                 )
             )
             callout_parts: list[VMobject] = []
-            if callout_label is not None:
-                callout_parts.append(callout_label)
+            if item.label:
+                callout_parts.append(
+                    elements.text(item.label, fonts.body, sizes.label, colors.text)
+                )
             if count == 1:
-                callout_parts.append(value_text(points[0][1], points[0][1]))
+                callout_parts.append(value_text(points[0], points[0]))
             callout = VGroup(*callout_parts).arrange(DOWN, buff=gap / 2)
             # The callout sits in the room kept above the plot, where it covers no data.
             callout_x = min(
@@ -533,26 +558,43 @@ class LineChartType(ChartType):
                 color=colors.highlight,
                 stroke_width=stroke_width(sizes.grid_line),
             )
-            dim = [
-                *(line.animate.set_stroke(opacity=colors.dim_opacity) for line in final_lines),
-                # Dots dim by blending toward the background so that they stay opaque
-                # and the line end does not show through them.
-                *(
-                    dot.animate.set_fill(
-                        interpolate_color(backdrop, dot.get_fill_color(), colors.dim_opacity)
-                    )
-                    for dot in final_tips[0]
-                ),
-            ]
-            scene.play(
-                *dim,
-                Create(guide),
-                FadeIn(dots),
-                *([FadeIn(callout)] if callout_parts else []),
-                run_time=phases.highlight,
-                rate_func=ease,
-            )
+            return guide, dots, callout if callout_parts else None
 
+        self._final = _LineFinal(
+            lines=final_lines,
+            tips=final_tips[0].submobjects,
+            colors=series_colors,
+            marks=marks,
+        )
         if chart.highlight:
-            highlight_beat()
+            scene.play(*self.emphasis(chart.highlight), run_time=phases.highlight, rate_func=ease)
         scene.wait(phases.hold)
+
+    def emphasis(self, item: Any) -> list[Any]:
+        """Mark the point a sequence item names and dim the lines.
+
+        A guide line draws up from the point, dots appear on it and the callout fades in; the
+        marks of an earlier emphasis fade out. Dots at the line ends dim by blending toward
+        the background, so that they stay opaque and the line end does not show through.
+        """
+        from manim import Create, FadeIn, FadeOut, ManimColor, VGroup, interpolate_color
+
+        colors = self.theme.colors
+        final = self._final
+        target = LineHighlight(x=item) if isinstance(item, str) else item
+        backdrop = ManimColor(colors.surface if self.layout.panel else colors.background)
+        animations: list[Any] = [
+            *(line.animate.set_stroke(opacity=colors.dim_opacity) for line in final.lines),
+            *(
+                dot.animate.set_fill(
+                    interpolate_color(backdrop, ManimColor(color), colors.dim_opacity)
+                )
+                for dot, color in zip(final.tips, final.colors, strict=True)
+            ),
+        ]
+        if final.shown is not None:
+            animations.append(FadeOut(final.shown))
+        guide, dots, callout = final.marks(target)
+        animations += [Create(guide), FadeIn(dots), *([FadeIn(callout)] if callout else [])]
+        final.shown = VGroup(guide, dots, *([callout] if callout else []))
+        return animations

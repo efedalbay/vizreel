@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from vizreel.charts._bars import (
     MAX_ROW_THICKNESS,
@@ -114,11 +114,9 @@ class WaterfallChartType(ChartType):
             AnimationGroup,
             Create,
             FadeIn,
-            ManimColor,
             ValueTracker,
             VGroup,
             always_redraw,
-            interpolate_color,
             linear,
         )
 
@@ -223,21 +221,31 @@ class WaterfallChartType(ChartType):
         )
         scene.remove(joining, *growing, *counting)
         scene.add(final_connectors, *final_bars, *final_values)
+        self._final = (list(zip(final_bars, bars, strict=True)), fills)
 
-        # The other bars keep their colors and only dim, so the final frame still tells an
-        # increase from a decrease.
-        backdrop = ManimColor(colors.surface if layout.panel else colors.background)
         highlighted = chart.highlight.label if chart.highlight else chart.end.label
-        recolor = [
+        scene.play(*self.emphasis(highlighted), run_time=phases.highlight, rate_func=ease)
+        scene.wait(phases.hold)
+
+    def emphasis(self, item: Any) -> list[Any]:
+        """Turn the bar labeled `item` to the highlight color and dim the others.
+
+        The other bars keep their colors and only dim, so the final frame still tells an
+        increase from a decrease.
+        """
+        from manim import ManimColor, interpolate_color
+
+        colors = self.theme.colors
+        final, fills = self._final
+        backdrop = ManimColor(colors.surface if self.layout.panel else colors.background)
+        return [
             bar_mobject.animate.set_fill(
                 colors.highlight
-                if bar.label == highlighted
+                if bar.label == item
                 else interpolate_color(backdrop, ManimColor(fills[bar.kind]), colors.dim_opacity)
             )
-            for bar_mobject, bar in zip(final_bars, bars, strict=True)
+            for bar_mobject, bar in final
         ]
-        scene.play(*recolor, run_time=phases.highlight, rate_func=ease)
-        scene.wait(phases.hold)
 
     def _columns(
         self,

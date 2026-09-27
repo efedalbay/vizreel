@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from vizreel.charts.base import ChartType, check_reading_time, split_duration
 from vizreel.charts.registry import register
@@ -204,12 +204,10 @@ class TimelineChartType(ChartType):
         from manim import (
             AnimationGroup,
             FadeIn,
-            ManimColor,
             UpdateFromAlphaFunc,
             ValueTracker,
             VGroup,
             always_redraw,
-            interpolate_color,
             linear,
         )
 
@@ -218,7 +216,7 @@ class TimelineChartType(ChartType):
         chart = self.chart
         assert isinstance(chart, TimelineChart)
         theme, layout = self.theme, self.layout
-        colors, motion = theme.colors, theme.motion
+        motion = theme.motion
         ease = elements.easing(theme)
         events = chart.events
         count = len(events)
@@ -300,24 +298,52 @@ class TimelineChartType(ChartType):
             event_block.set_opacity(1.0)
         scene.remove(drawing_axis, *appearing)
         scene.add(geometry.axis(1.0), *stems, *dots)
+        self._final = (blocks, dots, stems, dots[0].width)
 
         if emphasized is not None:
-            backdrop = ManimColor(colors.surface if layout.panel else colors.background)
-
-            def dimmed(color: str) -> ManimColor:
-                return interpolate_color(backdrop, ManimColor(color), colors.dim_opacity)
-
-            date, description = blocks[emphasized]
-            others = [index for index in range(count) if index != emphasized]
-            beat = [
-                dots[emphasized].animate.scale(EMPHASIS_SCALE).set_fill(colors.highlight),
-                date.animate.set_color(colors.highlight),
-                description.animate.set_color(colors.text),
-                *(dots[index].animate.set_fill(dimmed(colors.accent)) for index in others),
-                *(stems[index].animate.set_stroke(dimmed(colors.grid)) for index in others),
-            ]
-            scene.play(*beat, run_time=phases.highlight, rate_func=ease)
+            scene.play(
+                *self.emphasis(events[emphasized].date),
+                run_time=phases.highlight,
+                rate_func=ease,
+            )
         scene.wait(phases.hold)
+
+    def emphasis(self, item: Any) -> list[Any]:
+        """Emphasize the event dated `item` and dim the other events' marks.
+
+        The emphasized event's dot grows and turns to the highlight color, as does its date;
+        the other events' dots and stems dim and their text returns to its own colors.
+        """
+        from manim import ManimColor, interpolate_color
+
+        assert isinstance(self.chart, TimelineChart)
+        colors = self.theme.colors
+        blocks, dots, stems, dot_width = self._final
+        backdrop = ManimColor(colors.surface if self.layout.panel else colors.background)
+
+        def dimmed(color: str) -> ManimColor:
+            return interpolate_color(backdrop, ManimColor(color), colors.dim_opacity)
+
+        animations: list[Any] = []
+        for index, event in enumerate(self.chart.events):
+            date, description = blocks[index]
+            if event.date == item:
+                animations += [
+                    dots[index]
+                    .animate.set(width=dot_width * EMPHASIS_SCALE)
+                    .set_fill(colors.highlight),
+                    stems[index].animate.set_stroke(colors.grid),
+                    date.animate.set_color(colors.highlight),
+                    description.animate.set_color(colors.text),
+                ]
+            else:
+                animations += [
+                    dots[index].animate.set(width=dot_width).set_fill(dimmed(colors.accent)),
+                    stems[index].animate.set_stroke(dimmed(colors.grid)),
+                    date.animate.set_color(colors.text),
+                    description.animate.set_color(colors.muted),
+                ]
+        return animations
 
     def _event_block(
         self, index: int, lines: list[str], align: Literal["center", "left"]

@@ -94,6 +94,19 @@ def place_table(
     )
 
 
+@dataclass
+class _TableFinal:
+    """The drawn table, which the emphasis changes: its cells and the band."""
+
+    texts: dict[tuple[int, int], "VMobject"]
+    numbers: dict[tuple[int, int], "VMobject"]
+    band: "VMobject"
+    band_x: float
+    band_ys: list[float]
+    band_shown: bool = False
+    """Whether the band is on screen, behind an emphasized row."""
+
+
 @register
 class TableChartType(ChartType):
     """A few rows and columns: row names, then numbers or text.
@@ -353,32 +366,63 @@ class TableChartType(ChartType):
         scene.remove(*counters)
         scene.add(*numbers.values())
 
+        label = px(size_px)
+        band = Rectangle(
+            width=table_right - table_left + label,
+            height=label * ROW_PITCH * 0.8,
+            stroke_width=0,
+            fill_color=interpolate_color(
+                ManimColor(colors.surface if layout.panel else colors.background),
+                ManimColor(colors.highlight),
+                BAND_STRENGTH,
+            ),
+            fill_opacity=1,
+        )
+        band.set_z_index(elements.PANEL_Z_INDEX + 0.5)
+        self._final = _TableFinal(
+            texts={key: block.mobject for key, block in texts.items()},
+            numbers=numbers,
+            band=band,
+            band_x=(table_left + table_right) / 2,
+            band_ys=[baseline + label / 3 for baseline in placement.baselines],
+        )
+
         if chart.highlight:
-            highlighted = chart.row_names.index(chart.highlight.row)
-            backdrop = ManimColor(colors.surface if layout.panel else colors.background)
-            label = px(size_px)
-            band = Rectangle(
-                width=table_right - table_left + label,
-                height=label * ROW_PITCH * 0.8,
-                stroke_width=0,
-                fill_color=interpolate_color(backdrop, ManimColor(colors.highlight), BAND_STRENGTH),
-                fill_opacity=1,
+            scene.play(
+                *self.emphasis(chart.highlight.row), run_time=phases.highlight, rate_func=ease
             )
-            band.move_to(
-                ((table_left + table_right) / 2, placement.baselines[highlighted] + label / 3, 0.0)
-            )
-            band.set_z_index(elements.PANEL_Z_INDEX + 0.5)
-
-            def dimmed(color: str) -> Any:
-                return interpolate_color(backdrop, ManimColor(color), colors.dim_opacity)
-
-            dimming: list[Any] = []
-            for (row, column), block in texts.items():
-                if row != highlighted:
-                    original = colors.text if column == 0 else colors.muted
-                    dimming.append(block.mobject.animate.set_color(dimmed(original)))
-            for (row, _), number in numbers.items():
-                if row != highlighted:
-                    dimming.append(number.animate.set_color(dimmed(colors.text)))
-            scene.play(FadeIn(band), *dimming, run_time=phases.highlight, rate_func=ease)
         scene.wait(phases.hold)
+
+    def emphasis(self, item: Any) -> list[Any]:
+        """Put a soft band behind the row named `item` and dim the other rows.
+
+        The band fades in the first time and moves to the new row after that; the emphasized
+        row's text returns to its own colors.
+        """
+        from manim import FadeIn, ManimColor, interpolate_color
+
+        assert isinstance(self.chart, TableChart)
+        colors = self.theme.colors
+        final = self._final
+        highlighted = self.chart.row_names.index(item)
+        backdrop = ManimColor(colors.surface if self.layout.panel else colors.background)
+
+        def look(row: int, color: str) -> Any:
+            if row == highlighted:
+                return ManimColor(color)
+            return interpolate_color(backdrop, ManimColor(color), colors.dim_opacity)
+
+        target = (final.band_x, final.band_ys[highlighted], 0.0)
+        animations: list[Any] = []
+        if final.band_shown:
+            animations.append(final.band.animate.move_to(target))
+        else:
+            final.band.move_to(target)
+            animations.append(FadeIn(final.band))
+            final.band_shown = True
+        for (row, column), text in final.texts.items():
+            original = colors.text if column == 0 else colors.muted
+            animations.append(text.animate.set_color(look(row, original)))
+        for (row, _), number in final.numbers.items():
+            animations.append(number.animate.set_color(look(row, colors.text)))
+        return animations

@@ -1,5 +1,6 @@
 """How a whole divides into parts."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -12,6 +13,8 @@ from vizreel.spec.models import ShareChart
 
 if TYPE_CHECKING:
     from manim import Animation, Mobject, Scene, VMobject
+
+    from vizreel.render.numbers_text import NumberGlyphs
 
 NUMBER_SCALE = 2 / 3
 """Size of the percent in the middle, as a share of the theme's big number size."""
@@ -102,6 +105,22 @@ def part_shades(count: int, highlighted: int) -> list[float]:
     for step, index in enumerate(others):
         shades[index] = strongest - (strongest - weakest) * step / max(len(others) - 1, 1)
     return shades
+
+
+@dataclass
+class _ShareFinal:
+    """The drawn chart, which the emphasis changes: its parts, legend and middle."""
+
+    sectors: Sequence["VMobject"]
+    dots: Sequence["VMobject"]
+    names: Sequence["VMobject"]
+    percents: list[int]
+    center: tuple[float, float]
+    inner: float
+    gap: float
+    glyphs: "NumberGlyphs"
+    shown: "VMobject | None" = None
+    """The percent and name in the middle, once a part has been emphasized."""
 
 
 @register
@@ -210,32 +229,6 @@ class ShareChartType(ChartType):
             text = percent_glyphs.at(format_percent(percent), 0.0, baselines[index])
             return text.shift((percent_right_x - text.get_right()[0], 0.0, 0.0))
 
-        # The highlighted part's name goes under its percent when both fit inside the ring;
-        # otherwise only the percent does, and the legend still names the part.
-        center_block: elements.TextBlock | None
-        try:
-            center_block = elements.wrapped_block(
-                parts[highlighted].label,
-                fonts.body,
-                sizes.label,
-                colors.muted,
-                2 * inner * CENTER_FILL,
-                "the highlighted label",
-                "center",
-            )
-        except RenderError:
-            center_block = None
-        number_height = center_glyphs(format_percent(percents[highlighted])).height
-        name_gap = gap * 1.5
-        name_height = center_block.height + name_gap if center_block is not None else 0.0
-        if number_height + name_height > 2 * inner * CENTER_FILL:
-            center_block, name_height = None, 0.0
-        number_baseline = cy + (number_height + name_height) / 2 - number_height
-        center_name = center_block.mobject if center_block is not None else None
-        if center_block is not None:
-            center_block.move_top_to(number_baseline - name_gap)
-            center_block.mobject.set_x(cx)
-
         separator = stroke_width(SEPARATOR_PX)
 
         def sector(index: int, reached: float, color: Any) -> "VMobject":
@@ -332,26 +325,108 @@ class ShareChartType(ChartType):
             mobject.set_opacity(1.0)
         scene.remove(*drawing, *counting)
         scene.add(*final_sectors, *final_percents)
-
-        center_tracker = ValueTracker(0.0)
-        counting_center = always_redraw(
-            lambda: center_glyphs.at(
-                format_percent(center_tracker.get_value()), cx, number_baseline
-            )
+        self._final = _ShareFinal(
+            sectors=final_sectors,
+            dots=dots,
+            names=names,
+            percents=percents,
+            center=(cx, cy),
+            inner=inner,
+            gap=gap,
+            glyphs=center_glyphs,
         )
-        scene.add(counting_center)
 
-        def count_center(tracker: ValueTracker, alpha: float) -> None:
-            tracker.set_value(percents[highlighted] * alpha)
-
-        beat: list[Any] = [
-            final_sectors[highlighted].animate.set_fill(colors.highlight),
-            dots[highlighted].animate.set_fill(colors.highlight),
-            names[highlighted].animate.set_color(colors.text),
-            UpdateFromAlphaFunc(center_tracker, count_center),  # type: ignore[arg-type]
-        ]
-        if center_name is not None:
-            beat.append(FadeIn(center_name))
-        scene.play(*beat, run_time=phases.highlight, rate_func=ease)
-        counting_center.clear_updaters()
+        scene.play(
+            *self.emphasis(parts[highlighted].label), run_time=phases.highlight, rate_func=ease
+        )
         scene.wait(phases.hold)
+
+    def emphasis(self, item: Any) -> list[Any]:
+        """Emphasize the part labeled `item` and count its percent up in the middle.
+
+        The part turns to the highlight color and the others take their shades; a percent
+        already in the middle, from an earlier emphasis, fades out.
+        """
+        from manim import (
+            FadeIn,
+            FadeOut,
+            ManimColor,
+            UpdateFromAlphaFunc,
+            VGroup,
+            interpolate_color,
+        )
+
+        assert isinstance(self.chart, ShareChart)
+        colors = self.theme.colors
+        final = self._final
+        labels = [part.label for part in self.chart.parts]
+        index = labels.index(item)
+        backdrop = ManimColor(colors.surface if self.layout.panel else colors.background)
+        shades = part_shades(len(labels), index)
+        animations: list[Any] = []
+        for part, (sector, dot, name) in enumerate(
+            zip(final.sectors, final.dots, final.names, strict=True)
+        ):
+            fill = (
+                ManimColor(colors.highlight)
+                if part == index
+                else interpolate_color(backdrop, ManimColor(colors.muted), shades[part])
+            )
+            animations += [
+                sector.animate.set_fill(fill),
+                dot.animate.set_fill(fill),
+                name.animate.set_color(colors.text if part == index else colors.muted),
+            ]
+        if final.shown is not None:
+            animations.append(FadeOut(final.shown))
+        baseline, center_name = self._center_text(index)
+        cx, _ = final.center
+        percent = final.percents[index]
+        number = final.glyphs.at(format_percent(0), cx, baseline)
+
+        def count(mobject: "Mobject", alpha: float) -> None:
+            mobject.become(final.glyphs.at(format_percent(percent * alpha), cx, baseline))
+
+        animations.append(UpdateFromAlphaFunc(number, count))  # type: ignore[arg-type]
+        if center_name is not None:
+            animations.append(FadeIn(center_name))
+        final.shown = VGroup(number, *([center_name] if center_name is not None else []))
+        return animations
+
+    def _center_text(self, index: int) -> tuple[float, "VMobject | None"]:
+        """Return the baseline of part `index`'s percent in the middle, and its name under it.
+
+        The name goes under the percent when both fit inside the ring; otherwise only the
+        percent does, and the legend still names the part.
+        """
+        from vizreel.render import elements
+
+        assert isinstance(self.chart, ShareChart)
+        fonts, sizes, colors = self.theme.fonts, self.theme.sizes, self.theme.colors
+        final = self._final
+        cx, cy = final.center
+        room = 2 * final.inner * CENTER_FILL
+        block: elements.TextBlock | None
+        try:
+            block = elements.wrapped_block(
+                self.chart.parts[index].label,
+                fonts.body,
+                sizes.label,
+                colors.muted,
+                room,
+                "the highlighted label",
+                "center",
+            )
+        except RenderError:
+            block = None
+        number_height = final.glyphs(format_percent(final.percents[index])).height
+        name_gap = final.gap * 1.5
+        name_height = block.height + name_gap if block is not None else 0.0
+        if number_height + name_height > room:
+            block, name_height = None, 0.0
+        baseline = cy + (number_height + name_height) / 2 - number_height
+        if block is None:
+            return baseline, None
+        block.move_top_to(baseline - name_gap)
+        block.mobject.set_x(cx)
+        return baseline, block.mobject

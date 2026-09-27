@@ -1,7 +1,7 @@
 """Compare categories."""
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from vizreel.charts._bars import (
     MAX_ROW_THICKNESS,
@@ -172,17 +172,23 @@ class BarChartType(ChartType):
             value_mobject.move_to(geometry.value(index, 1.0).get_center())
         scene.remove(*growing, *counting)
         scene.add(*final_bars, *final_values)
+        self._final = list(zip(final_bars, bars, strict=True))
 
         if chart.highlight:
-            highlighted = chart.highlight.label
-            recolor = [
-                bar_mobject.animate.set_fill(colors.highlight, opacity=1)
-                if bar.label == highlighted
-                else bar_mobject.animate.set_fill(colors.muted, opacity=colors.dim_opacity)
-                for bar_mobject, bar in zip(final_bars, bars, strict=True)
-            ]
-            scene.play(*recolor, run_time=phases.highlight, rate_func=ease)
+            scene.play(
+                *self.emphasis(chart.highlight.label), run_time=phases.highlight, rate_func=ease
+            )
         scene.wait(phases.hold)
+
+    def emphasis(self, item: Any) -> list[Any]:
+        """Turn the bar with the label `item` to the highlight color and the others to muted."""
+        colors = self.theme.colors
+        return [
+            bar_mobject.animate.set_fill(colors.highlight, opacity=1)
+            if bar.label == item
+            else bar_mobject.animate.set_fill(colors.muted, opacity=colors.dim_opacity)
+            for bar_mobject, bar in self._final
+        ]
 
     def _columns(
         self,

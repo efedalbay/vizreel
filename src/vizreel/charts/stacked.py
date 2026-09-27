@@ -104,11 +104,9 @@ class StackedChartType(ChartType):
             AnimationGroup,
             Create,
             FadeIn,
-            ManimColor,
             ValueTracker,
             VGroup,
             always_redraw,
-            interpolate_color,
             linear,
         )
 
@@ -238,28 +236,43 @@ class StackedChartType(ChartType):
             total_mobject.move_to(geometry.total(category, totals[category]).get_center())
         scene.remove(*growing, *counting)
         scene.add(*(part for parts in final_parts for part in parts), *final_totals)
+        self._final = (final_parts, legend, series_colors)
 
         if chart.highlight:
-            backdrop = ManimColor(colors.surface if layout.panel else colors.background)
-            highlighted = [series.name for series in chart.series].index(chart.highlight.series)
-            # Manim's .animate builders have no public type.
-            dimming: list[Any] = []
-            for series in range(series_count):
-                if series == highlighted:
-                    continue
-                dimmed = interpolate_color(
-                    backdrop, ManimColor(series_colors[series]), colors.dim_opacity
-                )
-                dimming += [part.animate.set_fill(dimmed) for part in final_parts[series]]
-                dot, name = legend[series]
-                dimming += [
-                    dot.animate.set_fill(dimmed),
-                    name.animate.set_color(
-                        interpolate_color(backdrop, ManimColor(colors.muted), colors.dim_opacity)
-                    ),
-                ]
-            scene.play(*dimming, run_time=phases.highlight, rate_func=ease)
+            scene.play(
+                *self.emphasis(chart.highlight.series),
+                run_time=phases.highlight,
+                rate_func=ease,
+            )
         scene.wait(phases.hold)
+
+    def emphasis(self, item: Any) -> list[Any]:
+        """Keep the series named `item` in its color and dim the others, in the legend too."""
+        from manim import ManimColor, interpolate_color
+
+        assert isinstance(self.chart, StackedChart)
+        colors = self.theme.colors
+        final_parts, legend, series_colors = self._final
+        backdrop = ManimColor(colors.surface if self.layout.panel else colors.background)
+        animations: list[Any] = []
+        for index, series in enumerate(self.chart.series):
+            kept = series.name == item
+            fill = (
+                ManimColor(series_colors[index])
+                if kept
+                else interpolate_color(
+                    backdrop, ManimColor(series_colors[index]), colors.dim_opacity
+                )
+            )
+            name_color = (
+                ManimColor(colors.muted)
+                if kept
+                else interpolate_color(backdrop, ManimColor(colors.muted), colors.dim_opacity)
+            )
+            dot, name = legend[index]
+            animations += [part.animate.set_fill(fill) for part in final_parts[index]]
+            animations += [dot.animate.set_fill(fill), name.animate.set_color(name_color)]
+        return animations
 
     def _legend(self, series_colors: list[str]) -> "VMobject":
         """Build the legend, a dot and a name per series, at the top left of the content.

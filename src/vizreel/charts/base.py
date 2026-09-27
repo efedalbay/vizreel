@@ -3,7 +3,7 @@
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from vizreel.errors import RenderError
 from vizreel.render.layout import Layout
@@ -42,6 +42,16 @@ class ChartType(ABC):
     @abstractmethod
     def build(self, scene: "Scene") -> None:
         """Add mobjects and play animations on the given scene."""
+
+    def emphasis(self, item: Any) -> list[Any]:
+        """Return the animations that move the emphasis to the element a sequence item names.
+
+        They set the final look of every element that can be emphasized, whatever it looked
+        like before, so emphasizing an element always ends on the same frame; the chart's own
+        highlight beat plays them too. Chart types whose model is a `SequencedChart` implement
+        this; it is valid once `build` has run.
+        """
+        raise NotImplementedError(f"{self.name} charts cannot be told as a sequence")
 
 
 MAIN_SHARE_MAX = 0.5
