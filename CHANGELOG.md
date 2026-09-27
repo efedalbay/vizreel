@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The `compare` chart type: one measure before and after. The later value counts from the earlier one to its own, and the change counts in at the highlight beat, in percent (`−72%`) or as a difference (`+$150M`). The change is colored by its direction; `trend: none` keeps it neutral, for rises that are bad news.
+
 ## [0.3.0] - 2026-09-27
 
 ### Added

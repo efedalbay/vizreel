@@ -66,7 +66,8 @@ vizreel/
 │   │   ├── stat.py
 │   │   ├── line.py
 │   │   ├── bar.py
-│   │   └── timeline.py
+│   │   ├── timeline.py
+│   │   └── compare.py
 │   ├── render/
 │   │   ├── engine.py        ← render a Spec: loop charts, configure Manim, write files
 │   │   ├── scene.py         ← generic Manim Scene that hosts one chart

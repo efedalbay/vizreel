@@ -20,7 +20,13 @@ ROOT = Path(__file__).resolve().parents[1]
 SHOWCASE = ROOT / "examples" / "showcase.yaml"
 OUT_DIR = ROOT / "docs" / "images"
 WIDTH = 640
-CHARTS = {"peak-valuation": "stat", "valuation": "line", "offers": "bar", "final-years": "timeline"}
+CHARTS = {
+    "peak-valuation": "stat",
+    "valuation": "line",
+    "offers": "bar",
+    "final-years": "timeline",
+    "headcount": "compare",
+}
 
 
 def _frames(video: Path) -> tuple[list[av.VideoFrame], int]:
