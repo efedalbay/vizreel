@@ -70,6 +70,7 @@ vizreel/
 │   │   ├── compare.py
 │   │   ├── waterfall.py
 │   │   ├── stacked.py
+│   │   ├── share.py
 │   │   └── _bars.py         ← parts the bar-like types share; not a chart type
 │   ├── render/
 │   │   ├── engine.py        ← render a Spec: loop charts, configure Manim, write files
