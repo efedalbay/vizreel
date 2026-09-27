@@ -167,7 +167,9 @@ Resolution order for `meta.theme`: built-in name → path relative to the spec f
 
 ## Rendering
 
-- Resolution presets: `720p`, `1080p` (default), `1440p`, `4k`. Aspect ratio 16:9. Vertical `1080x1920` preset for Shorts is planned (see roadmap).
+- Resolution presets: `720p`, `1080p` (default), `1440p`, `4k`, named by the short side of the frame. Aspect `16:9` (default) or `9:16` (`meta.aspect`, `--aspect`). The short side of Manim's frame is 8 scene units in both aspects, so one scene unit is 135 pixels at 1080p either way and theme sizes need no conversion per aspect; `layout.py` gives each aspect its frame size and safe margins. Vertical files are named `<id>.vertical.<format>`.
+- Chart types adapt to a vertical frame through `Layout.vertical`: bar charts use rows (`layout: auto`) and timelines run down the frame. Titles and subtitles wrap onto a second line when they do not fit; the engine measures them before it builds the layout, so the title band is as tall as the wrapped lines.
+- Text is laid out by Pango on a fixed 4096-pixel surface, not one the size of the video, so it wraps and positions the same way in every output size (`elements.TEXT_SURFACE_PX`).
 - Quality flag: `--quality preview` (low resolution, 15 fps, fast) or `final` (spec resolution and fps). A chart renders to `<id>.<format>`; preview files are named `<id>.preview.<format>` so that a preview never replaces a final clip that may already be in an editor project.
 - Formats: `mov` with alpha (default), `webm` with alpha, `mp4` opaque (uses theme background). Alpha compatibility with common editors is verified in milestone M2 and documented in the README.
 - A clip has exactly `round(duration × fps)` frames. Manim rounds every animation up to whole frames, so `ChartScene` rounds each animation through a frame clock that keeps the running total on the wanted time. Every `scene.play` in a chart passes an explicit `run_time`; the final hold is a frozen frame, so nothing can move during it.

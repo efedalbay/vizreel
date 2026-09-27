@@ -19,7 +19,7 @@ vizreel is built for video from the start:
 
 - **Declarative.** Describe the chart and its data in YAML. No code, no timeline editing.
 - **Made to be watched.** Large type, one message per chart, a clear highlight moment, smooth eased motion, a clean final frame. See the [design rules](https://github.com/efedalbay/vizreel/blob/main/docs/DESIGN.md).
-- **Editor-ready.** One clip per chart, transparent background, 1080p or 4K at 60 fps.
+- **Editor-ready.** One clip per chart, transparent background, 1080p or 4K at 60 fps, landscape or vertical.
 - **Consistent.** Colors, fonts and timing come from a theme, so every chart in a video matches.
 - **Easy to install.** Pure Python. No LaTeX, no separate FFmpeg install.
 
@@ -106,10 +106,20 @@ out/
 |---|---|
 | `stat` | One number the viewer must remember, counting up to its value |
 | `line` | Values over time, up to 3 series, with an optional highlighted point |
-| `bar` | Comparing up to 8 categories, with one highlighted bar |
+| `bar` | Comparing up to 8 categories, with one highlighted bar, as columns or rows |
 | `timeline` | A sequence of up to 7 events, with an emphasized moment |
 
 `vizreel new TYPE` prints a commented template for each. Every field is documented in the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md).
+
+## Vertical clips
+
+The same spec renders as vertical 9:16 clips for Shorts, Reels and TikTok:
+
+```bash
+vizreel render charts.yaml --aspect 9:16
+```
+
+Text stays the same size; charts rearrange for the narrow frame instead. Bar charts become rows, timelines run down the frame and long titles wrap onto a second line. A wider margin at the top and bottom keeps charts clear of the buttons and captions those apps draw over the video. To make vertical the default for a spec, set `aspect: "9:16"` in its `meta`.
 
 ## Usage
 
@@ -119,6 +129,7 @@ vizreel validate charts.yaml            # check a spec and list every error
 vizreel render charts.yaml              # render all charts to ./out
 vizreel render charts.yaml --only offers --quality preview --still
 vizreel render charts.yaml --quality preview --still --watch   # render again on every save
+vizreel render charts.yaml --aspect 9:16   # vertical clips for Shorts
 vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
 vizreel themes list                     # built-in themes
 vizreel theme check my-brand.yaml       # contrast and color vision checks for a theme
@@ -131,6 +142,7 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 | `--quality preview\|final` | `preview` is low resolution and fast, and writes `ID.preview.mov`; `final` uses the spec settings |
 | `--format mov\|webm\|mp4` | `mov` and `webm` keep transparency; `mp4` uses the theme background |
 | `--still` | Also save the final frame as a PNG |
+| `--aspect 16:9\|9:16` | `9:16` renders vertical clips for Shorts, Reels and TikTok, named `ID.vertical.mov` |
 | `--watch` | Keep running and render again whenever the spec or its theme file is saved. Only the charts that changed are rendered; an invalid spec prints its errors and watching goes on. Ctrl+C stops |
 
 ## Using the clips in a video editor

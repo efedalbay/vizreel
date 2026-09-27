@@ -13,7 +13,7 @@ vizreel output is watched, not studied. A viewer sees each chart for a few secon
 
 ## 2. Legibility on a phone
 
-Sizes are defined relative to a 1080p frame and scale with resolution.
+Sizes are defined relative to a 1080p frame and scale with resolution. They refer to the short side of the frame, so a size is the same on a 9:16 vertical frame (1080×1920) as on a 16:9 one.
 
 | Element | Minimum font size at 1080p |
 |---|---|
@@ -22,7 +22,8 @@ Sizes are defined relative to a 1080p frame and scale with resolution.
 | Value labels, axis labels | 32 px |
 | Source line | 24 px |
 
-- **Safe area:** keep all content inside the central 90% of the frame (5% margin on every side). Video platforms and editors overlay controls near the edges.
+- **Safe area:** keep all content inside the central 90% of the frame (5% margin on every side). Video platforms and editors overlay controls near the edges. In a 9:16 frame, Shorts, Reels and TikTok cover more: menus at the top, the caption, channel name and buttons at the bottom and lower right. There the margins are 6% on the sides, 10% at the top and 20% at the bottom.
+- **Narrow frames change the form, not the size.** Text is never shrunk to fit a vertical frame. Charts rearrange instead: bars become rows, a timeline runs down the frame, and titles wrap onto a second line.
 - **Contrast:** text against its background must reach at least 4.5:1; large text (title, big numbers) at least 3:1. With transparent output, the chart draws its own background panel when the theme sets `background_panel: true`, because the footage underneath is unknown.
 - **Text wears text colors.** Labels and values use `text` or `muted` from the theme, never a series color. A colored mark next to the label carries identity.
 - **Direct labels over legends** for 1–3 series. A legend appears only when two or more series exist and direct labels would collide.
@@ -71,7 +72,7 @@ Motion guides the eye to the message. It is never decoration.
 
 Before a chart type or theme change is considered done:
 
-1. Render `examples/showcase.yaml` with `--still`.
+1. Render `examples/showcase.yaml` with `--still`, once as is and once with `--aspect 9:16`.
 2. Look at every PNG at 100% and at phone size (about 25%).
 3. Check: nothing clipped, nothing outside the safe area, no overlapping labels, highlight is obvious at phone size, source line readable.
 4. Play the clip once: motion eases, highlight beat is clear, final hold is still.

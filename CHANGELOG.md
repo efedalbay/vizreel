@@ -4,6 +4,19 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Vertical 9:16 clips for Shorts, Reels and TikTok: `meta.aspect: "9:16"` or `--aspect 9:16`. The same spec renders in both shapes; vertical files are named `ID.vertical.mov`, and a vertical safe area keeps clear of the platforms' buttons and captions.
+- Bar charts can be drawn as rows (`layout: rows`), each bar under its label, which suits long labels. `layout: auto`, the default, uses columns at 16:9 and rows at 9:16.
+- Timelines run down the frame in a 9:16 frame.
+- Titles and subtitles wrap onto a second line when they do not fit on one; so do the lines of a stat card.
+
+### Fixed
+
+- Text wrapped at the width of the video, so a title could wrap in a preview although it fit in the final render.
+
 ## [0.2.0] - 2026-09-27
 
 ### Added
