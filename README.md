@@ -4,7 +4,7 @@
 
 vizreel turns a short YAML spec into clean, animated chart clips (big numbers, line charts, bar charts and timelines) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
 
-> **Status: 0.2.0, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
+> **Status: 0.3.0, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
 
 | | |
 |---|---|
