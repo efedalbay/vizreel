@@ -26,6 +26,7 @@ CHARTS = {
     "offers": "bar",
     "final-years": "timeline",
     "headcount": "compare",
+    "profit": "waterfall",
 }
 
 

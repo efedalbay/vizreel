@@ -6,7 +6,7 @@ vizreel output is watched, not studied. A viewer sees each chart for a few secon
 
 - Every chart answers one question. If the title needs "and", it is two charts.
 - One key number → `stat`, not a chart. A one-bar bar chart is always wrong.
-- Change over time → `line`. Comparing a few categories → `bar`. Order of events → `timeline`. One measure before and after → `compare`.
+- Change over time → `line`. Comparing a few categories → `bar`. Order of events → `timeline`. One measure before and after → `compare`. How a value adds up from its parts → `waterfall`.
 - **Emphasize one thing.** The element that carries the message gets the `highlight` color; everything else uses `muted`. Do not give every bar its own color.
 - **Never two y-axes.** Two measures on different scales become two charts.
 - Maximum 3 series on a line chart, 8 bars, 7 timeline events. The spec validator enforces these limits.
