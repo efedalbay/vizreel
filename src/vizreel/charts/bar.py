@@ -105,7 +105,9 @@ class BarChartType(ChartType):
         glyphs = NumberGlyphs(fonts.numbers, sizes.value, colors.text)
 
         def value_text(index: int, grown: float) -> "VMobject":
-            return glyphs(format_number(bars[index].value * grown, value_formats[index]))
+            return glyphs(
+                format_number(bars[index].value * grown, value_formats[index], locale=self.locale)
+            )
 
         final_values = [value_text(index, 1.0) for index in range(count)]
         if uses_rows(chart.layout, layout.vertical):

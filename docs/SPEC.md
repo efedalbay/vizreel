@@ -50,7 +50,7 @@ vizreel new line -o revenue.yaml
 | `aspect` | `16:9` \| `9:16` | `16:9` | Frame shape. `16:9` is landscape; `9:16` is vertical, for Shorts, Reels and TikTok, and keeps clear of the platforms' buttons and captions. Vertical clips are named `ID.vertical.mov`. Quote the value: `aspect: "9:16"`. |
 | `fps` | `30` \| `60` | `60` | Frames per second. |
 | `format` | `mov` \| `webm` \| `mp4` | `mov` | `mov` and `webm` have a transparent background. `mp4` is opaque and uses the theme background color. |
-| `locale` | `en-US` | `en-US` | Number and date formatting. Only `en-US` in v1. |
+| `locale` | `en-US` \| `tr-TR` \| `es-ES` \| `pt-BR` \| `fr-FR` | `en-US` | How numbers are written: separators, the percent sign and compact unit names. See [Locales](#locales). Text you write, such as labels and dates, is shown as written. |
 
 CLI flags override `meta` values.
 
@@ -79,7 +79,7 @@ Used by any field that displays values.
 
 Values in the spec are always plain numbers. `740000000` with `prefix: "$"` and `compact: true` renders as `$740M`. Never write `"740M"` as a value.
 
-Formatting rules (en-US):
+Formatting rules, shown for `en-US` (see [Locales](#locales) for the others):
 
 - **Thousands separators:** `1200000` → `1,200,000`.
 - **Automatic decimals** (no `decimals` set): whole numbers get none; other numbers get at most 2, without trailing zeros (`4.2`, `0.05`, `1.23`). With `compact: true`, abbreviated numbers keep 3 significant digits (`740M`, `2.25B`, `1.2M`, `12.3M`).
@@ -88,6 +88,41 @@ Formatting rules (en-US):
 - **Rounding:** halves round away from zero: `2.675` → `2.68`, `2.5` → `3`.
 - **Negative numbers:** the minus sign (−, U+2212) comes before the prefix: `−$1.2M`. A value that rounds to zero never shows a sign.
 - **Same decimals within a chart:** values shown together in one chart, such as axis or bar labels, share the number of decimals of the most precise value: `$0.05B`, `$0.20B`, `$2.25B`. With `compact: true`, only values with the same unit share decimals: `$1.25B`, `$412.0M`, `$7.8M`.
+
+### Locales
+
+`meta.locale` sets how every number in the spec is written. The rules above hold in every locale; only the way the result is written changes.
+
+| | `en-US` | `tr-TR` | `es-ES` | `pt-BR` | `fr-FR` |
+|---|---|---|---|---|---|
+| Separators | `1,846.5` | `1.846,5` | `1846,5` · `18.460` | `1.846,5` | `1 846,5` |
+| Percent | `47%` | `%47` | `47 %` | `47%` | `47 %` |
+| Percent change | `−72%` · `+4.5%` | `−%72` · `+%4,5` | `−72 %` · `+4,5 %` | `−72%` · `+4,5%` | `−72 %` · `+4,5 %` |
+| `compact` | `12.3K` · `740M` · `2.25B` · `3.2T` | `12,3 bin` · `740 milyon` · `2,25 milyar` · `3,2 trilyon` | `12,3 mil` · `740 millones` · `2,25 mil millones` · `3,2 billones` | `12,3 mil` · `740 milhões` · `2,25 bilhões` · `3,2 trilhões` | `12,3 mille` · `740 millions` · `2,25 milliards` · `3,2 billions` |
+
+The conventions follow the [Unicode CLDR](https://cldr.unicode.org/):
+
+- Spanish groups digits only in numbers of five digits or more: `1846`, but `18.460`.
+- French separates groups with a narrow no-break space, and puts one before `%`; Spanish puts a no-break space before `%`.
+- Outside `en-US`, a compact number is followed by its unit's name, joined by a no-break space so the two never part. Where the name has a plural, it agrees with the number shown: `1 millón` and `1,2 millones` in Spanish; `1,5 milhão` and `2 milhões` in Portuguese; `1,5 million` and `2 millions` in French.
+- The minus sign comes first in every locale: `−%72`, `−5 €`.
+
+`prefix` and `suffix` are shown exactly as written, in every locale, so write them for yours. In Turkish the percent sign goes before the number: write `prefix: "%"` for `%12,5`. A currency after the number takes its space in the suffix: `suffix: " TL"` gives `740 milyon TL`.
+
+```yaml
+version: 1
+meta:
+  locale: tr-TR
+
+charts:
+  - id: revenue
+    type: stat
+    value: 740000000
+    label: Northwind'in yıllık geliri
+    number: { suffix: " TL", compact: true }
+```
+
+This renders `740 milyon TL`.
 
 ---
 

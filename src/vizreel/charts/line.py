@@ -299,7 +299,7 @@ class LineChartType(ChartType):
         glyphs = NumberGlyphs(fonts.numbers, sizes.value, colors.text)
 
         def value_text(value: float, final: float) -> "VMobject":
-            return glyphs(format_number(value, formats[final]))
+            return glyphs(format_number(value, formats[final], locale=self.locale))
 
         names = [
             elements.text(series.name, fonts.body, sizes.label, colors.text)
@@ -329,7 +329,7 @@ class LineChartType(ChartType):
         axis = value_axis(values, low=chart.y_min, high=chart.y_max)
         tick_labels = [
             elements.number_text(text, fonts.body, sizes.label, colors.muted)
-            for text in format_numbers(list(axis.ticks), chart.number)
+            for text in format_numbers(list(axis.ticks), chart.number, locale=self.locale)
         ]
         x_blocks = [
             elements.text_block(text, fonts.body, sizes.label, colors.muted) for text in chart.x

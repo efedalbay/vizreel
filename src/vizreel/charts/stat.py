@@ -80,7 +80,7 @@ class StatChartType(ChartType):
         glyphs = NumberGlyphs(fonts.numbers, sizes.big_number, number_color[chart.trend])
 
         def number(value: float) -> "VMobject":
-            return glyphs(format_number(value, number_format))
+            return glyphs(format_number(value, number_format, locale=self.locale))
 
         header = line(chart.title, fonts.heading, sizes.title, colors.text) + line(
             chart.subtitle, fonts.body, sizes.subtitle, colors.muted

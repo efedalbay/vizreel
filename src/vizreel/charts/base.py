@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from vizreel.errors import RenderError
+from vizreel.format.locales import Locale
 from vizreel.render.layout import Layout
 from vizreel.spec.models import BaseChart
 from vizreel.themes.models import Theme
@@ -43,16 +44,18 @@ class ChartType(ABC):
         chart: The chart to build, an instance of `model`.
         theme: All styling.
         layout: All geometry.
+        locale: How numbers are written. Pass it to every `format.numbers` call.
     """
 
     name: ClassVar[str]
     model: ClassVar[type[BaseChart]]
     template: ClassVar[str]
 
-    def __init__(self, chart: BaseChart, theme: Theme, layout: Layout) -> None:
+    def __init__(self, chart: BaseChart, theme: Theme, layout: Layout, locale: Locale) -> None:
         self.chart = chart
         self.theme = theme
         self.layout = layout
+        self.locale = locale
 
     @abstractmethod
     def build(self, scene: "Scene") -> None:

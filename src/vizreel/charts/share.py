@@ -195,7 +195,9 @@ class ShareChartType(ChartType):
 
         percent_glyphs = NumberGlyphs(fonts.numbers, sizes.value, colors.text)
         names = [elements.text(part.label, fonts.body, sizes.label, colors.muted) for part in parts]
-        widest_percent = max(percent_glyphs(format_percent(p)).width for p in [*percents, 100])
+        widest_percent = max(
+            percent_glyphs(format_percent(p, locale=self.locale)).width for p in [*percents, 100]
+        )
         dot_radius = px(sizes.label) * LEGEND_MARK
         name_x = 2 * dot_radius + gap / 2
         percent_right = name_x + max(name.width for name in names) + gap * 2 + widest_percent
@@ -204,7 +206,7 @@ class ShareChartType(ChartType):
 
         number_size = sizes.big_number * NUMBER_SCALE
         center_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text)
-        widest_center = center_glyphs(format_percent(100)).width
+        widest_center = center_glyphs(format_percent(100, locale=self.locale)).width
         min_radius = max(px(MIN_RADIUS_PX), widest_center / (2 * INNER_RADIUS * CENTER_FILL))
         placement = place_share(content, layout.vertical, legend_size, gap * 3, min_radius)
         (cx, cy), radius = placement.center, placement.radius
@@ -226,7 +228,9 @@ class ShareChartType(ChartType):
         percent_right_x = legend_left + percent_right
 
         def percent_text(index: int, percent: float) -> "VMobject":
-            text = percent_glyphs.at(format_percent(percent), 0.0, baselines[index])
+            text = percent_glyphs.at(
+                format_percent(percent, locale=self.locale), 0.0, baselines[index]
+            )
             return text.shift((percent_right_x - text.get_right()[0], 0.0, 0.0))
 
         separator = stroke_width(SEPARATOR_PX)
@@ -390,7 +394,9 @@ class ShareChartType(ChartType):
             # still the frame before it, where a sequence cuts. Each frame holds a fresh text
             # rather than reshaping the last one, so the final text does not depend on how
             # many frames led to it.
-            text = final.glyphs.at(format_percent(percent * alpha), cx, baseline)
+            text = final.glyphs.at(
+                format_percent(percent * alpha, locale=self.locale), cx, baseline
+            )
             mobject.submobjects = [text.set_opacity(alpha)]
 
         animations.append(UpdateFromAlphaFunc(number, count))  # type: ignore[arg-type]
@@ -425,7 +431,9 @@ class ShareChartType(ChartType):
             )
         except RenderError:
             block = None
-        number_height = final.glyphs(format_percent(final.percents[index])).height
+        number_height = final.glyphs(
+            format_percent(final.percents[index], locale=self.locale)
+        ).height
         name_gap = final.gap * 1.5
         name_height = block.height + name_gap if block is not None else 0.0
         if number_height + name_height > room:

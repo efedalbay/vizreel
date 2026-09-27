@@ -1,5 +1,6 @@
 import pytest
 
+from vizreel.format.locales import EN_US as EN
 from vizreel.format.numbers import (
     MINUS_SIGN,
     change_amount,
@@ -36,7 +37,7 @@ DOLLARS_COMPACT = NumberFormat(prefix="$", compact=True)
     ],
 )
 def test_plain_numbers(value: float, expected: str) -> None:
-    assert format_number(value) == expected
+    assert format_number(value, locale=EN) == expected
 
 
 @pytest.mark.parametrize(
@@ -51,7 +52,7 @@ def test_plain_numbers(value: float, expected: str) -> None:
     ],
 )
 def test_rounding_is_half_away_from_zero(value: float, decimals: int, expected: str) -> None:
-    assert format_number(value, NumberFormat(decimals=decimals)) == expected
+    assert format_number(value, NumberFormat(decimals=decimals), locale=EN) == expected
 
 
 @pytest.mark.parametrize(
@@ -65,7 +66,7 @@ def test_rounding_is_half_away_from_zero(value: float, decimals: int, expected: 
     ],
 )
 def test_fixed_decimals_keep_trailing_zeros(value: float, decimals: int, expected: str) -> None:
-    assert format_number(value, NumberFormat(decimals=decimals)) == expected
+    assert format_number(value, NumberFormat(decimals=decimals), locale=EN) == expected
 
 
 @pytest.mark.parametrize(
@@ -79,7 +80,7 @@ def test_fixed_decimals_keep_trailing_zeros(value: float, decimals: int, expecte
     ],
 )
 def test_prefix_and_suffix(value: float, fmt: NumberFormat, expected: str) -> None:
-    assert format_number(value, fmt) == expected
+    assert format_number(value, fmt, locale=EN) == expected
 
 
 @pytest.mark.parametrize(
@@ -99,7 +100,7 @@ def test_prefix_and_suffix(value: float, fmt: NumberFormat, expected: str) -> No
     ],
 )
 def test_compact_uses_three_significant_digits(value: float, expected: str) -> None:
-    assert format_number(value, COMPACT) == expected
+    assert format_number(value, COMPACT, locale=EN) == expected
 
 
 @pytest.mark.parametrize(
@@ -112,7 +113,7 @@ def test_compact_uses_three_significant_digits(value: float, expected: str) -> N
     ],
 )
 def test_compact_leaves_numbers_below_1000_unabbreviated(value: float, expected: str) -> None:
-    assert format_number(value, COMPACT) == expected
+    assert format_number(value, COMPACT, locale=EN) == expected
 
 
 @pytest.mark.parametrize(
@@ -128,7 +129,7 @@ def test_compact_leaves_numbers_below_1000_unabbreviated(value: float, expected:
 def test_compact_moves_up_a_unit_when_rounding_reaches_1000(
     value: float, fmt: NumberFormat, expected: str
 ) -> None:
-    assert format_number(value, fmt) == expected
+    assert format_number(value, fmt, locale=EN) == expected
 
 
 @pytest.mark.parametrize(
@@ -141,38 +142,45 @@ def test_compact_moves_up_a_unit_when_rounding_reaches_1000(
     ],
 )
 def test_compact_with_fixed_decimals(value: float, decimals: int, expected: str) -> None:
-    assert format_number(value, NumberFormat(compact=True, decimals=decimals)) == expected
+    assert (
+        format_number(value, NumberFormat(compact=True, decimals=decimals), locale=EN) == expected
+    )
 
 
 def test_compact_negative_number_puts_sign_before_prefix() -> None:
-    assert format_number(-2500000, DOLLARS_COMPACT) == f"{M}$2.5M"
+    assert format_number(-2500000, DOLLARS_COMPACT, locale=EN) == f"{M}$2.5M"
 
 
 def test_spec_example_peak_valuation() -> None:
-    assert format_number(740000000, DOLLARS_COMPACT) == "$740M"
+    assert format_number(740000000, DOLLARS_COMPACT, locale=EN) == "$740M"
 
 
 def test_minus_sign_is_typographic_minus() -> None:
     assert MINUS_SIGN == "−"
-    assert "-" not in format_number(-5)
+    assert "-" not in format_number(-5, locale=EN)
 
 
 def test_group_shares_the_most_precise_decimals() -> None:
     fmt = NumberFormat(prefix="$", suffix="B")
 
-    assert format_numbers([0.05, 0.2, 2.25, 2.25], fmt) == ["$0.05B", "$0.20B", "$2.25B", "$2.25B"]
+    assert format_numbers([0.05, 0.2, 2.25, 2.25], fmt, locale=EN) == [
+        "$0.05B",
+        "$0.20B",
+        "$2.25B",
+        "$2.25B",
+    ]
 
 
 def test_group_of_whole_numbers_has_no_decimals() -> None:
     values = [740000000, 70000000, 40000000]
 
-    assert format_numbers(values, DOLLARS_COMPACT) == ["$740M", "$70M", "$40M"]
+    assert format_numbers(values, DOLLARS_COMPACT, locale=EN) == ["$740M", "$70M", "$40M"]
 
 
 def test_compact_group_shares_decimals_per_unit() -> None:
     values = [1250000000, 412000000, 187500000, 54300000, 7800000, 950000]
 
-    assert format_numbers(values, DOLLARS_COMPACT) == [
+    assert format_numbers(values, DOLLARS_COMPACT, locale=EN) == [
         "$1.25B",
         "$412.0M",
         "$187.5M",
@@ -190,15 +198,15 @@ def test_shared_decimals() -> None:
 
 
 def test_group_with_fixed_decimals_ignores_precision_of_values() -> None:
-    assert format_numbers([1, 2.5], NumberFormat(decimals=0)) == ["1", "3"]
+    assert format_numbers([1, 2.5], NumberFormat(decimals=0), locale=EN) == ["1", "3"]
 
 
 def test_group_mixed_precision() -> None:
-    assert format_numbers([1, 2.5]) == ["1.0", "2.5"]
+    assert format_numbers([1, 2.5], locale=EN) == ["1.0", "2.5"]
 
 
 def test_empty_group() -> None:
-    assert format_numbers([]) == []
+    assert format_numbers([], locale=EN) == []
 
 
 @pytest.mark.parametrize(
@@ -220,7 +228,7 @@ def test_decimals_for(values: list[float], fmt: NumberFormat | None, expected: i
 @pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
 def test_non_finite_values_are_rejected(value: float) -> None:
     with pytest.raises(ValueError, match="cannot format"):
-        format_number(value)
+        format_number(value, locale=EN)
 
 
 @pytest.mark.parametrize(
@@ -237,7 +245,7 @@ def test_non_finite_values_are_rejected(value: float) -> None:
     ],
 )
 def test_percent_changes(before: float, after: float, expected: str) -> None:
-    assert format_change(change_amount(before, after, "percent"), "percent") == expected
+    assert format_change(change_amount(before, after, "percent"), "percent", locale=EN) == expected
 
 
 @pytest.mark.parametrize(
@@ -250,15 +258,18 @@ def test_percent_changes(before: float, after: float, expected: str) -> None:
     ],
 )
 def test_absolute_changes(before: float, after: float, fmt: NumberFormat, expected: str) -> None:
-    assert format_change(change_amount(before, after, "absolute"), "absolute", fmt) == expected
+    assert (
+        format_change(change_amount(before, after, "absolute"), "absolute", fmt, locale=EN)
+        == expected
+    )
 
 
 def test_a_counting_change_keeps_the_decimals_of_its_final_value() -> None:
     final = change_amount(100, 104.5, "percent")
     places = change_decimals(final, "percent")
 
-    assert format_change(final * 0.1, "percent", decimals=places) == "+0.5%"
-    assert format_change(0.0, "percent", decimals=places) == "0.0%"
+    assert format_change(final * 0.1, "percent", decimals=places, locale=EN) == "+0.5%"
+    assert format_change(0.0, "percent", decimals=places, locale=EN) == "0.0%"
 
 
 @pytest.mark.parametrize("before", [0, -5])
@@ -291,4 +302,4 @@ def test_whole_percents_need_a_positive_total() -> None:
 
 @pytest.mark.parametrize(("percent", "expected"), [(47, "47%"), (0, "0%"), (46.6, "47%")])
 def test_format_percent(percent: float, expected: str) -> None:
-    assert format_percent(percent) == expected
+    assert format_percent(percent, locale=EN) == expected

@@ -607,6 +607,24 @@ def test_every_template_renders(tmp_path: Path, name: str) -> None:
     assert result.video is not None
 
 
+@pytest.mark.parametrize("locale", ["en-US", "tr-TR", "es-ES", "pt-BR", "fr-FR"])
+def test_every_locale_renders(tmp_path: Path, locale: str) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        f"version: 1\nmeta: {{ locale: {locale} }}\ncharts:\n"
+        "  - id: revenue\n    type: stat\n    value: 18460000\n"
+        "    number: { suffix: ' €', compact: true }\n"
+        "  - id: staff\n    type: compare\n"
+        "    before: { label: '2019', value: 12846.5 }\n"
+        "    after: { label: '2022', value: 3405 }\n",
+        encoding="utf-8",
+    )
+
+    results = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+
+    assert [result.error for result in results] == [None, None]
+
+
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     too_wide = "Northwind " * 20
     spec = tmp_path / "spec.yaml"
@@ -746,6 +764,8 @@ def test_composed_numbers_match_pango_layout(tmp_path: Path, size_px: float) -> 
     register_bundled_fonts()
     fonts, colors = load_theme("default", Path(".")).fonts, load_theme("default", Path(".")).colors
     samples = ["$740M", "$123M", "1,234,567", "$2.25B", "−$9.81K", "47%", "1,111 users", "7"]
+    # Locales bring no-break spaces, narrow no-break spaces and unit names.
+    samples += ["−%72", "1 234,5", "47 %", "740 millones €", "2,25 milyar"]
     with tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR"}):
         glyphs = NumberGlyphs(fonts.numbers, size_px, colors.text)
         for sample in samples:

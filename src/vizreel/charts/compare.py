@@ -204,8 +204,8 @@ class CompareChartType(ChartType):
         number_size = sizes.big_number * NUMBER_SCALE
         before_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.muted)
         after_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text)
-        before_text = format_number(before_value, number_format)
-        after_text = format_number(after_value, number_format)
+        before_text = format_number(before_value, number_format, locale=self.locale)
+        after_text = format_number(after_value, number_format, locale=self.locale)
         widest = max(before_glyphs(before_text).width, after_glyphs(after_text).width)
 
         change_kind = chart.change
@@ -220,7 +220,9 @@ class CompareChartType(ChartType):
             if chart.trend == "auto" and amount != 0:
                 change_color = colors.positive if amount > 0 else colors.negative
             change_glyphs = NumberGlyphs(fonts.numbers, sizes.title, change_color)
-            sample = change_glyphs(format_change(amount, change_kind, chart.number, change_places))
+            sample = change_glyphs(
+                format_change(amount, change_kind, chart.number, change_places, locale=self.locale)
+            )
             change_size = (sample.width, sample.height)
 
         side_gap = px(number_size) * SIDE_GAP
@@ -326,7 +328,7 @@ class CompareChartType(ChartType):
             return UpdateFromAlphaFunc(tracker, step, run_time=run_time, rate_func=ease)  # type: ignore[arg-type]
 
         def number_text(value: float) -> str:
-            return format_number(value, number_format)
+            return format_number(value, number_format, locale=self.locale)
 
         before_tracker = ValueTracker(0.0)
         counting_before = counting(before_tracker, number_text, before_glyphs, placement.before)
@@ -370,7 +372,7 @@ class CompareChartType(ChartType):
             kind = change_kind
 
             def change_text(value: float) -> str:
-                return format_change(value, kind, chart.number, change_places)
+                return format_change(value, kind, chart.number, change_places, locale=self.locale)
 
             change_tracker = ValueTracker(0.0)
             change_x, change_y = placement.change

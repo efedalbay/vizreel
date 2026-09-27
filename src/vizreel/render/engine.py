@@ -13,6 +13,7 @@ from typing import Any, Literal
 from vizreel.charts.base import Continuation
 from vizreel.charts.registry import builtin_registry
 from vizreel.errors import OutputError, RenderError, VizreelError
+from vizreel.format.locales import Locale, locale_for
 from vizreel.render.layout import Aspect, Layout, build_layout, frame_size
 from vizreel.spec.loader import load_spec
 from vizreel.spec.models import BaseChart, SequencedChart, Spec
@@ -213,6 +214,7 @@ def render_spec(
     theme = load_theme(spec.meta.theme, spec_path.parent)
     charts = select_charts(spec, options.only)
     settings = frame_settings(spec, options)
+    locale = locale_for(spec.meta.locale)
     try:
         options.out_dir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
@@ -228,7 +230,7 @@ def render_spec(
         plans = plan_clips(chart)
         steps = len(plans) if plans[0].step is not None else None
         for plan in plans:
-            result = _render_safely(plan, steps, theme, settings, options, reraise)
+            result = _render_safely(plan, steps, theme, locale, settings, options, reraise)
             results.append(result)
             if on_done:
                 on_done(result)
@@ -242,6 +244,7 @@ def _render_safely(
     plan: ClipPlan,
     steps: int | None,
     theme: Theme,
+    locale: Locale,
     settings: FrameSettings,
     options: RenderOptions,
     reraise: bool,
@@ -255,7 +258,7 @@ def _render_safely(
         return ChartResult(chart_id, seconds=seconds, step=plan.step, steps=steps, **fields)
 
     try:
-        render_chart(plan.chart, theme, settings, video, still, plan.continuation)
+        render_chart(plan.chart, theme, locale, settings, video, still, plan.continuation)
     except VizreelError as exc:
         return result(error=str(exc))
     except Exception as exc:
@@ -268,6 +271,7 @@ def _render_safely(
 def render_chart(
     chart: BaseChart,
     theme: Theme,
+    locale: Locale,
     settings: FrameSettings,
     video_path: Path,
     still_path: Path | None,
@@ -322,7 +326,7 @@ def render_chart(
             width = layout_with(1, 1).title.width
             title, subtitle = elements.header_lines(chart.title, chart.subtitle, theme, width)
             layout = layout_with(len(title), len(subtitle))
-            scene = ChartScene(chart_type(chart, theme, layout), continuation)
+            scene = ChartScene(chart_type(chart, theme, layout, locale), continuation)
             scene.render()
             _move(Path(scene.renderer.file_writer.movie_file_path), video_path)
             if still_path is not None:

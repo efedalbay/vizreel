@@ -1,10 +1,11 @@
-"""Formatting of every number a chart displays. Pure functions; en-US only in version 1."""
+"""Formatting of every number a chart displays, in the spec's locale. Pure functions."""
 
 import math
 from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Literal
 
+from vizreel.format.locales import Locale
 from vizreel.spec.models import NumberFormat
 
 ChangeKind = Literal["percent", "absolute"]
@@ -23,28 +24,26 @@ AUTO_MAX_DECIMALS = 2
 COMPACT_SIGNIFICANT_DIGITS = 3
 """Significant digits of an abbreviated number when `decimals` is not set: 740M, 2.25B, 12.3K."""
 
-COMPACT_UNITS: tuple[tuple[str, int], ...] = (
-    ("", 1),
-    ("K", 10**3),
-    ("M", 10**6),
-    ("B", 10**9),
-    ("T", 10**12),
-)
+COMPACT_POWERS: tuple[int, ...] = (1, 10**3, 10**6, 10**9, 10**12)
+"""Size of each compact unit: none, thousand, million, billion, trillion."""
 
 _DEFAULT_FORMAT = NumberFormat()
 
 
-def format_number(value: float, fmt: NumberFormat | None = None) -> str:
-    """Format one value for display, e.g. 740000000 → "$740M".
+def format_number(value: float, fmt: NumberFormat | None = None, *, locale: Locale) -> str:
+    """Format one value for display, e.g. 740000000 → "$740M", or "740 milyon" in tr-TR.
 
     Args:
         value: The number to format.
         fmt: Prefix, suffix, decimals and compact notation. Defaults to plain formatting.
+        locale: Separators and compact unit names.
     """
-    return format_numbers([value], fmt)[0]
+    return format_numbers([value], fmt, locale=locale)[0]
 
 
-def format_numbers(values: Sequence[float], fmt: NumberFormat | None = None) -> list[str]:
+def format_numbers(
+    values: Sequence[float], fmt: NumberFormat | None = None, *, locale: Locale
+) -> list[str]:
     """Format values that appear together in one chart with consistent decimals.
 
     See `shared_decimals`: a chart shows 0.05, 0.20 and 2.25 rather than 0.05, 0.2 and 2.25.
@@ -52,10 +51,13 @@ def format_numbers(values: Sequence[float], fmt: NumberFormat | None = None) -> 
     Args:
         values: The numbers to format.
         fmt: Prefix, suffix, decimals and compact notation. Defaults to plain formatting.
+        locale: Separators and compact unit names.
     """
     fmt = fmt or _DEFAULT_FORMAT
     decimals = shared_decimals(values, fmt)
-    return [_format(value, fmt, places) for value, places in zip(values, decimals, strict=True)]
+    return [
+        _format(value, fmt, places, locale) for value, places in zip(values, decimals, strict=True)
+    ]
 
 
 def shared_decimals(values: Sequence[float], fmt: NumberFormat | None = None) -> list[int]:
@@ -119,6 +121,8 @@ def format_change(
     kind: ChangeKind,
     fmt: NumberFormat | None = None,
     decimals: int | None = None,
+    *,
+    locale: Locale,
 ) -> str:
     """Format a change with its sign, e.g. "−72%", "+4.5%" or "+$1.2M". No change has no sign.
 
@@ -128,15 +132,16 @@ def format_change(
         fmt: The chart's number format, for absolute changes. Percent changes ignore it.
         decimals: Decimals to show; by default those of `change_decimals`. A change that counts
             up keeps the decimals of its final value in every frame.
+        locale: Separators, the percent sign's place and compact unit names.
     """
     fmt = fmt or _DEFAULT_FORMAT
     places = change_decimals(amount, kind, fmt) if decimals is None else decimals
     if kind == "percent":
         rounded = _round(_to_decimal(amount), places)
-        text = f"{abs(rounded):,.{places}f}%"
+        text = locale.percent.format(_digits(abs(rounded), places, locale))
     else:
         rounded, _ = _round_scaled(_to_decimal(amount), fmt.compact, places)
-        text = _format(abs(amount), fmt, places)
+        text = _format(abs(amount), fmt, places, locale)
     sign = "+" if rounded > 0 else MINUS_SIGN if rounded < 0 else ""
     return sign + text
 
@@ -163,16 +168,33 @@ def whole_percents(values: Sequence[float]) -> list[int]:
     return percents
 
 
-def format_percent(percent: float) -> str:
-    """Format a whole percent, e.g. 47 → "47%"."""
-    return f"{_round(_to_decimal(percent), 0):,.0f}%"
+def format_percent(percent: float, *, locale: Locale) -> str:
+    """Format a whole percent, e.g. 47 → "47%", or "%47" in tr-TR."""
+    return locale.percent.format(_digits(_round(_to_decimal(percent), 0), 0, locale))
 
 
-def _format(value: float, fmt: NumberFormat, decimals: int) -> str:
+def _format(value: float, fmt: NumberFormat, decimals: int, locale: Locale) -> str:
     rounded, unit_index = _round_scaled(_to_decimal(value), fmt.compact, decimals)
     sign = MINUS_SIGN if rounded < 0 else ""
-    digits = f"{abs(rounded):,.{decimals}f}"
-    return f"{sign}{fmt.prefix}{digits}{COMPACT_UNITS[unit_index][0]}{fmt.suffix}"
+    digits = _digits(abs(rounded), decimals, locale)
+    return f"{sign}{fmt.prefix}{digits}{_unit(rounded, unit_index, locale)}{fmt.suffix}"
+
+
+def _digits(number: Decimal, decimals: int, locale: Locale) -> str:
+    """Write a rounded number that is not negative with the locale's separators."""
+    integer, _, fraction = f"{number:,.{decimals}f}".partition(".")
+    if len(integer.replace(",", "")) < 3 + locale.min_grouping_digits:
+        integer = integer.replace(",", "")
+    digits = integer.replace(",", locale.group)
+    return f"{digits}{locale.decimal}{fraction}" if fraction else digits
+
+
+def _unit(rounded: Decimal, unit_index: int, locale: Locale) -> str:
+    """Return the compact unit after a number, e.g. "M", or " millones" in es-ES."""
+    if unit_index == 0:
+        return ""
+    singular, plural = locale.units[unit_index - 1]
+    return locale.unit_separator + (singular if locale.is_singular(rounded) else plural)
 
 
 def _auto_decimals(value: float, compact: bool) -> tuple[int, int]:
@@ -192,9 +214,9 @@ def _round_scaled(number: Decimal, compact: bool, decimals: int) -> tuple[Decima
     """Scale to the compact unit and round, moving up a unit if rounding reaches 1000."""
     scaled, unit_index = _scale(number, compact)
     rounded = _round(scaled, decimals)
-    if compact and unit_index > 0 and abs(rounded) >= 1000 and unit_index + 1 < len(COMPACT_UNITS):
+    if compact and unit_index > 0 and abs(rounded) >= 1000 and unit_index + 1 < len(COMPACT_POWERS):
         unit_index += 1
-        rounded = _round(number / COMPACT_UNITS[unit_index][1], decimals)
+        rounded = _round(number / COMPACT_POWERS[unit_index], decimals)
     return rounded, unit_index
 
 
@@ -202,10 +224,10 @@ def _scale(number: Decimal, compact: bool) -> tuple[Decimal, int]:
     unit_index = 0
     if compact:
         while (
-            unit_index + 1 < len(COMPACT_UNITS) and abs(number) >= COMPACT_UNITS[unit_index + 1][1]
+            unit_index + 1 < len(COMPACT_POWERS) and abs(number) >= COMPACT_POWERS[unit_index + 1]
         ):
             unit_index += 1
-    return number / COMPACT_UNITS[unit_index][1], unit_index
+    return number / COMPACT_POWERS[unit_index], unit_index
 
 
 def _round(number: Decimal, decimals: int) -> Decimal:

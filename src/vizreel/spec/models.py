@@ -77,8 +77,8 @@ class Meta(SpecModel):
     """Frames per second."""
     format: Literal["mov", "webm", "mp4"] = "mov"
     """mov and webm have a transparent background. mp4 is opaque."""
-    locale: Literal["en-US"] = "en-US"
-    """Number formatting. Only en-US in version 1."""
+    locale: Literal["en-US", "tr-TR", "es-ES", "pt-BR", "fr-FR"] = "en-US"
+    """How numbers are written: separators, the percent sign and compact unit names."""
 
 
 class NumberFormat(SpecModel):
