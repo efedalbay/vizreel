@@ -145,6 +145,18 @@ When a narration walks through a chart ("first 2016... then 2018..."), tell the 
 
 This renders `history.1.mov`, `history.2.mov` and `history.3.mov`. The first draws the chart and emphasizes 2016; each later clip starts on exactly the last frame of the one before and moves the emphasis on. Put them one after another on a track, with your narration between the moves, and they play as one continuous chart. Bar, line, timeline, waterfall, stacked, share and table charts can be told as sequences; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#sequences).
 
+## Number locales
+
+Numbers are written the way your audience reads them. Set `locale` in the spec's `meta` to `en-US` (the default), `tr-TR`, `es-ES`, `pt-BR` or `fr-FR`:
+
+| | `en-US` | `tr-TR` | `es-ES` | `pt-BR` | `fr-FR` |
+|---|---|---|---|---|---|
+| Number | `1,846.5` | `1.846,5` | `1846,5` | `1.846,5` | `1 846,5` |
+| Percent | `47%` | `%47` | `47 %` | `47%` | `47 %` |
+| Compact | `740M` | `740 milyon` | `740 millones` | `740 milhões` | `740 millions` |
+
+`compact: long` or `compact: short` chooses between full unit names and abbreviations in any locale: `740 million` or `740M`, `740 milyon` or `740 Mn`. Labels, titles and dates are shown as you write them. See the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#locales) for the details, and [`examples/showcase-tr.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/showcase-tr.yaml) for every chart type in Turkish.
+
 ## Usage
 
 ```bash

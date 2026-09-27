@@ -88,6 +88,7 @@ vizreel/
 │       └── fonts/           ← bundled open-license fonts + their licenses
 ├── examples/
 │   ├── showcase.yaml        ← one of every chart type (fictional data)
+│   ├── showcase-tr.yaml     ← the showcase in Turkish, numbers written for tr-TR
 │   ├── brand.yaml           ← charts in the example brand theme
 │   └── themes/example-brand.yaml  ← a complete custom theme
 ├── scripts/

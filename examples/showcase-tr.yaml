@@ -1,0 +1,90 @@
+# The showcase in Turkish, with numbers written for tr-TR. All data is fictional.
+version: 1
+meta:
+  title: vizreel showcase (tr-TR)
+  locale: tr-TR
+
+charts:
+  - id: peak-valuation
+    type: stat
+    value: 740000000
+    label: Northwind'in en yüksek değeri
+    number: { suffix: " TL", compact: true }
+    source: "Kaynak: örnek veri"
+
+  - id: valuation
+    type: line
+    title: Northwind'in değeri
+    subtitle: Milyar TL
+    x: ["2016", "2017", "2018", "2019", "2020"]
+    series:
+      - values: [0.05, 0.2, 2.25, 2.25, null]
+    number: { decimals: 2 }
+    highlight: { x: "2018", label: "C serisi yatırımı" }
+    source: "Kaynak: örnek veri"
+
+  - id: offers
+    type: bar
+    title: Northwind'e gelen teklifler
+    bars:
+      - { label: "Alıcı A (2015)", value: 740000000 }
+      - { label: "Alıcı B (2016)", value: 70000000 }
+      - { label: "Alıcı C (2016)", value: 40000000 }
+    number: { suffix: " TL", compact: true }
+    highlight: { label: "Alıcı C (2016)" }
+
+  - id: final-years
+    type: timeline
+    title: Northwind'in son üç yılı
+    events:
+      - { date: "2018", label: "865 milyon TL yatırım alır" }
+      - { date: "2020", label: "Geliri 1,75 milyar TL'ye ulaşır" }
+      - { date: "Haziran 2021", label: "İflas başvurusu yapar", emphasis: true }
+
+  - id: headcount
+    type: compare
+    title: Northwind'in çalışan sayısı
+    before: { label: "2019", value: 1200 }
+    after: { label: "2022", value: 340 }
+
+  - id: profit
+    type: waterfall
+    title: Northwind'in gelirden kâra yolu
+    start: { label: Gelir, value: 12000000 }
+    steps:
+      - { label: Maaşlar, value: -5000000 }
+      - { label: Pazarlama, value: -2000000 }
+      - { label: Diğer gelirler, value: 500000 }
+    end: { label: Kâr }
+    number: { suffix: " TL", compact: true }
+
+  - id: revenue-mix
+    type: stacked
+    title: Ürünlere göre Northwind geliri
+    categories: ["2021", "2022", "2023"]
+    series:
+      - { name: Bulut, values: [1.2, 2.4, 3.9] }
+      - { name: Cihazlar, values: [3.1, 2.9, 3.2] }
+    number: { suffix: " milyar TL" }
+    highlight: { series: Bulut }
+
+  - id: market
+    type: share
+    title: Northwind'in pazar payı
+    parts:
+      - { label: Northwind, value: 47 }
+      - { label: Contoso, value: 28 }
+      - { label: Diğerleri, value: 25 }
+
+  - id: top-markets
+    type: table
+    title: Northwind'in en büyük pazarları
+    columns:
+      - { name: Pazar }
+      - { name: Gelir, number: { suffix: " TL", compact: true } }
+      - { name: Büyüme, number: { prefix: "%" } }
+    rows:
+      - [Almanya, 412000000, 12]
+      - [Fransa, 298000000, -3]
+      - [Japonya, 187500000, 21]
+    highlight: { row: Japonya }
