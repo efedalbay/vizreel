@@ -29,6 +29,7 @@ CHARTS = {
     "profit": "waterfall",
     "revenue-mix": "stacked",
     "market": "share",
+    "top-markets": "table",
 }
 
 
