@@ -64,7 +64,7 @@ Work proceeds one milestone at a time. A milestone is done only when every accep
 
 **Done when:** `pip install vizreel` in a clean Windows environment, then the README quickstart, works exactly as written.
 
-From here on, each milestone ends with a minor release (M7 → 0.2.0, M8 → 0.3.0, …).
+From here on, each milestone ends with a minor release (M7 → 0.2.0, M8 → 0.3.0, …). M9 adds its chart types one release at a time: the first in 0.4.0, each further type in 0.4.1, 0.4.2 and so on.
 
 ## M7 — Watch mode
 
