@@ -50,7 +50,7 @@ def test_validate_valid_spec() -> None:
     result = runner.invoke(app, ["validate", str(SHOWCASE)])
 
     assert result.exit_code == 0
-    assert result.stdout.strip() == f"{SHOWCASE} is valid: 8 charts"
+    assert result.stdout.strip() == f"{SHOWCASE} is valid: 9 charts"
 
 
 def test_validate_invalid_spec_lists_every_error() -> None:
@@ -252,7 +252,7 @@ def test_new_unknown_type() -> None:
     assert result.exit_code == 1
     assert (
         'unknown chart type "pie". Valid types: '
-        "bar, compare, line, share, stacked, stat, timeline, waterfall" in result.stderr
+        "bar, compare, line, share, stacked, stat, table, timeline, waterfall" in result.stderr
     )
 
 
@@ -269,6 +269,7 @@ def test_schema_prints_json_schema() -> None:
         "share",
         "stacked",
         "stat",
+        "table",
         "timeline",
         "waterfall",
     ]

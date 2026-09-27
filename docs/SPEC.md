@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `share`. |
+| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `share`, `table`. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -327,6 +327,39 @@ Default `duration`: 6.
     - { label: Northwind, value: 47 }
     - { label: Contoso, value: 28 }
     - { label: Others, value: 25 }
+```
+
+## `table` — rows and columns
+
+A few rows and columns: each row's name, then numbers or text.
+
+The column names and a thin line under them appear first; then the rows appear one after another from the top, their numbers counting up. Text is set flush left and numbers flush right, with tabular figures so that digits line up. The cells use the largest of the theme's text sizes (title, subtitle, value, label) at which the table fits, so a short table is easy to read on a phone; a table that does not fit even at the label size is an error. At the highlight beat a soft band in the `highlight` color appears behind the highlighted row and the other rows dim.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `columns` | list | yes | — | 2–4 columns. The first holds the row names. |
+| `columns[].name` | string | yes | — | Shown above the column. |
+| `columns[].number` | number format | no | — | Formatting of the column's numbers, with consistent decimals down the column. |
+| `rows` | list of lists | yes | — | 2–8 rows, each with one cell per column. |
+| `rows[][0]` | string | yes | — | The row's name. Unique. |
+| `rows[][1:]` | number or string | yes | — | A column holds either numbers or text in every row; which one is decided by its first row. Quote years and codes that should stay text: `"2016"`. |
+| `highlight.row` | string | no | — | Name of the row to emphasize. |
+
+Default `duration`: 6.
+
+```yaml
+- id: top-markets
+  type: table
+  title: Northwind's largest markets
+  columns:
+    - { name: Market }
+    - { name: Revenue, number: { prefix: "$", compact: true } }
+    - { name: Growth, number: { suffix: "%" } }
+  rows:
+    - [Germany, 412000000, 12]
+    - [France, 298000000, -3]
+    - [Japan, 187500000, 21]
+  highlight: { row: Japan }
 ```
 
 ---

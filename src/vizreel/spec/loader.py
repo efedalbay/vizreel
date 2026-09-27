@@ -72,11 +72,32 @@ def spec_model() -> type[Spec]:
     )
 
 
+_CELL_BRANCHES = frozenset({"constrained-str", "float"})
+"""Names Pydantic appends to the location of a value that is neither branch of a text-or-number
+field, such as a table cell; each branch reports its own error."""
+
+
 def _validate(data: dict[str, Any], source: str) -> Spec:
     try:
         return spec_model().model_validate(data)
     except ValidationError as exc:
-        raise SpecError(source, [_issue_from_error(error) for error in exc.errors()]) from None
+        raise SpecError(source, _issues_from_errors(exc.errors())) from None
+
+
+def _issues_from_errors(errors: list[ErrorDetails]) -> list[InputIssue]:
+    """Turn Pydantic's errors into issues, one per text-or-number value rather than per branch."""
+    issues = []
+    reported: set[Location] = set()
+    for error in errors:
+        loc = _strip_chart_tag(error["loc"])
+        if loc and loc[-1] in _CELL_BRANCHES:
+            if loc[:-1] not in reported:
+                reported.add(loc[:-1])
+                value = show(error.get("input"))
+                issues.append(_issue(loc[:-1], f"expected text or a number, got {value}"))
+            continue
+        issues.append(_issue_from_error(error))
+    return issues
 
 
 def _issue_from_error(error: ErrorDetails) -> InputIssue:

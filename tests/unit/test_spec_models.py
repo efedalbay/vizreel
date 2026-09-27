@@ -270,6 +270,7 @@ def test_json_schema_lists_every_chart_type() -> None:
         "share",
         "stacked",
         "stat",
+        "table",
         "timeline",
         "waterfall",
     ]

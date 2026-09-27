@@ -32,6 +32,7 @@ def test_builtin_registry_has_every_chart_type() -> None:
         "share",
         "stacked",
         "stat",
+        "table",
         "timeline",
         "waterfall",
     ]

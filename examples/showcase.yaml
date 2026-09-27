@@ -76,3 +76,16 @@ charts:
       - { label: Northwind, value: 47 }
       - { label: Contoso, value: 28 }
       - { label: Others, value: 25 }
+
+  - id: top-markets
+    type: table
+    title: Northwind's largest markets
+    columns:
+      - { name: Market }
+      - { name: Revenue, number: { prefix: "$", compact: true } }
+      - { name: Growth, number: { suffix: "%" } }
+    rows:
+      - [Germany, 412000000, 12]
+      - [France, 298000000, -3]
+      - [Japan, 187500000, 21]
+    highlight: { row: Japan }

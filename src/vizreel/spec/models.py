@@ -568,6 +568,100 @@ class ShareChart(BaseChart):
         return values.index(max(values))
 
 
+class TableColumn(SpecModel):
+    """One column of a table."""
+
+    name: Text
+    """Shown above the column."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of the column's numbers. Ignored for a column of text."""
+
+
+class TableHighlight(SpecModel):
+    """The row to emphasize."""
+
+    row: Text
+    """Name of the row, as in its first cell."""
+
+
+class TableChart(BaseChart):
+    """A few rows and columns, the rows appearing one after another."""
+
+    type: Literal["table"]
+    duration: Duration = 6
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    columns: list[TableColumn] = Field(min_length=2, max_length=4)
+    """Two to four columns. The first holds the row names."""
+    rows: list[list[Text | float]] = Field(min_length=2, max_length=8)
+    """Two to eight rows, each with one cell per column: the row's name, then numbers or text."""
+    highlight: TableHighlight | None = None
+    """The row to emphasize."""
+
+    @property
+    def row_names(self) -> list[str]:
+        """The first cell of every row."""
+        return [str(row[0]) if row else "" for row in self.rows]
+
+    def numeric(self, column: int) -> bool:
+        """Whether a column holds numbers rather than text. The first column never does."""
+        return column > 0 and isinstance(self.rows[0][column], float | int)
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues: list[RuleViolation] = []
+        width = len(self.columns)
+        for index, row in enumerate(self.rows):
+            if len(row) != width:
+                issues.append(
+                    (
+                        ("rows", index),
+                        f"has {len(row)} cells but there are {width} columns; "
+                        "give one cell per column",
+                    )
+                )
+        if issues:
+            raise_rule_violations(type(self).__name__, issues)
+        for index, row in enumerate(self.rows):
+            if not isinstance(row[0], str):
+                issues.append(
+                    (("rows", index, 0), "the first cell names the row; write it as text")
+                )
+        for column in range(1, width):
+            numbers = self.numeric(column)
+            kind = "numbers" if numbers else "text"
+            for index, row in enumerate(self.rows):
+                if isinstance(row[column], str) == numbers:
+                    issues.append(
+                        (
+                            ("rows", index, column),
+                            f'column "{self.columns[column].name}" holds {kind}, as in its first '
+                            f"row, so this cell must be {kind} too",
+                        )
+                    )
+        first_seen: dict[str, int] = {}
+        for index, name in enumerate(self.row_names):
+            if name in first_seen:
+                issues.append(
+                    (
+                        ("rows", index, 0),
+                        f'"{name}" is already used by rows[{first_seen[name]}]; row names must be '
+                        "unique",
+                    )
+                )
+            else:
+                first_seen.setdefault(name, index)
+        if self.highlight is not None and self.highlight.row not in self.row_names:
+            issues.append(
+                (
+                    ("highlight", "row"),
+                    f'"{self.highlight.row}" does not match any row. '
+                    f"Rows: {_quoted_list(self.row_names)}",
+                )
+            )
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+
 def _location_text(location: Location) -> str:
     """Write a location the way error messages show it: steps[2].label."""
     text = ""

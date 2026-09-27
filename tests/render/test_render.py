@@ -482,6 +482,39 @@ def test_share_highlights_the_largest_part(tmp_path: Path, aspect: str) -> None:
     assert np.mean(columns >= ring_top_x - 2) > 0.95
 
 
+@pytest.mark.parametrize("aspect", ["16:9", "9:16"])
+def test_table_bands_the_highlighted_row(tmp_path: Path, aspect: str) -> None:
+    from manim import ManimColor, interpolate_color
+
+    from vizreel.charts.table import BAND_STRENGTH
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    band = interpolate_color(
+        ManimColor(colors.surface), ManimColor(colors.highlight), BAND_STRENGTH
+    ).to_hex()
+    [result] = render_spec(
+        SHOWCASE,
+        RenderOptions(
+            out_dir=tmp_path, only=("top-markets",), quality="preview", still=True, aspect=aspect
+        ),
+        reraise=True,
+    )
+    assert result.error is None
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    height = rgb.shape[0]
+    rows, _ = np.nonzero(np.all(np.abs(rgb - hex_rgb(band)) <= 4, axis=2))
+
+    assert len(frames) == 6 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    # Japan, the last of three rows, is highlighted: its band sits below the middle.
+    assert rows.size > 500
+    assert np.median(rows) > height / 2
+
+
 def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
     long = "Northwind signs a partnership with every airline in the region at once"
     events = ", ".join(f'{{ date: "{2010 + i}", label: "{long}" }}' for i in range(7))
