@@ -1,6 +1,7 @@
 import pytest
 
-from vizreel.charts.bar import MAX_ROW_GAP, plan_rows, sorted_bars, uses_rows
+from vizreel.charts._bars import MAX_ROW_GAP, plan_rows, uses_rows
+from vizreel.charts.bar import sorted_bars
 from vizreel.errors import RenderError, SpecError
 from vizreel.render.layout import BAR_FILL
 from vizreel.spec.loader import parse_spec
@@ -47,8 +48,8 @@ def chart_with_layout(layout: str) -> BarChart:
 def test_layout_picks_rows_or_columns(layout: str, landscape: bool, vertical: bool) -> None:
     chart = chart_with_layout(layout)
 
-    assert uses_rows(chart, vertical_frame=False) is landscape
-    assert uses_rows(chart, vertical_frame=True) is vertical
+    assert uses_rows(chart.layout, vertical_frame=False) is landscape
+    assert uses_rows(chart.layout, vertical_frame=True) is vertical
 
 
 def test_unknown_layout_is_rejected() -> None:

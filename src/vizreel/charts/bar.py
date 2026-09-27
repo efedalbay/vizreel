@@ -1,9 +1,16 @@
 """Compare categories."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from vizreel.charts._bars import (
+    MAX_ROW_THICKNESS,
+    MIN_ROW_THICKNESS_PX,
+    BarGeometry,
+    category_label,
+    plan_rows,
+    uses_rows,
+)
 from vizreel.charts.base import (
     ChartType,
     check_reading_time,
@@ -14,22 +21,15 @@ from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.format.numbers import format_number, shared_decimals
 from vizreel.render.layout import BAR_FILL, LABEL_FILL, px, stack_gap, stroke_width
-from vizreel.render.scales import LinearScale, band_centers, two_line_splits
+from vizreel.render.scales import LinearScale, band_centers
 from vizreel.spec.models import Bar, BarChart
 
 if TYPE_CHECKING:
     from manim import Animation, Scene, VMobject
 
-    from vizreel.render.elements import TextBlock
 
 MIN_BAR_AREA_PX = 120
 """Least height, in pixels at 1080p, left for the tallest column."""
-MIN_ROW_THICKNESS_PX = 16
-"""Least thickness, in pixels at 1080p, of the bar in a row."""
-MAX_ROW_THICKNESS = 1.5
-"""Most thickness of the bar in a row, as a multiple of the value font size."""
-MAX_ROW_GAP = 0.8
-"""Most space between rows, as a multiple of the height of a row."""
 MIN_ROW_LENGTH = 0.4
 """Least share of the content width left for the longest row after its value label."""
 
@@ -41,76 +41,6 @@ def sorted_bars(chart: BarChart) -> list[Bar]:
     if chart.sort == "desc":
         return sorted(chart.bars, key=lambda bar: bar.value, reverse=True)
     return list(chart.bars)
-
-
-def uses_rows(chart: BarChart, vertical_frame: bool) -> bool:
-    """Whether the bars are drawn as rows rather than columns."""
-    return chart.layout == "rows" or (chart.layout == "auto" and vertical_frame)
-
-
-@dataclass(frozen=True)
-class Row:
-    """Where one row of a bar chart goes, in scene units.
-
-    Attributes:
-        label_top: Top of the row's label.
-        bar_center: Vertical center of the row's bar.
-        thickness: Height of the row's bar.
-    """
-
-    label_top: float
-    bar_center: float
-    thickness: float
-
-
-def plan_rows(
-    count: int,
-    top: float,
-    bottom: float,
-    label_height: float,
-    label_gap: float,
-    thickness_range: tuple[float, float],
-) -> list[Row]:
-    """Stack `count` rows, each a label above a bar, centered between `bottom` and `top`.
-
-    Each row gets an equal share of the height. The bar takes `BAR_FILL` of what the label
-    leaves, within `thickness_range`; the gap between rows is at most `MAX_ROW_GAP` rows, so a
-    few rows stay together instead of spreading over a tall frame.
-
-    Raises:
-        RenderError: The bars would be thinner than the least thickness.
-    """
-    thinnest, thickest = thickness_range
-    share = (top - bottom) / count
-    thickness = min((share - label_height - label_gap) * BAR_FILL, thickest)
-    if thickness < thinnest:
-        raise RenderError("not enough room for the bars; shorten the title or the labels")
-    row_height = label_height + label_gap + thickness
-    gap = min(share - row_height, row_height * MAX_ROW_GAP)
-    total = count * row_height + (count - 1) * gap
-    first_top = (top + bottom + total) / 2
-    rows = []
-    for index in range(count):
-        row_top = first_top - index * (row_height + gap)
-        rows.append(Row(row_top, row_top - label_height - label_gap - thickness / 2, thickness))
-    return rows
-
-
-@dataclass(frozen=True)
-class BarGeometry:
-    """Where the parts of a bar chart go, for columns or rows.
-
-    Attributes:
-        labels: The category labels, in place.
-        bar: Builds bar `index` grown by a share from 0 to 1, in a fill color.
-        value: Builds the value label of bar `index` grown by a share, at the bar's end.
-        axis: The line the bars grow from, or None.
-    """
-
-    labels: list["VMobject"]
-    bar: Callable[[int, float, str], "VMobject"]
-    value: Callable[[int, float], "VMobject"]
-    axis: "VMobject | None"
 
 
 @register
@@ -178,7 +108,7 @@ class BarChartType(ChartType):
             return glyphs(format_number(bars[index].value * grown, value_formats[index]))
 
         final_values = [value_text(index, 1.0) for index in range(count)]
-        if uses_rows(chart, layout.vertical):
+        if uses_rows(chart.layout, layout.vertical):
             geometry = self._rows(bars, value_text, final_values)
         else:
             geometry = self._columns(bars, value_text, final_values)
@@ -263,34 +193,24 @@ class BarChartType(ChartType):
         """Columns growing up from a baseline, with the labels under the baseline."""
         from manim import Line, Rectangle, VGroup
 
-        from vizreel.render import elements
-
-        fonts, sizes, colors = self.theme.fonts, self.theme.sizes, self.theme.colors
+        sizes, colors = self.theme.sizes, self.theme.colors
         content = self.layout.content
         count = len(bars)
         slot = content.width / count
         centers = band_centers(count, content.left, content.right)
         label_gap = stack_gap(sizes.label, sizes.label)
 
-        def category_label(content_text: str) -> "TextBlock":
-            max_width = slot * LABEL_FILL
-            single = elements.text_block(content_text, fonts.body, sizes.label, colors.muted)
-            if single.mobject.width <= max_width:
-                return single
-            for split in two_line_splits(content_text):
-                lines = [
-                    elements.text(part, fonts.body, sizes.label, colors.muted) for part in split
-                ]
-                if all(line.width <= max_width for line in lines):
-                    return elements.paragraph_block(
-                        list(split), fonts.body, sizes.label, colors.muted
-                    )
-            raise RenderError(
-                f'bar label "{content_text}" is too long for {count} bars; shorten it '
-                "or use layout: rows"
+        label_blocks = [
+            category_label(
+                bar.label,
+                self.theme,
+                slot * LABEL_FILL,
+                "center",
+                f'bar label "{bar.label}" is too long for {count} bars; shorten it '
+                "or use layout: rows",
             )
-
-        label_blocks = [category_label(bar.label) for bar in bars]
+            for bar in bars
+        ]
         labels_height = max(block.height for block in label_blocks)
         baseline = content.bottom + labels_height + label_gap
         for block, center in zip(label_blocks, centers, strict=True):
@@ -345,29 +265,22 @@ class BarChartType(ChartType):
         """Rows growing to the right, each bar under its label, values at the bar ends."""
         from manim import LEFT, Rectangle, VGroup
 
-        from vizreel.render import elements
-
-        fonts, sizes, colors = self.theme.fonts, self.theme.sizes, self.theme.colors
+        sizes = self.theme.sizes
         content = self.layout.content
         count = len(bars)
         label_gap = stack_gap(sizes.label, sizes.label) / 2
         value_gap = stack_gap(sizes.value, sizes.value)
 
-        def row_label(content_text: str) -> "TextBlock":
-            single = elements.text_block(content_text, fonts.body, sizes.label, colors.muted)
-            if single.mobject.width <= content.width:
-                return single
-            for split in two_line_splits(content_text):
-                lines = [
-                    elements.text(part, fonts.body, sizes.label, colors.muted) for part in split
-                ]
-                if all(line.width <= content.width for line in lines):
-                    return elements.paragraph_block(
-                        list(split), fonts.body, sizes.label, colors.muted, align="left"
-                    )
-            raise RenderError(f'bar label "{content_text}" is too long; shorten it')
-
-        label_blocks = [row_label(bar.label) for bar in bars]
+        label_blocks = [
+            category_label(
+                bar.label,
+                self.theme,
+                content.width,
+                "left",
+                f'bar label "{bar.label}" is too long; shorten it',
+            )
+            for bar in bars
+        ]
         rows = plan_rows(
             count,
             content.top,
