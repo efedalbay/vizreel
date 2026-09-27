@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from vizreel.charts.base import ChartType, check_reading_time, split_duration
 from vizreel.charts.registry import register
@@ -24,6 +24,59 @@ STEM_GAPS = 1.5
 """Length of the stem between the axis and a label, in label gaps."""
 EDGE_SLOTS = 1.5
 """Slots the first and last label may span when labels alternate sides."""
+VERTICAL_LINES = 3
+"""Most lines of a label on a vertical timeline, where labels have the whole width."""
+VERTICAL_STEM_GAPS = 2.5
+"""Length of the stem between the axis and a label on a vertical timeline, in label gaps."""
+MAX_VERTICAL_PITCH = 1.8
+"""Most distance between events on a vertical timeline, as a multiple of the least."""
+
+
+def plan_vertical_events(
+    top: float, bottom: float, heights: Sequence[float], gap: float
+) -> list[float]:
+    """Return the top of each event's label on a vertical timeline, first event first.
+
+    Events are evenly spaced and centered between `bottom` and `top`. The spacing leaves at
+    least `gap` under the tallest label, and is at most `MAX_VERTICAL_PITCH` times that, so a
+    few events stay together instead of spreading over a tall frame.
+
+    Raises:
+        RenderError: The labels do not fit.
+    """
+    count = len(heights)
+    least = max(heights) + gap
+    fill = (top - bottom - heights[-1]) / (count - 1)
+    pitch = min(fill, least * MAX_VERTICAL_PITCH)
+    if pitch < least - 1e-9:
+        raise RenderError("not enough room for the timeline; shorten the labels or the title")
+    total = (count - 1) * pitch + heights[-1]
+    first = (top + bottom + total) / 2
+    return [first - index * pitch for index in range(count)]
+
+
+@dataclass(frozen=True)
+class TimelineGeometry:
+    """Where the parts of a timeline go, horizontal or vertical.
+
+    The axis is drawn by a pen that moves along it; positions along the axis are shares of
+    its length, from 0 at the start to 1 at the end.
+
+    Attributes:
+        blocks: Each event's date and label, in place.
+        shares: Where each event is along the axis.
+        appear_share: How far the pen moves while an event appears.
+        axis: Builds the axis drawn up to a share of its length.
+        stem: Builds event `index`'s stem grown by a share from 0 to 1.
+        dot: Builds event `index`'s dot grown by a share from 0 to 1.
+    """
+
+    blocks: list["VMobject"]
+    shares: list[float]
+    appear_share: float
+    axis: Callable[[float], "VMobject"]
+    stem: Callable[[int, float], "VMobject"]
+    dot: Callable[[int, float], "VMobject"]
 
 
 @dataclass(frozen=True)
@@ -149,11 +202,8 @@ class TimelineChartType(ChartType):
     def build(self, scene: "Scene") -> None:
         """Add the timeline to the scene and animate it."""
         from manim import (
-            DOWN,
             AnimationGroup,
-            Dot,
             FadeIn,
-            Line,
             ManimColor,
             UpdateFromAlphaFunc,
             ValueTracker,
@@ -168,91 +218,15 @@ class TimelineChartType(ChartType):
         chart = self.chart
         assert isinstance(chart, TimelineChart)
         theme, layout = self.theme, self.layout
-        fonts, sizes, colors, motion = theme.fonts, theme.sizes, theme.colors, theme.motion
+        colors, motion = theme.colors, theme.motion
         ease = elements.easing(theme)
-        content = layout.content
         events = chart.events
         count = len(events)
-        slot = content.width / count
-        xs = band_centers(count, content.left, content.right)
-        gap = stack_gap(sizes.label, sizes.label)
-        dot_radius = px(sizes.dot) / 2
-        stem_length = gap * STEM_GAPS
 
         header = elements.header(chart.title, chart.subtitle, theme, layout)
         source = elements.source_line(chart.source, theme, layout)
-
-        widths: dict[str, float] = {}
-
-        def fits(line: str, width: float) -> bool:
-            if line not in widths:
-                widths[line] = elements.text(line, fonts.body, sizes.label, colors.muted).width
-            return widths[line] <= width
-
-        plan = plan_labels(
-            [event.date for event in events], [event.label for event in events], content.width, fits
-        )
-
-        date_metrics = elements.line_metrics(fonts.heading, sizes.label)
-        label_metrics = elements.line_metrics(fonts.body, sizes.label)
-
-        def block(index: int) -> tuple["VMobject", float, float]:
-            """Build an event's date and label, and return it with its top and bottom.
-
-            Lines sit on their baselines, and the top and bottom come from the font, not the
-            ink, so a dotted capital I or a descender does not move a label off its row.
-            """
-            lines = plan.lines[index]
-            date = elements.text(events[index].date, fonts.heading, sizes.label, colors.text)
-            description = elements.paragraph(lines, fonts.body, sizes.label, colors.muted)
-            description.next_to(date, DOWN)
-            date_baseline = elements.baseline(date, events[index].date, fonts.heading, sizes.label)
-            first_baseline = date_baseline - gap / 2 - label_metrics.ascent
-            description.shift(
-                (
-                    0.0,
-                    first_baseline
-                    - elements.baseline(description[0], lines[0], fonts.body, sizes.label),
-                    0.0,
-                )
-            )
-            last_baseline = elements.baseline(description[-1], lines[-1], fonts.body, sizes.label)
-            top = date_baseline + date_metrics.ascent
-            bottom = last_baseline - label_metrics.descent
-            return VGroup(date, description), top, bottom
-
-        built = [block(index) for index in range(count)]
-        blocks = [event_block for event_block, _, _ in built]
-        heights = [top - bottom for _, top, bottom in built]
-        sides = [side_of(index, plan.alternate) for index in range(count)]
-        above = max((h for h, s in zip(heights, sides, strict=True) if s > 0), default=0.0)
-        below = max((h for h, s in zip(heights, sides, strict=True) if s < 0), default=0.0)
-        above_height = stem_length + above if above else dot_radius
-        below_height = stem_length + below if below else dot_radius
-        axis_y = content.center[1] + (below_height - above_height) / 2
-        if above_height + below_height > content.height:
-            raise RenderError("not enough room for the timeline; shorten the labels or the title")
-
-        for index, ((event_block, top, bottom), side) in enumerate(zip(built, sides, strict=True)):
-            x = clamp_center(xs[index], event_block.width, content.left, content.right)
-            stem_end = axis_y + side * stem_length
-            dy = stem_end - bottom if side > 0 else stem_end - top
-            event_block.shift((x - event_block.get_center()[0], dy, 0.0))
-
-        axis_width = stroke_width(sizes.line)
-
-        def stem(index: int, grown: float) -> "VMobject":
-            start = axis_y + sides[index] * dot_radius
-            end = axis_y + sides[index] * stem_length * grown
-            return Line(
-                (xs[index], start, 0.0),
-                (xs[index], end, 0.0),
-                color=colors.grid,
-                stroke_width=stroke_width(sizes.grid_line),
-            )
-
-        def dot(index: int, grown: float) -> "VMobject":
-            return Dot((xs[index], axis_y, 0.0), radius=dot_radius * grown, color=colors.accent)
+        geometry = self._vertical() if layout.vertical else self._horizontal()
+        blocks = geometry.blocks
 
         intro = motion.title_fade if len(header) else 0.0
         emphasized = next((index for index, event in enumerate(events) if event.emphasis), None)
@@ -262,11 +236,9 @@ class TimelineChartType(ChartType):
             highlight=motion.highlight if emphasized is not None else 0.0,
             hold=motion.hold,
         )
-        appear_distance = slot / 2
 
         def appears_at(index: int) -> float:
-            share = (xs[index] - content.left) / content.width
-            return phases.main_start + inverse(ease, share) * phases.main
+            return phases.main_start + inverse(ease, geometry.shares[index]) * phases.main
 
         check_reading_time(
             [(text, 0.0) for text in (chart.title, chart.subtitle, chart.source) if text]
@@ -288,28 +260,17 @@ class TimelineChartType(ChartType):
         progress = ValueTracker(0.0)
 
         def pen() -> float:
-            eased = ease(progress.get_value())
-            return content.right if eased >= 1 else content.left + eased * content.width
+            return min(ease(progress.get_value()), 1.0)
 
         def grown(index: int) -> float:
-            local = (pen() - xs[index]) / appear_distance
+            local = (pen() - geometry.shares[index]) / geometry.appear_share
             return ease(min(max(local, 0.0), 1.0))
-
-        def axis_at(end: float) -> "VMobject":
-            if end <= content.left:
-                return VGroup()
-            return Line(
-                (content.left, axis_y, 0.0),
-                (end, axis_y, 0.0),
-                color=colors.grid,
-                stroke_width=axis_width,
-            )
 
         def marks_at(index: int) -> "VMobject":
             amount = grown(index)
             if amount <= 0:
                 return VGroup()
-            return VGroup(stem(index, amount), dot(index, amount))
+            return VGroup(geometry.stem(index, amount), geometry.dot(index, amount))
 
         def appearing_marks(index: int) -> "VMobject":
             return always_redraw(lambda: marks_at(index))
@@ -318,7 +279,7 @@ class TimelineChartType(ChartType):
             # Setting the opacity in place is much cheaper than copying the text every frame.
             blocks[index].add_updater(lambda block: block.set_opacity(grown(index)))
 
-        drawing_axis = always_redraw(lambda: axis_at(pen()))
+        drawing_axis = always_redraw(lambda: geometry.axis(pen()))
         appearing = [appearing_marks(index) for index in range(count)]
         for index in range(count):
             fade_with_pen(index)
@@ -332,13 +293,13 @@ class TimelineChartType(ChartType):
         reveal: list[Animation] = [*opening, sweep]
         scene.play(AnimationGroup(*reveal), run_time=phases.main)
 
-        stems = [stem(index, 1.0) for index in range(count)]
-        dots = [dot(index, 1.0) for index in range(count)]
+        stems = [geometry.stem(index, 1.0) for index in range(count)]
+        dots = [geometry.dot(index, 1.0) for index in range(count)]
         for event_block in blocks:
             event_block.clear_updaters()
             event_block.set_opacity(1.0)
         scene.remove(drawing_axis, *appearing)
-        scene.add(axis_at(content.right), *stems, *dots)
+        scene.add(geometry.axis(1.0), *stems, *dots)
 
         if emphasized is not None:
             backdrop = ManimColor(colors.surface if layout.panel else colors.background)
@@ -357,3 +318,195 @@ class TimelineChartType(ChartType):
             ]
             scene.play(*beat, run_time=phases.highlight, rate_func=ease)
         scene.wait(phases.hold)
+
+    def _event_block(
+        self, index: int, lines: list[str], align: Literal["center", "left"]
+    ) -> tuple["VMobject", float, float]:
+        """Build an event's date and label, and return it with its top and bottom.
+
+        Lines sit on their baselines, and the top and bottom come from the font, not the ink,
+        so a dotted capital I or a descender does not move a label off its row.
+        """
+        from manim import DOWN, LEFT, ORIGIN, VGroup
+
+        from vizreel.render import elements
+
+        fonts, sizes, colors = self.theme.fonts, self.theme.sizes, self.theme.colors
+        assert isinstance(self.chart, TimelineChart)
+        event = self.chart.events[index]
+        gap = stack_gap(sizes.label, sizes.label)
+        date_metrics = elements.line_metrics(fonts.heading, sizes.label)
+        label_metrics = elements.line_metrics(fonts.body, sizes.label)
+        date = elements.text(event.date, fonts.heading, sizes.label, colors.text)
+        description = elements.paragraph(lines, fonts.body, sizes.label, colors.muted, align)
+        description.next_to(date, DOWN, aligned_edge=LEFT if align == "left" else ORIGIN)
+        date_baseline = elements.baseline(date, event.date, fonts.heading, sizes.label)
+        first_baseline = date_baseline - gap / 2 - label_metrics.ascent
+        description.shift(
+            (
+                0.0,
+                first_baseline
+                - elements.baseline(description[0], lines[0], fonts.body, sizes.label),
+                0.0,
+            )
+        )
+        last_baseline = elements.baseline(description[-1], lines[-1], fonts.body, sizes.label)
+        top = date_baseline + date_metrics.ascent
+        bottom = last_baseline - label_metrics.descent
+        return VGroup(date, description), top, bottom
+
+    def _fits(self) -> Callable[[str, float], bool]:
+        """Return a check whether a line of label text fits a width, remembering widths."""
+        from vizreel.render import elements
+
+        fonts, sizes, colors = self.theme.fonts, self.theme.sizes, self.theme.colors
+        widths: dict[str, float] = {}
+
+        def fits(line: str, width: float) -> bool:
+            if line not in widths:
+                widths[line] = elements.text(line, fonts.body, sizes.label, colors.muted).width
+            return widths[line] <= width
+
+        return fits
+
+    def _horizontal(self) -> TimelineGeometry:
+        """Events along a horizontal axis, labels below it or alternating above and below."""
+        from manim import Dot, Line, VGroup
+
+        chart = self.chart
+        assert isinstance(chart, TimelineChart)
+        sizes, colors = self.theme.sizes, self.theme.colors
+        content = self.layout.content
+        events = chart.events
+        count = len(events)
+        slot = content.width / count
+        xs = band_centers(count, content.left, content.right)
+        gap = stack_gap(sizes.label, sizes.label)
+        dot_radius = px(sizes.dot) / 2
+        stem_length = gap * STEM_GAPS
+
+        plan = plan_labels(
+            [event.date for event in events],
+            [event.label for event in events],
+            content.width,
+            self._fits(),
+        )
+        built = [self._event_block(index, plan.lines[index], "center") for index in range(count)]
+        heights = [top - bottom for _, top, bottom in built]
+        sides = [side_of(index, plan.alternate) for index in range(count)]
+        above = max((h for h, s in zip(heights, sides, strict=True) if s > 0), default=0.0)
+        below = max((h for h, s in zip(heights, sides, strict=True) if s < 0), default=0.0)
+        above_height = stem_length + above if above else dot_radius
+        below_height = stem_length + below if below else dot_radius
+        axis_y = content.center[1] + (below_height - above_height) / 2
+        if above_height + below_height > content.height:
+            raise RenderError("not enough room for the timeline; shorten the labels or the title")
+
+        for index, ((event_block, top, bottom), side) in enumerate(zip(built, sides, strict=True)):
+            x = clamp_center(xs[index], event_block.width, content.left, content.right)
+            stem_end = axis_y + side * stem_length
+            dy = stem_end - bottom if side > 0 else stem_end - top
+            event_block.shift((x - event_block.get_center()[0], dy, 0.0))
+
+        def axis(share: float) -> "VMobject":
+            if share <= 0:
+                return VGroup()
+            return Line(
+                (content.left, axis_y, 0.0),
+                (content.left + share * content.width, axis_y, 0.0),
+                color=colors.grid,
+                stroke_width=stroke_width(sizes.line),
+            )
+
+        def stem(index: int, grown: float) -> "VMobject":
+            return Line(
+                (xs[index], axis_y + sides[index] * dot_radius, 0.0),
+                (xs[index], axis_y + sides[index] * stem_length * grown, 0.0),
+                color=colors.grid,
+                stroke_width=stroke_width(sizes.grid_line),
+            )
+
+        def dot(index: int, grown: float) -> "VMobject":
+            return Dot((xs[index], axis_y, 0.0), radius=dot_radius * grown, color=colors.accent)
+
+        return TimelineGeometry(
+            blocks=[event_block for event_block, _, _ in built],
+            shares=[(x - content.left) / content.width for x in xs],
+            appear_share=slot / 2 / content.width,
+            axis=axis,
+            stem=stem,
+            dot=dot,
+        )
+
+    def _vertical(self) -> TimelineGeometry:
+        """Events down a vertical axis at the left, each label to the right of its dot."""
+        from manim import LEFT, Dot, Line, VGroup
+
+        from vizreel.render import elements
+
+        chart = self.chart
+        assert isinstance(chart, TimelineChart)
+        fonts, sizes, colors = self.theme.fonts, self.theme.sizes, self.theme.colors
+        content = self.layout.content
+        events = chart.events
+        count = len(events)
+        gap = stack_gap(sizes.label, sizes.label)
+        dot_radius = px(sizes.dot) / 2
+        axis_x = content.left + dot_radius * EMPHASIS_SCALE
+        label_x = axis_x + gap * VERTICAL_STEM_GAPS
+        label_width = content.right - label_x
+        fits = self._fits()
+
+        all_lines = []
+        for event in events:
+            lines = _wrap(event.label, label_width, VERTICAL_LINES, fits)
+            if not fits(event.date, label_width):
+                raise RenderError(f'event date "{event.date}" is too long; shorten it')
+            if lines is None:
+                raise RenderError(f'event label "{event.label}" is too long; shorten it')
+            all_lines.append(lines)
+        built = [self._event_block(index, all_lines[index], "left") for index in range(count)]
+        heights = [top - bottom for _, top, bottom in built]
+        tops = plan_vertical_events(content.top, content.bottom, heights, gap * 2)
+        # The dot sits level with the middle of the date's capitals.
+        dot_drop = elements.line_metrics(fonts.heading, sizes.label).ascent / 2
+        ys = [top - dot_drop for top in tops]
+        for (event_block, top, _), wanted_top in zip(built, tops, strict=True):
+            event_block.shift((0.0, wanted_top - top, 0.0))
+            event_block.align_to((label_x, 0.0, 0.0), LEFT)
+
+        axis_top = tops[0]
+        axis_length = tops[0] - (tops[-1] - heights[-1])
+
+        def axis(share: float) -> "VMobject":
+            if share <= 0:
+                return VGroup()
+            return Line(
+                (axis_x, axis_top, 0.0),
+                (axis_x, axis_top - share * axis_length, 0.0),
+                color=colors.grid,
+                stroke_width=stroke_width(sizes.line),
+            )
+
+        def stem(index: int, grown: float) -> "VMobject":
+            start = axis_x + dot_radius
+            end = label_x - gap / 4
+            return Line(
+                (start, ys[index], 0.0),
+                (start + (end - start) * grown, ys[index], 0.0),
+                color=colors.grid,
+                stroke_width=stroke_width(sizes.grid_line),
+            )
+
+        def dot(index: int, grown: float) -> "VMobject":
+            return Dot((axis_x, ys[index], 0.0), radius=dot_radius * grown, color=colors.accent)
+
+        pitch = tops[0] - tops[1]
+        return TimelineGeometry(
+            blocks=[event_block for event_block, _, _ in built],
+            shares=[(axis_top - y) / axis_length for y in ys],
+            appear_share=pitch / 2 / axis_length,
+            axis=axis,
+            stem=stem,
+            dot=dot,
+        )

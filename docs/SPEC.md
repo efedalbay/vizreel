@@ -184,9 +184,9 @@ Default `duration`: 5.
 
 ## `timeline` — sequence of events
 
-Events placed in order along a horizontal line.
+Events placed in order along a line: horizontal in a 16:9 frame, vertical in a 9:16 frame.
 
-The line draws from left to right, and each event appears as the line reaches it. Events are evenly spaced. Labels sit below the line when each fits its own space in at most two lines; otherwise they alternate below and above the line, with more room and up to three lines each. A date always stays on one line. A date or label that still does not fit is an error asking you to shorten it.
+The line draws from its start to its end, and each event appears as the line reaches it. Events are evenly spaced. On a horizontal line, labels sit below the line when each fits its own space in at most two lines; otherwise they alternate below and above the line, with more room and up to three lines each. On a vertical line, events run from top to bottom and each label sits to the right of its event, with the whole width for up to three lines. A date always stays on one line. A date or label that still does not fit is an error asking you to shorten it.
 
 At the highlight beat the emphasized event's dot grows and turns to the `highlight` color, its date turns to the `highlight` color, and the other events' marks dim.
 

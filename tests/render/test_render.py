@@ -312,6 +312,29 @@ def test_timeline_emphasis_marks_the_emphasized_event(tmp_path: Path) -> None:
     assert PREVIEW[0] * 0.5 < np.median(columns) < PREVIEW[0] * 0.75
 
 
+def test_vertical_timeline_runs_down_the_left(tmp_path: Path) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    [result] = render_spec(
+        FIXTURES / "timeline-7.yaml",
+        RenderOptions(out_dir=tmp_path, quality="preview", still=True, aspect="9:16"),
+        reraise=True,
+    )
+    assert result.error is None
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    rows, columns = np.nonzero(np.all(np.abs(rgb - hex_rgb(colors.highlight)) <= 12, axis=2))
+
+    assert len(frames) == 9 * PREVIEW_FPS
+    assert rgb.shape[:2] == (PREVIEW[0], PREVIEW[1])
+    # The emphasized event is the fourth of seven: its dot and date sit near the middle
+    # height, at the left.
+    assert PREVIEW[0] * 0.3 < np.median(rows) < PREVIEW[0] * 0.6
+    assert columns.min() < PREVIEW[1] * 0.2
+
+
 def test_a_long_title_wraps_onto_two_lines(tmp_path: Path) -> None:
     spec = tmp_path / "spec.yaml"
     spec.write_text(

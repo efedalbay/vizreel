@@ -2,10 +2,12 @@ import pytest
 
 from vizreel.charts.timeline import (
     ALTERNATING_LINES,
+    MAX_VERTICAL_PITCH,
     ONE_SIDE_LINES,
     inverse,
     label_widths,
     plan_labels,
+    plan_vertical_events,
     side_of,
 )
 from vizreel.errors import RenderError
@@ -81,3 +83,22 @@ def test_inverse_of_a_curve(value: float) -> None:
 
     assert inverse(lambda t: t, value) == pytest.approx(value, abs=1e-9)
     assert ease_out_cubic(inverse(ease_out_cubic, value)) == pytest.approx(value, abs=1e-9)
+
+
+def test_vertical_events_fill_the_height_evenly() -> None:
+    tops = plan_vertical_events(top=4.0, bottom=-4.0, heights=[1.0, 1.0, 1.0, 1.0], gap=0.5)
+
+    assert tops == pytest.approx([4.0, 4.0 - 7 / 3, 4.0 - 14 / 3, -3.0])
+
+
+def test_few_vertical_events_stay_together_in_the_middle() -> None:
+    tops = plan_vertical_events(top=6.0, bottom=-6.0, heights=[1.0, 2.0], gap=0.5)
+    pitch = (2.0 + 0.5) * MAX_VERTICAL_PITCH
+
+    assert tops[0] - tops[1] == pytest.approx(pitch)
+    assert (tops[0] + tops[1] - 2.0) / 2 == pytest.approx(0.0)
+
+
+def test_vertical_events_that_do_not_fit_are_an_error() -> None:
+    with pytest.raises(RenderError, match="not enough room"):
+        plan_vertical_events(top=1.0, bottom=-1.0, heights=[1.0, 1.0, 1.0], gap=0.2)
