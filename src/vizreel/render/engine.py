@@ -1,5 +1,6 @@
 """Render the charts of a spec to clips, one file per chart."""
 
+import math
 import os
 import shutil
 import tempfile
@@ -11,7 +12,7 @@ from typing import Literal
 
 from vizreel.charts.registry import builtin_registry
 from vizreel.errors import OutputError, RenderError, VizreelError
-from vizreel.render.layout import build_layout
+from vizreel.render.layout import Aspect, build_layout, frame_size
 from vizreel.spec.loader import load_spec
 from vizreel.spec.models import BaseChart, Spec
 from vizreel.themes.loader import load_theme
@@ -20,15 +21,12 @@ from vizreel.themes.models import Theme
 Quality = Literal["preview", "final"]
 OutputFormat = Literal["mov", "webm", "mp4"]
 
-RESOLUTIONS: dict[str, tuple[int, int]] = {
-    "720p": (1280, 720),
-    "1080p": (1920, 1080),
-    "1440p": (2560, 1440),
-    "4k": (3840, 2160),
-}
-PREVIEW_SIZE = (854, 480)
+SHORT_SIDES: dict[str, int] = {"720p": 720, "1080p": 1080, "1440p": 1440, "4k": 2160}
+"""Pixels on the short side of the frame for each `meta.resolution`."""
+PREVIEW_SHORT_SIDE = 480
 PREVIEW_FPS = 15
 PREVIEW_SUFFIX = ".preview"
+VERTICAL_SUFFIX = ".vertical"
 TRANSPARENT_FORMATS = frozenset({"mov", "webm"})
 
 
@@ -42,6 +40,7 @@ class RenderOptions:
         quality: "preview" renders small and at 15 fps; "final" uses the spec settings.
         format: Output format, overriding `meta.format`.
         still: Also save the last frame of each chart as PNG.
+        aspect: Frame shape, overriding `meta.aspect`.
     """
 
     out_dir: Path = Path("out")
@@ -49,6 +48,7 @@ class RenderOptions:
     quality: Quality = "final"
     format: OutputFormat | None = None
     still: bool = False
+    aspect: Aspect | None = None
 
 
 @dataclass(frozen=True)
@@ -72,12 +72,13 @@ class ChartResult:
 
 @dataclass(frozen=True)
 class FrameSettings:
-    """Pixel size, frame rate and background of the output."""
+    """Pixel size, frame rate, shape and background of the output."""
 
     width: int
     height: int
     fps: int
     format: OutputFormat
+    aspect: Aspect = "16:9"
 
     @property
     def transparent(self) -> bool:
@@ -85,23 +86,40 @@ class FrameSettings:
         return self.format in TRANSPARENT_FORMATS
 
 
+def frame_pixels(short_side: int, aspect: Aspect) -> tuple[int, int]:
+    """Width and height in pixels of a frame.
+
+    The long side is rounded up to an even number, which video encoders need.
+    """
+    long_side = math.ceil(short_side * 16 / 9 / 2) * 2
+    return (long_side, short_side) if aspect == "16:9" else (short_side, long_side)
+
+
 def frame_settings(spec: Spec, options: RenderOptions) -> FrameSettings:
     """Combine the spec's `meta` with the command-line options."""
     output_format = options.format or spec.meta.format
+    aspect = options.aspect or spec.meta.aspect
     if options.quality == "preview":
-        return FrameSettings(*PREVIEW_SIZE, PREVIEW_FPS, output_format)
-    width, height = RESOLUTIONS[spec.meta.resolution]
-    return FrameSettings(width, height, spec.meta.fps, output_format)
+        short_side, fps = PREVIEW_SHORT_SIDE, PREVIEW_FPS
+    else:
+        short_side, fps = SHORT_SIDES[spec.meta.resolution], spec.meta.fps
+    return FrameSettings(*frame_pixels(short_side, aspect), fps, output_format, aspect)
 
 
 def output_paths(
-    chart_id: str, options: RenderOptions, output_format: OutputFormat
+    chart_id: str, options: RenderOptions, settings: FrameSettings
 ) -> tuple[Path, Path | None]:
     """Return the clip path and, if a still is requested, the PNG path for a chart.
 
-    Preview files get a `.preview` suffix, so a preview never replaces a final clip.
+    Vertical files get a `.vertical` suffix and preview files a `.preview` suffix, so that
+    renders of one chart in another shape or quality never replace each other.
     """
-    stem = chart_id + (PREVIEW_SUFFIX if options.quality == "preview" else "")
+    stem = (
+        chart_id
+        + (VERTICAL_SUFFIX if settings.aspect == "9:16" else "")
+        + (PREVIEW_SUFFIX if options.quality == "preview" else "")
+    )
+    output_format = settings.format
     video = options.out_dir / f"{stem}.{output_format}"
     still = options.out_dir / f"{stem}.png" if options.still else None
     return video, still
@@ -178,7 +196,7 @@ def _render_safely(
     reraise: bool,
 ) -> ChartResult:
     started = time.perf_counter()
-    video, still = output_paths(chart.id, options, settings.format)
+    video, still = output_paths(chart.id, options, settings)
     try:
         render_chart(chart, theme, settings, video, still)
     except VizreelError as exc:
@@ -209,11 +227,13 @@ def render_chart(
     chart_type = builtin_registry().get(chart.type)
     layout = build_layout(
         theme.sizes,
+        aspect=settings.aspect,
         panel=theme.background_panel and settings.transparent,
         title_lines=1 if chart.title else 0,
         subtitle_lines=1 if chart.subtitle else 0,
         source_lines=1 if chart.source else 0,
     )
+    scene_width, scene_height = frame_size(settings.aspect)
     with tempfile.TemporaryDirectory(prefix="vizreel-", ignore_cleanup_errors=True) as media_dir:
         manim_config = {
             "verbosity": "ERROR",
@@ -222,6 +242,8 @@ def render_chart(
             "output_file": chart.id,
             "pixel_width": settings.width,
             "pixel_height": settings.height,
+            "frame_width": scene_width,
+            "frame_height": scene_height,
             "frame_rate": settings.fps,
             "transparent": settings.transparent,
             "format": settings.format,

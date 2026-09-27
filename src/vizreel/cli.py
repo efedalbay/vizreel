@@ -79,6 +79,13 @@ class QualityChoice(StrEnum):
     final = "final"
 
 
+class AspectChoice(StrEnum):
+    """Values of --aspect."""
+
+    landscape = "16:9"
+    vertical = "9:16"
+
+
 class FormatChoice(StrEnum):
     """Values of --format."""
 
@@ -114,6 +121,15 @@ def render(
     still: Annotated[
         bool, typer.Option("--still", help="Also save the last frame as PNG.")
     ] = False,
+    aspect: Annotated[
+        AspectChoice | None,
+        typer.Option(
+            "--aspect",
+            help="16:9 is landscape; 9:16 is vertical, for Shorts, and adds .vertical to "
+            "file names. Default: meta.aspect.",
+            show_default=False,
+        ),
+    ] = None,
     watch: Annotated[
         bool,
         typer.Option(
@@ -130,6 +146,7 @@ def render(
         quality=quality.value,
         format=output_format.value if output_format else None,
         still=still,
+        aspect=aspect.value if aspect else None,
     )
     console = _stdout()
     if watch:

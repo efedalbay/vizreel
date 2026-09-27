@@ -42,8 +42,30 @@ def test_meta_defaults() -> None:
     spec = parse("  - { id: users, type: stat, value: 1 }")
 
     assert spec.meta == Meta(
-        title=None, theme="default", resolution="1080p", fps=60, format="mov", locale="en-US"
+        title=None,
+        theme="default",
+        resolution="1080p",
+        aspect="16:9",
+        fps=60,
+        format="mov",
+        locale="en-US",
     )
+
+
+def test_meta_aspect_accepts_vertical_and_rejects_others() -> None:
+    vertical = parse_spec(
+        'version: 1\nmeta: { aspect: "9:16" }\ncharts: [{ id: a, type: stat, value: 1 }]', "t.yaml"
+    )
+
+    assert vertical.meta.aspect == "9:16"
+    with pytest.raises(SpecError) as caught:
+        parse_spec(
+            'version: 1\nmeta: { aspect: "4:3" }\ncharts: [{ id: a, type: stat, value: 1 }]',
+            "t.yaml",
+        )
+    [issue] = caught.value.issues
+    assert str(issue).startswith("meta.aspect:")
+    assert "16:9" in str(issue) and "9:16" in str(issue)
 
 
 def test_charts_become_their_type_specific_models() -> None:

@@ -373,6 +373,21 @@ def test_render_command(tmp_path: Path) -> None:
     assert result.stdout.strip().endswith("1 rendered, 0 failed")
 
 
+def test_vertical_stat_has_the_vertical_size_and_duration(tmp_path: Path) -> None:
+    [result] = render_spec(
+        SHOWCASE,
+        RenderOptions(out_dir=tmp_path, only=(STAT_ID,), quality="preview", aspect="9:16"),
+        reraise=True,
+    )
+
+    assert result.video is not None
+    assert result.video.name == f"{STAT_ID}.vertical.preview.mov"
+    with av.open(str(result.video)) as container:
+        stream = container.streams.video[0]
+        assert (stream.width, stream.height) == (PREVIEW[1], PREVIEW[0])
+    assert len(frames_rgba(result.video)) == STAT_DURATION * PREVIEW_FPS
+
+
 def test_text_lays_out_the_same_at_every_output_size(tmp_path: Path) -> None:
     """Pango wraps text at the width of its surface; the surface must not be the video's."""
     from manim import tempconfig

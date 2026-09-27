@@ -3,12 +3,13 @@ from pathlib import Path
 import pytest
 
 from vizreel.render.layout import (
-    FRAME_HEIGHT,
-    FRAME_WIDTH,
+    LONG_SIDE,
+    SHORT_SIDE,
     Box,
     Layout,
     build_layout,
     font_size,
+    frame_size,
     px,
     stroke_width,
 )
@@ -24,7 +25,7 @@ def layout(*, panel: bool = True, title: int = 1, subtitle: int = 0, source: int
 
 
 def test_pixels_at_1080p_convert_to_scene_units() -> None:
-    assert px(1080) == pytest.approx(FRAME_HEIGHT)
+    assert px(1080) == pytest.approx(SHORT_SIDE)
     assert px(135) == pytest.approx(1)
 
 
@@ -41,7 +42,7 @@ def test_stroke_width_is_hundredths_of_a_scene_unit() -> None:
 def test_frame_is_16_by_9_around_origin() -> None:
     frame = layout().frame
 
-    assert (frame.width, frame.height) == pytest.approx((FRAME_WIDTH, FRAME_HEIGHT))
+    assert (frame.width, frame.height) == pytest.approx((LONG_SIDE, SHORT_SIDE))
     assert frame.center == pytest.approx((0, 0))
     assert frame.width / frame.height == pytest.approx(16 / 9)
 
@@ -49,8 +50,8 @@ def test_frame_is_16_by_9_around_origin() -> None:
 def test_safe_area_keeps_five_percent_margin() -> None:
     result = layout()
 
-    assert result.safe.width == pytest.approx(FRAME_WIDTH * 0.9)
-    assert result.safe.height == pytest.approx(FRAME_HEIGHT * 0.9)
+    assert result.safe.width == pytest.approx(LONG_SIDE * 0.9)
+    assert result.safe.height == pytest.approx(SHORT_SIDE * 0.9)
     assert result.safe.center == pytest.approx((0, 0))
 
 
@@ -109,3 +110,27 @@ def test_box_geometry() -> None:
     assert box.inset(1) == Box(-1, 0, 3, 2)
     assert box.contains(Box(0, 0, 1, 1))
     assert not box.contains(Box(0, 0, 5, 1))
+
+
+def test_vertical_frame_is_9_by_16_around_origin() -> None:
+    frame = build_layout(
+        SIZES, aspect="9:16", panel=False, title_lines=0, subtitle_lines=0, source_lines=0
+    ).frame
+
+    assert (frame.width, frame.height) == pytest.approx((SHORT_SIDE, LONG_SIDE))
+    assert frame.center == pytest.approx((0, 0))
+
+
+def test_vertical_safe_area_keeps_clear_of_platform_overlays() -> None:
+    result = build_layout(
+        SIZES, aspect="9:16", panel=False, title_lines=0, subtitle_lines=0, source_lines=0
+    )
+
+    assert result.safe.left == pytest.approx(-SHORT_SIDE / 2 + SHORT_SIDE * 0.06)
+    assert result.safe.right == pytest.approx(SHORT_SIDE / 2 - SHORT_SIDE * 0.06)
+    assert result.safe.top == pytest.approx(LONG_SIDE / 2 - LONG_SIDE * 0.10)
+    assert result.safe.bottom == pytest.approx(-LONG_SIDE / 2 + LONG_SIDE * 0.20)
+
+
+def test_sizes_are_the_same_in_both_aspects() -> None:
+    assert frame_size("16:9")[1] == frame_size("9:16")[0] == px(1080)

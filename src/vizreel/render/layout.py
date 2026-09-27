@@ -1,25 +1,46 @@
 """Geometry of a chart frame in Manim scene units. Pure functions, no Manim import.
 
-Manim's frame is 8 units high at every resolution, so geometry computed here is
-resolution-independent. Theme sizes are pixels at 1080p and are converted here.
+The short side of the frame is 8 units at every resolution and in both aspects, so geometry
+computed here is resolution-independent, and a size is as large on a vertical frame as on a
+landscape one. Theme sizes are pixels at 1080p (on the short side) and are converted here.
 """
 
 from dataclasses import dataclass
+from typing import Literal
 
 from vizreel.themes.models import ThemeSizes
 
-FRAME_HEIGHT = 8.0
-"""Height of Manim's frame in scene units."""
-FRAME_WIDTH = FRAME_HEIGHT * 16 / 9
-"""Width of Manim's frame in scene units (16:9)."""
-REFERENCE_HEIGHT_PX = 1080
-"""Frame height in pixels that theme sizes refer to."""
+Aspect = Literal["16:9", "9:16"]
+"""Frame shape: landscape or vertical."""
+
+SHORT_SIDE = 8.0
+"""Short side of Manim's frame in scene units."""
+LONG_SIDE = SHORT_SIDE * 16 / 9
+"""Long side of Manim's frame in scene units."""
+REFERENCE_SHORT_SIDE_PX = 1080
+"""Short side of the frame in pixels that theme sizes refer to."""
 POINTS_PER_UNIT = 72
 """Manim's `Text` measures `font_size` in points, 72 per scene unit."""
 STROKE_UNITS_PER_SCENE_UNIT = 100
 """Manim's `stroke_width` is measured in hundredths of a scene unit."""
-SAFE_MARGIN = 0.05
-"""Share of the frame kept empty on every side (docs/DESIGN.md §2)."""
+
+
+@dataclass(frozen=True)
+class Margins:
+    """Shares of the frame kept empty: left and right of its width, bottom and top of its height."""
+
+    left: float
+    bottom: float
+    right: float
+    top: float
+
+
+SAFE_MARGINS: dict[Aspect, Margins] = {
+    "16:9": Margins(0.05, 0.05, 0.05, 0.05),
+    "9:16": Margins(0.06, 0.20, 0.06, 0.10),
+}
+"""The safe area of each aspect (docs/DESIGN.md §2). Vertical platforms cover the top with
+menus and the bottom with the caption, the channel name and buttons."""
 LINE_HEIGHT = 1.3
 """Height of a line of text as a multiple of its font size."""
 BAND_GAP = 0.5
@@ -34,7 +55,12 @@ LABEL_FILL = 0.96
 
 def px(pixels: float) -> float:
     """Convert pixels at 1080p to scene units."""
-    return pixels * FRAME_HEIGHT / REFERENCE_HEIGHT_PX
+    return pixels * SHORT_SIDE / REFERENCE_SHORT_SIDE_PX
+
+
+def frame_size(aspect: Aspect) -> tuple[float, float]:
+    """Width and height of Manim's frame in scene units."""
+    return (LONG_SIDE, SHORT_SIDE) if aspect == "16:9" else (SHORT_SIDE, LONG_SIDE)
 
 
 def stroke_width(pixels: float) -> float:
@@ -137,6 +163,7 @@ class Layout:
 def build_layout(
     sizes: ThemeSizes,
     *,
+    aspect: Aspect = "16:9",
     panel: bool,
     title_lines: int,
     subtitle_lines: int,
@@ -146,17 +173,20 @@ def build_layout(
 
     Args:
         sizes: Theme sizes, in pixels at 1080p.
+        aspect: The frame shape.
         panel: Whether a background panel is drawn around the content.
         title_lines: Lines of title text (0 without a title).
         subtitle_lines: Lines of subtitle text (0 without a subtitle).
         source_lines: Lines of source text (0 without a source).
     """
-    frame = Box(-FRAME_WIDTH / 2, -FRAME_HEIGHT / 2, FRAME_WIDTH / 2, FRAME_HEIGHT / 2)
+    width, height = frame_size(aspect)
+    margins = SAFE_MARGINS[aspect]
+    frame = Box(-width / 2, -height / 2, width / 2, height / 2)
     safe = Box(
-        frame.left + FRAME_WIDTH * SAFE_MARGIN,
-        frame.bottom + FRAME_HEIGHT * SAFE_MARGIN,
-        frame.right - FRAME_WIDTH * SAFE_MARGIN,
-        frame.top - FRAME_HEIGHT * SAFE_MARGIN,
+        frame.left + width * margins.left,
+        frame.bottom + height * margins.bottom,
+        frame.right - width * margins.right,
+        frame.top - height * margins.top,
     )
     padding = px(sizes.panel_padding) if panel else 0.0
     inner = safe.inset(padding)

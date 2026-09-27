@@ -59,7 +59,7 @@ def test_transparency_depends_on_format(output_format: str, transparent: bool) -
 def test_final_output_paths_use_the_chart_id() -> None:
     options = RenderOptions(out_dir=Path("clips"), still=True)
 
-    assert output_paths("offers", options, "mov") == (
+    assert output_paths("offers", options, FrameSettings(1920, 1080, 60, "mov")) == (
         Path("clips/offers.mov"),
         Path("clips/offers.png"),
     )
@@ -68,14 +68,17 @@ def test_final_output_paths_use_the_chart_id() -> None:
 def test_preview_output_paths_have_a_suffix() -> None:
     options = RenderOptions(out_dir=Path("clips"), quality="preview", still=True)
 
-    assert output_paths("offers", options, "webm") == (
+    assert output_paths("offers", options, FrameSettings(854, 480, 15, "webm")) == (
         Path("clips/offers.preview.webm"),
         Path("clips/offers.preview.png"),
     )
 
 
 def test_no_still_path_without_still() -> None:
-    assert output_paths("offers", RenderOptions(), "mp4") == (Path("out/offers.mp4"), None)
+    assert output_paths("offers", RenderOptions(), FrameSettings(1920, 1080, 60, "mp4")) == (
+        Path("out/offers.mp4"),
+        None,
+    )
 
 
 def test_select_all_charts_in_spec_order() -> None:
@@ -106,3 +109,44 @@ def test_select_unknown_id_lists_ids() -> None:
         "final-years",
     ):
         select_charts(spec, ("nope",))
+
+
+@pytest.mark.parametrize(
+    ("resolution", "size"),
+    [("720p", (720, 1280)), ("1080p", (1080, 1920)), ("1440p", (1440, 2560)), ("4k", (2160, 3840))],
+)
+def test_vertical_frames_swap_the_sides(resolution: str, size: tuple[int, int]) -> None:
+    spec = spec_with_meta(f'{{ resolution: {resolution}, aspect: "9:16" }}')
+
+    settings = frame_settings(spec, RenderOptions())
+
+    assert (settings.width, settings.height, settings.aspect) == (*size, "9:16")
+
+
+def test_vertical_preview_is_480_wide() -> None:
+    spec = spec_with_meta('{ aspect: "9:16" }')
+
+    assert frame_settings(spec, RenderOptions(quality="preview")) == FrameSettings(
+        480, 854, 15, "mov", "9:16"
+    )
+
+
+def test_aspect_option_overrides_meta() -> None:
+    spec = spec_with_meta('{ aspect: "9:16" }')
+
+    assert frame_settings(spec, RenderOptions()).aspect == "9:16"
+    assert frame_settings(spec, RenderOptions(aspect="16:9")).aspect == "16:9"
+    assert frame_settings(spec_with_meta("{}"), RenderOptions(aspect="9:16")).aspect == "9:16"
+
+
+def test_vertical_output_paths_have_a_suffix() -> None:
+    vertical = FrameSettings(1080, 1920, 60, "mov", "9:16")
+
+    assert output_paths("offers", RenderOptions(still=True), vertical) == (
+        Path("out/offers.vertical.mov"),
+        Path("out/offers.vertical.png"),
+    )
+    assert output_paths("offers", RenderOptions(quality="preview"), vertical) == (
+        Path("out/offers.vertical.preview.mov"),
+        None,
+    )

@@ -46,7 +46,8 @@ vizreel new line -o revenue.yaml
 |---|---|---|---|
 | `title` | string | — | Human-readable name of the spec. Not rendered. |
 | `theme` | string | `default` | Built-in theme name, or a path to a theme YAML file (relative to the spec file). |
-| `resolution` | `720p` \| `1080p` \| `1440p` \| `4k` | `1080p` | Output resolution, 16:9. |
+| `resolution` | `720p` \| `1080p` \| `1440p` \| `4k` | `1080p` | Output resolution, named by the short side of the frame: `1080p` is 1920×1080, or 1080×1920 at `9:16`. |
+| `aspect` | `16:9` \| `9:16` | `16:9` | Frame shape. `16:9` is landscape; `9:16` is vertical, for Shorts, Reels and TikTok, and keeps clear of the platforms' buttons and captions. Vertical clips are named `ID.vertical.mov`. Quote the value: `aspect: "9:16"`. |
 | `fps` | `30` \| `60` | `60` | Frames per second. |
 | `format` | `mov` \| `webm` \| `mp4` | `mov` | `mov` and `webm` have a transparent background. `mp4` is opaque and uses the theme background color. |
 | `locale` | `en-US` | `en-US` | Number and date formatting. Only `en-US` in v1. |
