@@ -133,7 +133,12 @@ class ChartType(ABC):
     @abstractmethod
     def build(self, scene: Scene) -> None:
         """Add mobjects and play animations on the given scene."""
+
+    def emphasis(self, item) -> list[Animation]:
+        """Animations that move the emphasis to the element a sequence item names."""
 ```
+
+A chart type whose model is a `SequencedChart` (every type with a highlight) implements `emphasis`, and its own highlight beat plays it. `emphasis` sets the final look of every element that can be emphasized, whatever it looked like before, so emphasizing an element always ends on the same frame. That is what lets a sequence cut seamlessly: the engine renders a later clip of a sequence with `ChartType.continue_to`, which builds the chart emphasizing the previous item inside `ChartScene.unrecorded()` (Manim finishes every animation without writing a frame, leaving the scene on the previous clip's last frame), then plays `emphasis` for the next item and holds. `render/engine.py` plans the clips with `plan_clips`. Anything the emphasis makes appear must start invisible, and anything it removes fades by opacity (`elements.fade_away`) rather than with Manim's FadeOut, which reshapes curves; a render test compares the frames at every cut, for every type and aspect.
 
 Rules:
 

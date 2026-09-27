@@ -129,6 +129,22 @@ vizreel render charts.yaml --aspect 9:16
 
 Text stays the same size; charts rearrange for the narrow frame instead. Bar charts become rows, timelines run down the frame and long titles wrap onto a second line. A wider margin at the top and bottom keeps charts clear of the buttons and captions those apps draw over the video. To make vertical the default for a spec, set `aspect: "9:16"` in its `meta`.
 
+## Sequences
+
+When a narration walks through a chart ("first 2016... then 2018..."), tell the chart as a sequence: one clip per element to emphasize, each continuing from the last.
+
+```yaml
+- id: history
+  type: timeline
+  events:
+    - { date: "2016", label: "Founded" }
+    - { date: "2018", label: "Opens offices in three countries" }
+    - { date: "2020", label: "Reaches one million users" }
+  sequence: ["2016", "2018", "2020"]
+```
+
+This renders `history.1.mov`, `history.2.mov` and `history.3.mov`. The first draws the chart and emphasizes 2016; each later clip starts on exactly the last frame of the one before and moves the emphasis on. Put them one after another on a track, with your narration between the moves, and they play as one continuous chart. Bar, line, timeline, waterfall, stacked, share and table charts can be told as sequences; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#sequences).
+
 ## Usage
 
 ```bash
@@ -138,6 +154,7 @@ vizreel render charts.yaml              # render all charts to ./out
 vizreel render charts.yaml --only offers --quality preview --still
 vizreel render charts.yaml --quality preview --still --watch   # render again on every save
 vizreel render charts.yaml --aspect 9:16   # vertical clips for Shorts
+vizreel render examples/sequence.yaml   # a chart told as three clips
 vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
 vizreel themes list                     # built-in themes
 vizreel theme check my-brand.yaml       # contrast and color vision checks for a theme
