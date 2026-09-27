@@ -65,7 +65,12 @@ class StatChartType(ChartType):
         def line(
             content: str | None, style: FontStyle, size: float, color: str
         ) -> list[tuple["VMobject", float]]:
-            return [(elements.text(content, style, size, color), size)] if content else []
+            if not content:
+                return []
+            block = elements.wrapped_block(
+                content, style, size, color, self.layout.inner.width, "the stat card text", "center"
+            )
+            return [(block.mobject, size)]
 
         number_color = {"up": colors.positive, "down": colors.negative, "none": colors.text}
         number_format = chart.number.model_copy(
@@ -86,8 +91,6 @@ class StatChartType(ChartType):
         widest_number = max(final_number, number(chart.start), key=lambda mobject: mobject.width)
         lines = [*header, (final_number, sizes.big_number), *footer]
 
-        for mobject, _ in lines:
-            elements.check_fits(mobject, self.layout.inner, "the stat card text")
         elements.check_fits(widest_number, self.layout.inner, "the number")
         # The header and the source line are set apart; the number and its label stay close.
         band_breaks = {len(header) - 1 if header else -1, len(lines) - 2 if source else -1}

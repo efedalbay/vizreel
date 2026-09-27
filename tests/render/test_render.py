@@ -312,6 +312,38 @@ def test_timeline_emphasis_marks_the_emphasized_event(tmp_path: Path) -> None:
     assert PREVIEW[0] * 0.5 < np.median(columns) < PREVIEW[0] * 0.75
 
 
+def test_a_long_title_wraps_onto_two_lines(tmp_path: Path) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n"
+        "  - id: long-title\n    type: bar\n"
+        "    title: Northwind revenue in each of its sales regions\n"
+        "    bars: [{ label: North, value: 3 }, { label: South, value: 2 }]\n",
+        encoding="utf-8",
+    )
+
+    [result] = render_spec(
+        spec, RenderOptions(out_dir=tmp_path, quality="preview", aspect="9:16"), reraise=True
+    )
+
+    assert result.error is None
+
+
+def test_a_title_too_long_for_two_lines_is_an_error(tmp_path: Path) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n"
+        "  - id: long-title\n    type: stat\n    value: 1\n"
+        f"    title: {'Northwind revenue in every region ' * 4}\n",
+        encoding="utf-8",
+    )
+
+    [result] = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+
+    assert result.error is not None
+    assert "too long to fit on 2 lines" in result.error
+
+
 def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
     long = "Northwind signs a partnership with every airline in the region at once"
     events = ", ".join(f'{{ date: "{2010 + i}", label: "{long}" }}' for i in range(7))

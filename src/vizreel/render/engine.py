@@ -12,7 +12,7 @@ from typing import Literal
 
 from vizreel.charts.registry import builtin_registry
 from vizreel.errors import OutputError, RenderError, VizreelError
-from vizreel.render.layout import Aspect, build_layout, frame_size
+from vizreel.render.layout import Aspect, Layout, build_layout, frame_size
 from vizreel.spec.loader import load_spec
 from vizreel.spec.models import BaseChart, Spec
 from vizreel.themes.loader import load_theme
@@ -222,17 +222,21 @@ def render_chart(
     """
     from manim import Camera, tempconfig
 
+    from vizreel.render import elements
     from vizreel.render.scene import ChartScene
 
     chart_type = builtin_registry().get(chart.type)
-    layout = build_layout(
-        theme.sizes,
-        aspect=settings.aspect,
-        panel=theme.background_panel and settings.transparent,
-        title_lines=1 if chart.title else 0,
-        subtitle_lines=1 if chart.subtitle else 0,
-        source_lines=1 if chart.source else 0,
-    )
+
+    def layout_with(title_lines: int, subtitle_lines: int) -> Layout:
+        return build_layout(
+            theme.sizes,
+            aspect=settings.aspect,
+            panel=theme.background_panel and settings.transparent,
+            title_lines=title_lines,
+            subtitle_lines=subtitle_lines,
+            source_lines=1 if chart.source else 0,
+        )
+
     scene_width, scene_height = frame_size(settings.aspect)
     with tempfile.TemporaryDirectory(prefix="vizreel-", ignore_cleanup_errors=True) as media_dir:
         manim_config = {
@@ -254,6 +258,11 @@ def render_chart(
             "preview": False,
         }
         with tempconfig(manim_config):
+            # The title band is as tall as the title and subtitle once wrapped to its width,
+            # which does not depend on its height.
+            width = layout_with(1, 1).title.width
+            title, subtitle = elements.header_lines(chart.title, chart.subtitle, theme, width)
+            layout = layout_with(len(title), len(subtitle))
             scene = ChartScene(chart_type(chart, theme, layout))
             scene.render()
             _move(Path(scene.renderer.file_writer.movie_file_path), video_path)

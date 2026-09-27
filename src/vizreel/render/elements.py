@@ -27,6 +27,7 @@ from manim import (
 
 from vizreel.errors import RenderError
 from vizreel.render.layout import Box, Layout, font_size, px, stack_gap
+from vizreel.render.scales import wrap_text
 from vizreel.themes.models import FontStyle, FontWeight, Theme
 
 _PANGO_WEIGHTS = {"regular": "NORMAL", "semibold": "SEMIBOLD", "bold": "BOLD"}
@@ -37,6 +38,8 @@ LAYOUT_FONT_SIZE = 150
 Pango rounds glyph positions, which at small sizes makes letter spacing uneven
 ("Northw ind"). Much larger sizes overflow the surface Manim gives Pango and lose glyphs.
 """
+MAX_TEXT_LINES = 2
+"""Most lines a title, subtitle or stat line wraps onto."""
 TEXT_SURFACE_PX = 4096
 """Width and height of the surface Pango lays text out on.
 
@@ -308,25 +311,89 @@ def check_fits(mobject: Mobject, box: Box, what: str) -> None:
         raise RenderError(f"{what} is too wide to fit at the theme's size; shorten it")
 
 
+def wrapped_lines(
+    content: str, style: FontStyle, size_px: float, width: float, what: str
+) -> list[str]:
+    """Split text into at most `MAX_TEXT_LINES` lines that each fit `width`.
+
+    Raises:
+        RenderError: The text does not fit in that many lines.
+    """
+    lines = wrap_text(
+        content, lambda line: text(line, style, size_px, "#000000").width <= width, MAX_TEXT_LINES
+    )
+    if lines is None:
+        raise RenderError(
+            f"{what} is too long to fit on {MAX_TEXT_LINES} lines at the theme's size; shorten it"
+        )
+    return lines
+
+
+def wrapped_block(
+    content: str,
+    style: FontStyle,
+    size_px: float,
+    hex_color: str,
+    width: float,
+    what: str,
+    align: Literal["center", "left"],
+) -> TextBlock:
+    """Build text on as many lines as it needs to fit `width`, at most `MAX_TEXT_LINES`.
+
+    Raises:
+        RenderError: The text does not fit in that many lines.
+    """
+    lines = wrapped_lines(content, style, size_px, width, what)
+    if len(lines) == 1:
+        return text_block(content, style, size_px, hex_color)
+    return paragraph_block(lines, style, size_px, hex_color, align)
+
+
+def header_lines(
+    title: str | None, subtitle: str | None, theme: Theme, width: float
+) -> tuple[list[str], list[str]]:
+    """Return the lines of the title and of the subtitle when wrapped to `width`.
+
+    Raises:
+        RenderError: The title or subtitle does not fit in `MAX_TEXT_LINES` lines.
+    """
+    fonts, sizes = theme.fonts, theme.sizes
+    return (
+        wrapped_lines(title, fonts.heading, sizes.title, width, "the title") if title else [],
+        wrapped_lines(subtitle, fonts.body, sizes.subtitle, width, "the subtitle")
+        if subtitle
+        else [],
+    )
+
+
 def header(title: str | None, subtitle: str | None, theme: Theme, layout: Layout) -> VGroup:
     """Build the title and subtitle, left-aligned at the top of the title band.
 
+    Each wraps onto a second line if it does not fit the width of the band.
+
     Raises:
-        RenderError: The title or subtitle is too wide for the frame.
+        RenderError: The title or subtitle does not fit on two lines.
     """
-    blocks: list[tuple[TextBlock, str]] = []
+    fonts, sizes, colors = theme.fonts, theme.sizes, theme.colors
+    width = layout.title.width
+    blocks: list[TextBlock] = []
     if title:
-        heading = text_block(title, theme.fonts.heading, theme.sizes.title, theme.colors.text)
-        blocks.append((heading, "the title"))
+        blocks.append(
+            wrapped_block(
+                title, fonts.heading, sizes.title, colors.text, width, "the title", "left"
+            )
+        )
     if subtitle:
-        sub = text_block(subtitle, theme.fonts.body, theme.sizes.subtitle, theme.colors.muted)
-        blocks.append((sub, "the subtitle"))
+        blocks.append(
+            wrapped_block(
+                subtitle, fonts.body, sizes.subtitle, colors.muted, width, "the subtitle", "left"
+            )
+        )
     group = VGroup()
     top = layout.title.top
-    for index, (block, what) in enumerate(blocks):
-        check_fits(block.mobject, layout.title, what)
+    for index, block in enumerate(blocks):
         if index:
-            previous = blocks[index - 1][0]
+            previous = blocks[index - 1]
             top = previous.bottom() - stack_gap(previous.size_px, block.size_px)
         block.move_top_to(top)
         block.mobject.align_to((layout.title.left, 0.0, 0.0), LEFT)
