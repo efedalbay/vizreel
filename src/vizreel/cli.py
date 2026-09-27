@@ -238,7 +238,7 @@ def new(
         str,
         typer.Argument(
             metavar="TYPE",
-            help="Chart type: stat, line, bar, timeline, compare or waterfall.",
+            help="Chart type: stat, line, bar, timeline, compare, waterfall or stacked.",
             show_default=False,
         ),
     ],

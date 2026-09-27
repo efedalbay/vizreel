@@ -25,7 +25,15 @@ class DemoChartType(ChartType):
 
 
 def test_builtin_registry_has_every_chart_type() -> None:
-    assert builtin_registry().names() == ["bar", "compare", "line", "stat", "timeline", "waterfall"]
+    assert builtin_registry().names() == [
+        "bar",
+        "compare",
+        "line",
+        "stacked",
+        "stat",
+        "timeline",
+        "waterfall",
+    ]
 
 
 def test_get_returns_the_chart_type_for_a_name() -> None:

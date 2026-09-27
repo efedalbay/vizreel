@@ -426,6 +426,34 @@ def test_waterfall_highlights_the_total_and_keeps_its_length(tmp_path: Path, asp
         assert rows.min() > height * 0.5
 
 
+@pytest.mark.parametrize("aspect", ["16:9", "9:16"])
+def test_stacked_keeps_the_highlighted_series_color(tmp_path: Path, aspect: str) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    [result] = render_spec(
+        SHOWCASE,
+        RenderOptions(
+            out_dir=tmp_path, only=("revenue-mix",), quality="preview", still=True, aspect=aspect
+        ),
+        reraise=True,
+    )
+    assert result.error is None
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+
+    def pixels(color: str) -> int:
+        return int(np.all(np.abs(rgb - hex_rgb(color)) <= 6, axis=2).sum())
+
+    assert len(frames) == 6 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    # Cloud, the first series, is highlighted and keeps its color; Devices is dimmed.
+    assert pixels(colors.series[0]) > 500
+    assert pixels(colors.series[1]) < 20
+
+
 def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
     long = "Northwind signs a partnership with every airline in the region at once"
     events = ", ".join(f'{{ date: "{2010 + i}", label: "{long}" }}' for i in range(7))

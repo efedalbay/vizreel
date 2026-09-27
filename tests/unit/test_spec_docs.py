@@ -28,7 +28,7 @@ README_EXAMPLES = spec_examples(ROOT / "README.md")
 
 
 def test_examples_are_found() -> None:
-    assert len(SPEC_EXAMPLES) == 7
+    assert len(SPEC_EXAMPLES) == 8
     assert len(README_EXAMPLES) == 1
 
 
@@ -49,6 +49,7 @@ def test_showcase_is_valid() -> None:
         "bar",
         "compare",
         "line",
+        "stacked",
         "stat",
         "timeline",
         "waterfall",

@@ -453,6 +453,71 @@ class WaterfallChart(BaseChart):
         return self
 
 
+class StackedSeries(SpecModel):
+    """One part of every bar of a stacked bar chart."""
+
+    name: Text
+    """Shown in the legend."""
+    values: list[Annotated[float, Field(ge=0)]]
+    """One value per category, zero or more."""
+
+
+class StackedHighlight(SpecModel):
+    """The series to emphasize."""
+
+    series: Text
+    """Name of the series that keeps its color while the others dim."""
+
+
+class StackedChart(BaseChart):
+    """Bars made of two or three parts, stacked, one bar per category."""
+
+    type: Literal["stacked"]
+    duration: Duration = 6
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    categories: list[Text] = Field(min_length=2, max_length=8)
+    """Two to eight categories, one bar each, in order."""
+    series: list[StackedSeries] = Field(min_length=2, max_length=3)
+    """Two or three parts of each bar, from the bottom (or left) up."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of the totals."""
+    layout: Literal["auto", "columns", "rows"] = "auto"
+    """Columns or rows, as for bar charts. auto uses columns at 16:9 and rows at 9:16."""
+    highlight: StackedHighlight | None = None
+    """The series to emphasize."""
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues = _duplicate_issues(self.categories, "categories", None, "categories")
+        names = [series.name for series in self.series]
+        issues += _duplicate_issues(names, "series", "name", "series names")
+        for index, series in enumerate(self.series):
+            if len(series.values) != len(self.categories):
+                issues.append(
+                    (
+                        ("series", index, "values"),
+                        f"has {len(series.values)} values but there are "
+                        f"{len(self.categories)} categories; give one value per category",
+                    )
+                )
+        if self.highlight is not None and self.highlight.series not in names:
+            issues.append(
+                (
+                    ("highlight", "series"),
+                    f'"{self.highlight.series}" does not match any series. '
+                    f"Series: {_quoted_list(names)}",
+                )
+            )
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+    def totals(self) -> list[float]:
+        """The total of each category: the height of its bar."""
+        return [
+            sum(values) for values in zip(*(series.values for series in self.series), strict=True)
+        ]
+
+
 def _location_text(location: Location) -> str:
     """Write a location the way error messages show it: steps[2].label."""
     text = ""

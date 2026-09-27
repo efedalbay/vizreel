@@ -267,6 +267,7 @@ def test_json_schema_lists_every_chart_type() -> None:
         "bar",
         "compare",
         "line",
+        "stacked",
         "stat",
         "timeline",
         "waterfall",

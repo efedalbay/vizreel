@@ -58,3 +58,13 @@ charts:
       - { label: Other income, value: 500000 }
     end: { label: Profit }
     number: { prefix: "$", compact: true }
+
+  - id: revenue-mix
+    type: stacked
+    title: Northwind revenue by product
+    categories: ["2021", "2022", "2023"]
+    series:
+      - { name: Cloud, values: [1.2, 2.4, 3.9] }
+      - { name: Devices, values: [3.1, 2.9, 3.2] }
+    number: { prefix: "$", suffix: "B" }
+    highlight: { series: Cloud }

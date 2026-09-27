@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`. |
+| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -270,6 +270,36 @@ Labels are unique across the start, the steps and the end. Default `duration`: 6
     - { label: Other income, value: 500000 }
   end: { label: Profit }
   number: { prefix: "$", compact: true }
+```
+
+## `stacked` — bars made of parts
+
+One bar per category, each made of two or three parts stacked on each other, e.g. revenue per year split by product.
+
+A legend under the title names the parts by color, in the theme's `series` colors, in order. Each bar shows its total; the parts do not show their own values. The parts grow one series at a time: the first part in every bar, then the next part on top of it, while each total counts up. At the highlight beat the highlighted series keeps its color and the others dim. Bars are drawn as columns or rows, as for bar charts (`layout`).
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `categories` | list of strings | yes | — | 2–8 categories, one bar each, in order. Unique. |
+| `series` | list | yes | — | 2–3 parts of each bar, from the bottom (or the left) up. |
+| `series[].name` | string | yes | — | Shown in the legend. Unique. |
+| `series[].values` | list of numbers | yes | — | One value per category, zero or more. |
+| `number` | number format | no | — | Formatting of the totals. |
+| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | As for bar charts: `auto` uses columns at 16:9 and rows at 9:16. |
+| `highlight.series` | string | no | — | The series that keeps its color while the others dim. |
+
+Default `duration`: 6.
+
+```yaml
+- id: revenue-mix
+  type: stacked
+  title: Northwind revenue by product
+  categories: ["2021", "2022", "2023"]
+  series:
+    - { name: Cloud, values: [1.2, 2.4, 3.9] }
+    - { name: Devices, values: [3.1, 2.9, 3.2] }
+  number: { prefix: "$", suffix: "B" }
+  highlight: { series: Cloud }
 ```
 
 ---
