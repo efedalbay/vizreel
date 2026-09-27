@@ -3,7 +3,8 @@
 Imports Manim at the top. Chart modules import this module inside `build`.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import cache
 from xml.sax.saxutils import escape
@@ -19,6 +20,7 @@ from manim import (
     Text,
     VGroup,
     VMobject,
+    config,
     rate_functions,
 )
 
@@ -34,6 +36,23 @@ LAYOUT_FONT_SIZE = 150
 Pango rounds glyph positions, which at small sizes makes letter spacing uneven
 ("Northw ind"). Much larger sizes overflow the surface Manim gives Pango and lose glyphs.
 """
+TEXT_SURFACE_PX = 4096
+"""Width and height of the surface Pango lays text out on.
+
+Manim uses the video's pixel size, so text would wrap at a different point in a preview, a
+vertical frame or 4k. A fixed surface lays text out the same way in every output, and at this
+size even a line as wide as the frame at the smallest theme size fits on one line.
+"""
+
+
+@contextmanager
+def _text_surface() -> Iterator[None]:
+    saved = config.pixel_width, config.pixel_height
+    config.pixel_width = config.pixel_height = TEXT_SURFACE_PX
+    try:
+        yield
+    finally:
+        config.pixel_width, config.pixel_height = saved
 
 
 def color(hex_color: str) -> ManimColor:
@@ -50,15 +69,16 @@ def text(content: str, style: FontStyle, size_px: float, hex_color: str) -> VMob
     content = content.strip()
     size = font_size(size_px)
     oversample = max(1.0, LAYOUT_FONT_SIZE / size)
-    mobject = Text(
-        content,
-        font=style.family,
-        weight=_PANGO_WEIGHTS[style.weight],
-        font_size=size * oversample,
-        color=color(hex_color),
-        disable_ligatures=True,
-        warn_missing_font=False,
-    )
+    with _text_surface():
+        mobject = Text(
+            content,
+            font=style.family,
+            weight=_PANGO_WEIGHTS[style.weight],
+            font_size=size * oversample,
+            color=color(hex_color),
+            disable_ligatures=True,
+            warn_missing_font=False,
+        )
     # With ligatures disabled, Text has one submobject per character, spaces included.
     _check_complete(mobject, content, len(content))
     return mobject.scale(1 / oversample)
@@ -73,16 +93,17 @@ def paragraph(lines: list[str], style: FontStyle, size_px: float, hex_color: str
     lines = [line.strip() for line in lines]
     size = font_size(size_px)
     oversample = max(1.0, LAYOUT_FONT_SIZE / size)
-    mobject = Paragraph(
-        *lines,
-        font=style.family,
-        weight=_PANGO_WEIGHTS[style.weight],
-        font_size=size * oversample,
-        color=color(hex_color),
-        alignment="center",
-        disable_ligatures=True,
-        warn_missing_font=False,
-    )
+    with _text_surface():
+        mobject = Paragraph(
+            *lines,
+            font=style.family,
+            weight=_PANGO_WEIGHTS[style.weight],
+            font_size=size * oversample,
+            color=color(hex_color),
+            alignment="center",
+            disable_ligatures=True,
+            warn_missing_font=False,
+        )
     for line, line_mobject in zip(lines, mobject.submobjects, strict=True):
         _check_complete(line_mobject, line, len(line))
     return mobject.scale(1 / oversample)
@@ -96,15 +117,16 @@ def number_text(content: str, style: FontStyle, size_px: float, hex_color: str) 
     """
     size = font_size(size_px)
     oversample = max(1.0, LAYOUT_FONT_SIZE / size)
-    mobject = MarkupText(
-        f'<span font_features="tnum">{escape(content)}</span>',
-        font=style.family,
-        weight=_PANGO_WEIGHTS[style.weight],
-        font_size=size * oversample,
-        color=color(hex_color),
-        disable_ligatures=True,
-        warn_missing_font=False,
-    )
+    with _text_surface():
+        mobject = MarkupText(
+            f'<span font_features="tnum">{escape(content)}</span>',
+            font=style.family,
+            weight=_PANGO_WEIGHTS[style.weight],
+            font_size=size * oversample,
+            color=color(hex_color),
+            disable_ligatures=True,
+            warn_missing_font=False,
+        )
     # MarkupText has one submobject per visible character.
     _check_complete(mobject, content, sum(1 for char in content if not char.isspace()))
     return mobject.scale(1 / oversample)

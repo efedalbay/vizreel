@@ -373,6 +373,28 @@ def test_render_command(tmp_path: Path) -> None:
     assert result.stdout.strip().endswith("1 rendered, 0 failed")
 
 
+def test_text_lays_out_the_same_at_every_output_size(tmp_path: Path) -> None:
+    """Pango wraps text at the width of its surface; the surface must not be the video's."""
+    from manim import tempconfig
+
+    from vizreel.render import elements
+    from vizreel.render.fonts import register_bundled_fonts
+    from vizreel.themes.loader import load_theme
+
+    register_bundled_fonts()
+    theme = load_theme("default", Path("."))
+    title = "Offers Northwind received from three buyers"
+    heights = []
+    for width, height in [(1920, 1080), (480, 854)]:
+        config = {"media_dir": str(tmp_path), "pixel_width": width, "pixel_height": height}
+        with tempconfig(config):
+            heights.append(
+                elements.text(title, theme.fonts.heading, theme.sizes.title, "#FFFFFF").height
+            )
+
+    assert heights[1] == pytest.approx(heights[0])
+
+
 def test_watch_renders_again_only_the_changed_chart(tmp_path: Path) -> None:
     import threading
     import time
