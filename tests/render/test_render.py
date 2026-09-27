@@ -367,6 +367,35 @@ def test_a_title_too_long_for_two_lines_is_an_error(tmp_path: Path) -> None:
     assert "too long to fit on 2 lines" in result.error
 
 
+@pytest.mark.parametrize("aspect", ["16:9", "9:16"])
+def test_compare_shows_the_change_in_its_direction_color(tmp_path: Path, aspect: str) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    [result] = render_spec(
+        SHOWCASE,
+        RenderOptions(
+            out_dir=tmp_path, only=("headcount",), quality="preview", still=True, aspect=aspect
+        ),
+        reraise=True,
+    )
+    assert result.error is None
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    height, width = rgb.shape[:2]
+    rows, columns = np.nonzero(np.all(np.abs(rgb - hex_rgb(colors.negative)) <= 12, axis=2))
+
+    assert len(frames) == 5 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    # 1,200 to 340 is a fall: the change is drawn in the negative color, between the values.
+    assert rows.size > 30
+    assert height * 0.25 < np.median(rows) < height * 0.75
+    assert width * 0.3 < np.median(columns) < width * 0.8
+    assert not np.all(np.abs(rgb - hex_rgb(colors.positive)) <= 12, axis=2).any()
+
+
 def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
     long = "Northwind signs a partnership with every airline in the region at once"
     events = ", ".join(f'{{ date: "{2010 + i}", label: "{long}" }}' for i in range(7))

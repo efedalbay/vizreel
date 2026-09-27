@@ -52,6 +52,18 @@ class NumberGlyphs:
                 result.submobjects[index] = self._digit_at(int(char), result.submobjects[index])
         return result.move_to(ORIGIN)
 
+    def at(self, content: str, x: float, baseline: float) -> VMobject:
+        """Build the text of a number centered at `x`, its digits standing on `baseline`.
+
+        Placing by the digits rather than the ink keeps two numbers level when one has a comma
+        or a dollar sign that reaches below the digits.
+        """
+        result = self(content)
+        visible = [char for char in content if not char.isspace()]
+        digit = next((index for index, char in enumerate(visible) if char in DIGITS), None)
+        bottom = result.submobjects[digit].get_bottom()[1] if digit is not None else 0.0
+        return result.shift((x - result.get_center()[0], baseline - bottom, 0.0))
+
     def _digit_at(self, digit: int, zero_slot: VMobject) -> VMobject:
         glyph = self._digits[digit].copy()
         dx, dy = self._offsets[digit]

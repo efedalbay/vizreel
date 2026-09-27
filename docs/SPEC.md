@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`. |
+| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -207,6 +207,34 @@ Default `duration`: 7.
     - { date: "2018", label: "Raises $865M" }
     - { date: "2020", label: "Revenue reaches $1.75B" }
     - { date: "Jun 2021", label: "Files for bankruptcy", emphasis: true }
+```
+
+## `compare` — before and after
+
+One measure at two moments: the earlier value, an arrow, the later value, and the change between them.
+
+The earlier value counts up and the arrow draws; then the later value counts from the earlier value to its own, so the viewer sees the change happen. At the highlight beat the earlier value dims and the change counts in. The values sit side by side at 16:9, and one above the other at 9:16 or when they are too wide to sit side by side. A value too wide even for that is an error asking you to use compact numbers.
+
+The change is always signed. In percent it is a whole number from 10% up (`−72%`) and keeps one decimal below (`+4.5%`); as a difference it uses the chart's `number` format (`+$150M`). With `trend: auto` a rise is drawn in the theme's `positive` color and a fall in its `negative` color; use `trend: none` when a rise is bad news, such as costs.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `before.label` | string | yes | — | When or what the earlier value is, e.g. `"2019"` or `"Before the redesign"`. |
+| `before.value` | number | yes | — | The earlier value. Above zero when `change` is `percent`. |
+| `after.label` | string | yes | — | When or what the later value is. |
+| `after.value` | number | yes | — | The later value. |
+| `change` | `percent` \| `absolute` \| `none` | no | `percent` | The change in percent of the earlier value, as the difference, or not shown. |
+| `trend` | `auto` \| `none` | no | `auto` | `auto` colors the change by its direction; `none` keeps it in the text color. |
+| `number` | number format | no | — | Formatting of both values, and of the change when it is `absolute`. |
+
+Default `duration`: 5.
+
+```yaml
+- id: headcount
+  type: compare
+  title: Northwind's employees
+  before: { label: "2019", value: 1200 }
+  after: { label: "2022", value: 340 }
 ```
 
 ---

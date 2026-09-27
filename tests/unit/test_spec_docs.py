@@ -28,7 +28,7 @@ README_EXAMPLES = spec_examples(ROOT / "README.md")
 
 
 def test_examples_are_found() -> None:
-    assert len(SPEC_EXAMPLES) == 5
+    assert len(SPEC_EXAMPLES) == 6
     assert len(README_EXAMPLES) == 1
 
 
@@ -45,7 +45,13 @@ def test_readme_example_is_valid(example: str) -> None:
 def test_showcase_is_valid() -> None:
     spec = load_spec(ROOT / "examples" / "showcase.yaml")
 
-    assert sorted(chart.type for chart in spec.charts) == ["bar", "line", "stat", "timeline"]
+    assert sorted(chart.type for chart in spec.charts) == [
+        "bar",
+        "compare",
+        "line",
+        "stat",
+        "timeline",
+    ]
 
 
 @pytest.mark.parametrize("path", sorted((ROOT / "examples").glob("*.yaml")), ids=lambda p: p.name)

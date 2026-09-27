@@ -25,7 +25,7 @@ class DemoChartType(ChartType):
 
 
 def test_builtin_registry_has_every_chart_type() -> None:
-    assert builtin_registry().names() == ["bar", "line", "stat", "timeline"]
+    assert builtin_registry().names() == ["bar", "compare", "line", "stat", "timeline"]
 
 
 def test_get_returns_the_chart_type_for_a_name() -> None:
@@ -36,7 +36,7 @@ def test_get_returns_the_chart_type_for_a_name() -> None:
 
 
 def test_get_unknown_name_lists_registered_types() -> None:
-    with pytest.raises(KeyError, match="unknown chart type 'pie'; registered: bar, line"):
+    with pytest.raises(KeyError, match="unknown chart type 'pie'; registered: bar, compare, line"):
         builtin_registry().get("pie")
 
 

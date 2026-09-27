@@ -237,7 +237,9 @@ def new(
     chart_type: Annotated[
         str,
         typer.Argument(
-            metavar="TYPE", help="Chart type: stat, line, bar or timeline.", show_default=False
+            metavar="TYPE",
+            help="Chart type: stat, line, bar, timeline or compare.",
+            show_default=False,
         ),
     ],
     output: Annotated[

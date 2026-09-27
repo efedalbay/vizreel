@@ -314,6 +314,48 @@ class TimelineChart(BaseChart):
         return self
 
 
+class CompareValue(SpecModel):
+    """One side of a compare chart."""
+
+    label: Text
+    """When or what the value is, e.g. "2019" or "Before the redesign"."""
+    value: float
+    """The value."""
+
+
+class CompareChart(BaseChart):
+    """One measure at two moments, and the change between them."""
+
+    type: Literal["compare"]
+    duration: Duration = 5
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    before: CompareValue
+    """The earlier value."""
+    after: CompareValue
+    """The later value."""
+    change: Literal["percent", "absolute", "none"] = "percent"
+    """How the change is shown: in percent of the earlier value, as the difference, or not."""
+    trend: Literal["auto", "none"] = "auto"
+    """auto colors the change with the theme's positive color if it goes up and its negative
+    color if it goes down; none keeps it in the text color, e.g. when a rise is bad news."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of both values, and of the change when it is absolute."""
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues: list[RuleViolation] = []
+        if self.change == "percent" and self.before.value <= 0:
+            issues.append(
+                (
+                    ("before", "value"),
+                    f"a percent change needs a value above zero, got {self.before.value:g}; "
+                    "use change: absolute",
+                )
+            )
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+
 class Spec(SpecModel):
     """A vizreel spec: one or more charts, each rendered to its own clip.
 

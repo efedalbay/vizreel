@@ -41,3 +41,9 @@ charts:
       - { date: "2018", label: "Raises $865M" }
       - { date: "2020", label: "Revenue reaches $1.75B" }
       - { date: "Jun 2021", label: "Files for bankruptcy", emphasis: true }
+
+  - id: headcount
+    type: compare
+    title: Northwind's employees
+    before: { label: "2019", value: 1200 }
+    after: { label: "2022", value: 340 }
