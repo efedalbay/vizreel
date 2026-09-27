@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import cache
+from typing import Literal
 from xml.sax.saxutils import escape
 
 from manim import (
@@ -84,8 +85,14 @@ def text(content: str, style: FontStyle, size_px: float, hex_color: str) -> VMob
     return mobject.scale(1 / oversample)
 
 
-def paragraph(lines: list[str], style: FontStyle, size_px: float, hex_color: str) -> VMobject:
-    """Build centered lines of text, spaced by Pango so that baselines are even.
+def paragraph(
+    lines: list[str],
+    style: FontStyle,
+    size_px: float,
+    hex_color: str,
+    align: Literal["center", "left"] = "center",
+) -> VMobject:
+    """Build lines of text, spaced by Pango so that baselines are even.
 
     Raises:
         RenderError: Pango could not lay out every character.
@@ -100,7 +107,7 @@ def paragraph(lines: list[str], style: FontStyle, size_px: float, hex_color: str
             weight=_PANGO_WEIGHTS[style.weight],
             font_size=size * oversample,
             color=color(hex_color),
-            alignment="center",
+            alignment=align,
             disable_ligatures=True,
             warn_missing_font=False,
         )
@@ -228,10 +235,15 @@ def text_block(content: str, style: FontStyle, size_px: float, hex_color: str) -
 
 
 def paragraph_block(
-    lines: list[str], style: FontStyle, size_px: float, hex_color: str
+    lines: list[str],
+    style: FontStyle,
+    size_px: float,
+    hex_color: str,
+    align: Literal["center", "left"] = "center",
 ) -> TextBlock:
     """Build lines of text, as `paragraph` does, to be placed by their font's extent."""
-    return TextBlock(paragraph(lines, style, size_px, hex_color), tuple(lines), style, size_px)
+    mobject = paragraph(lines, style, size_px, hex_color, align)
+    return TextBlock(mobject, tuple(lines), style, size_px)
 
 
 def _check_complete(mobject: VMobject, content: str, expected: int) -> None:

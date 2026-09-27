@@ -247,7 +247,7 @@ class BarHighlight(SpecModel):
 
 
 class BarChart(BaseChart):
-    """Vertical bars, one per category."""
+    """One bar per category, as columns or as rows."""
 
     type: Literal["bar"]
     duration: Duration = 5
@@ -258,6 +258,9 @@ class BarChart(BaseChart):
     """Formatting of value labels."""
     sort: Literal["none", "asc", "desc"] = "none"
     """Order of bars."""
+    layout: Literal["auto", "columns", "rows"] = "auto"
+    """Columns grow up from a baseline; rows grow to the right, each under its label. auto uses
+    columns in a 16:9 frame and rows in a 9:16 frame."""
     highlight: BarHighlight | None = None
     """The bar to emphasize."""
 

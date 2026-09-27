@@ -155,6 +155,11 @@ class Layout:
     panel_padding: float
     band_gap: float
 
+    @property
+    def vertical(self) -> bool:
+        """Whether the frame is taller than it is wide."""
+        return self.frame.height > self.frame.width
+
     def panel_around(self, content: Box) -> Box:
         """Background panel surrounding `content`, kept inside the safe area."""
         return content.expand(self.panel_padding, self.safe)

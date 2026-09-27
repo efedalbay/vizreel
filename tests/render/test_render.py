@@ -161,6 +161,28 @@ def test_bar_highlight_colors_in_last_frame(bar_mov: ChartResult) -> None:
     assert not matching(colors.accent).any()
 
 
+def test_vertical_bar_chart_draws_rows(tmp_path: Path) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    [result] = render_spec(
+        SHOWCASE,
+        RenderOptions(
+            out_dir=tmp_path, only=("offers",), quality="preview", still=True, aspect="9:16"
+        ),
+        reraise=True,
+    )
+    assert result.still is not None
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    rows, columns = np.nonzero(np.all(np.abs(rgb - hex_rgb(colors.highlight)) <= 6, axis=2))
+
+    assert rgb.shape[:2] == (PREVIEW[0], PREVIEW[1])
+    # The highlighted bar is the last row; a row starts at the left of the chart.
+    assert rows.size > 50
+    assert rows.min() > PREVIEW[0] / 2
+    assert columns.min() < PREVIEW[1] * 0.2
+
+
 def test_bar_chart_with_eight_long_labels_wraps_them(tmp_path: Path) -> None:
     labels = [f"Northwind region {name}" for name in "ABCDEFGH"]
     bars = ", ".join(f'{{ label: "{label}", value: {i + 1} }}' for i, label in enumerate(labels))

@@ -149,17 +149,23 @@ Default `duration`: 6.
 
 ## `bar` — compare categories
 
-Vertical bars, one per category. Each bar shows its value above it, so there is no value axis. The bars grow from the baseline one after another; at the highlight beat the highlighted bar turns to the `highlight` color and the others to `muted`.
+One bar per category, with its value at the end of the bar, so there is no value axis. The bars grow one after another; at the highlight beat the highlighted bar turns to the `highlight` color and the others to `muted`.
 
-Category labels that do not fit under their bar are split into two lines. With many bars each label has little room (about 10 characters per line with 8 bars at the default theme); a label that does not fit on two lines is an error asking you to shorten it.
+Bars are drawn as **columns** or as **rows**:
+
+- Columns grow up from a baseline, with the labels under it. A label that does not fit under its column is split into two lines. With many bars each label has little room (about 10 characters per line with 8 bars at the default theme); a label that does not fit on two lines is an error.
+- Rows grow to the right, each bar under its label, with the value after the bar. A label has the whole width, so rows suit long labels; a label wider than the chart is split into two lines.
+
+`layout: auto` uses columns in a 16:9 frame and rows in a 9:16 frame, where columns would be too narrow.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `bars` | list | yes | — | 2–8 bars. |
 | `bars[].label` | string | yes | — | Category label. Each label is unique. |
-| `bars[].value` | number | yes | — | Bar height. Zero or more; negative values are not supported in version 1. |
+| `bars[].value` | number | yes | — | Bar length. Zero or more; negative values are not supported in version 1. |
 | `number` | number format | no | — | Formatting of value labels. |
-| `sort` | `none` \| `asc` \| `desc` | no | `none` | Order of bars. |
+| `sort` | `none` \| `asc` \| `desc` | no | `none` | Order of bars: left to right as columns, top to bottom as rows. |
+| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | Columns or rows, see above. `auto` picks by the frame's aspect. |
 | `highlight.label` | string | if `highlight` is given | — | Bar to draw in the `highlight` color. Others use `muted`. Must match a bar label. |
 
 Default `duration`: 5.
