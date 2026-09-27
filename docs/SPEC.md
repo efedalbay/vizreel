@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`. |
+| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -235,6 +235,41 @@ Default `duration`: 5.
   title: Northwind's employees
   before: { label: "2019", value: 1200 }
   after: { label: "2022", value: 340 }
+```
+
+## `waterfall` — from a start to a total
+
+How a starting value becomes a total through increases and decreases, e.g. revenue becoming profit.
+
+The start grows from zero. Each step then grows from where the previous one ended: up in the theme's `positive` color for an increase, down in its `negative` color for a decrease, with a thin line joining each bar to the next. The total, the start plus every step, grows last. At the highlight beat the highlighted bar turns to the `highlight` color and the others dim, keeping their colors. The start and the total show their value; each step shows its change with a sign (`−$5.0M`, `+$500K`).
+
+Bars are drawn as columns or rows, as for bar charts (`layout`); rows have no joining lines. The running total must stay at zero or above in version 1.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `start.label` | string | yes | — | What the starting value is, e.g. `Revenue`. |
+| `start.value` | number | yes | — | The starting value. Zero or more. |
+| `steps` | list | yes | — | 1–6 changes, in order. |
+| `steps[].label` | string | yes | — | What the change is, e.g. `Salaries`. |
+| `steps[].value` | number | yes | — | The change: positive adds, negative takes away. |
+| `end.label` | string | no | `Total` | What the total is, e.g. `Profit`. Its value is computed. |
+| `number` | number format | no | — | Formatting of the values. |
+| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | As for bar charts: `auto` uses columns at 16:9 and rows at 9:16. |
+| `highlight.label` | string | no | the total | The bar to draw in the `highlight` color: the start, a step or the end. |
+
+Labels are unique across the start, the steps and the end. Default `duration`: 6.
+
+```yaml
+- id: profit
+  type: waterfall
+  title: How Northwind's revenue became profit
+  start: { label: Revenue, value: 12000000 }
+  steps:
+    - { label: Salaries, value: -5000000 }
+    - { label: Marketing, value: -2000000 }
+    - { label: Other income, value: 500000 }
+  end: { label: Profit }
+  number: { prefix: "$", compact: true }
 ```
 
 ---

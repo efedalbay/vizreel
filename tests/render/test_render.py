@@ -396,6 +396,36 @@ def test_compare_shows_the_change_in_its_direction_color(tmp_path: Path, aspect:
     assert not np.all(np.abs(rgb - hex_rgb(colors.positive)) <= 12, axis=2).any()
 
 
+@pytest.mark.parametrize("aspect", ["16:9", "9:16"])
+def test_waterfall_highlights_the_total_and_keeps_its_length(tmp_path: Path, aspect: str) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    [result] = render_spec(
+        SHOWCASE,
+        RenderOptions(
+            out_dir=tmp_path, only=("profit",), quality="preview", still=True, aspect=aspect
+        ),
+        reraise=True,
+    )
+    assert result.error is None
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    height, width = rgb.shape[:2]
+    rows, columns = np.nonzero(np.all(np.abs(rgb - hex_rgb(colors.highlight)) <= 6, axis=2))
+
+    assert len(frames) == 6 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    # The total is the last bar: the rightmost column, or the lowest row.
+    assert rows.size > 50
+    if aspect == "16:9":
+        assert columns.min() > width * 0.7
+    else:
+        assert rows.min() > height * 0.5
+
+
 def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
     long = "Northwind signs a partnership with every airline in the region at once"
     events = ", ".join(f'{{ date: "{2010 + i}", label: "{long}" }}' for i in range(7))

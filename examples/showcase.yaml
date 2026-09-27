@@ -47,3 +47,14 @@ charts:
     title: Northwind's employees
     before: { label: "2019", value: 1200 }
     after: { label: "2022", value: 340 }
+
+  - id: profit
+    type: waterfall
+    title: How Northwind's revenue became profit
+    start: { label: Revenue, value: 12000000 }
+    steps:
+      - { label: Salaries, value: -5000000 }
+      - { label: Marketing, value: -2000000 }
+      - { label: Other income, value: 500000 }
+    end: { label: Profit }
+    number: { prefix: "$", compact: true }

@@ -356,6 +356,111 @@ class CompareChart(BaseChart):
         return self
 
 
+class WaterfallStart(SpecModel):
+    """The value a waterfall starts from."""
+
+    label: Text
+    """What the value is, e.g. "Revenue"."""
+    value: float = Field(ge=0)
+    """The starting value. Zero or more."""
+
+
+class WaterfallStep(SpecModel):
+    """One change on a waterfall."""
+
+    label: Text
+    """What changes the value, e.g. "Salaries"."""
+    value: float
+    """The change: positive adds to the running total, negative takes from it."""
+
+
+class WaterfallEnd(SpecModel):
+    """The total a waterfall ends with. Its value is the start plus every step."""
+
+    label: Text = "Total"
+    """What the total is, e.g. "Profit"."""
+
+
+class WaterfallHighlight(SpecModel):
+    """The bar to emphasize."""
+
+    label: Text
+    """Label of the start, a step or the end."""
+
+
+class WaterfallChart(BaseChart):
+    """How a starting value becomes a total through increases and decreases."""
+
+    type: Literal["waterfall"]
+    duration: Duration = 6
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    start: WaterfallStart
+    """The starting value."""
+    steps: list[WaterfallStep] = Field(min_length=1, max_length=6)
+    """One to six changes, in order."""
+    end: WaterfallEnd = Field(default_factory=WaterfallEnd)
+    """The total."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of the values; changes are shown with their sign."""
+    layout: Literal["auto", "columns", "rows"] = "auto"
+    """Columns or rows, as for bar charts. auto uses columns at 16:9 and rows at 9:16."""
+    highlight: WaterfallHighlight | None = None
+    """The bar to emphasize. The total, if not given."""
+
+    @property
+    def labels(self) -> list[str]:
+        """The label of every bar, in order: the start, each step, the end."""
+        return [self.start.label, *(step.label for step in self.steps), self.end.label]
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues: list[RuleViolation] = []
+        locations: list[Location] = [
+            ("start", "label"),
+            *(("steps", index, "label") for index in range(len(self.steps))),
+            ("end", "label"),
+        ]
+        first_seen: dict[str, Location] = {}
+        for label, location in zip(self.labels, locations, strict=True):
+            if label in first_seen:
+                first = _location_text(first_seen[label])
+                issues.append(
+                    (location, f'"{label}" is already used by {first}; labels must be unique')
+                )
+            else:
+                first_seen[label] = location
+        total = self.start.value
+        for index, step in enumerate(self.steps):
+            total += step.value
+            if total < 0:
+                issues.append(
+                    (
+                        ("steps", index, "value"),
+                        f"the running total falls to {total:g} here; a waterfall stays at zero "
+                        "or above in version 1",
+                    )
+                )
+                break
+        if self.highlight is not None and self.highlight.label not in self.labels:
+            issues.append(
+                (
+                    ("highlight", "label"),
+                    f'"{self.highlight.label}" does not match any bar. '
+                    f"Labels: {_quoted_list(self.labels)}",
+                )
+            )
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+
+def _location_text(location: Location) -> str:
+    """Write a location the way error messages show it: steps[2].label."""
+    text = ""
+    for part in location:
+        text += f"[{part}]" if isinstance(part, int) else f".{part}" if text else part
+    return text
+
+
 class Spec(SpecModel):
     """A vizreel spec: one or more charts, each rendered to its own clip.
 

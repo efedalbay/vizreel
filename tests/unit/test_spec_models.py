@@ -263,7 +263,14 @@ def test_json_schema_lists_every_chart_type() -> None:
 
     discriminator = schema["properties"]["charts"]["items"]["discriminator"]
     assert discriminator["propertyName"] == "type"
-    assert sorted(discriminator["mapping"]) == ["bar", "compare", "line", "stat", "timeline"]
+    assert sorted(discriminator["mapping"]) == [
+        "bar",
+        "compare",
+        "line",
+        "stat",
+        "timeline",
+        "waterfall",
+    ]
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
 
 
