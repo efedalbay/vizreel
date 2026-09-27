@@ -27,6 +27,7 @@ CHARTS = {
     "final-years": "timeline",
     "headcount": "compare",
     "profit": "waterfall",
+    "revenue-mix": "stacked",
 }
 
 

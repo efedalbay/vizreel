@@ -2,7 +2,7 @@
 
 **Animated charts for video, from a YAML file.**
 
-vizreel turns a short YAML spec into clean, animated chart clips (big numbers, line charts, bar charts, timelines, before/after comparisons and waterfalls) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
+vizreel turns a short YAML spec into clean, animated chart clips (big numbers, line charts, bar charts, timelines, before/after comparisons, waterfalls and stacked bars) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
 
 > **Status: 0.4.1, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
 
@@ -11,6 +11,7 @@ vizreel turns a short YAML spec into clean, animated chart clips (big numbers, l
 | ![A stat chart counting up to $740M](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/stat.gif) | ![A line chart drawing from left to right](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/line.gif) |
 | ![A bar chart with one highlighted bar](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/bar.gif) | ![A timeline with an emphasized event](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/timeline.gif) |
 | ![A compare chart counting from 1,200 down to 340, a change of −72%](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/compare.gif) | ![A waterfall chart from revenue to profit](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/waterfall.gif) |
+| ![A stacked bar chart of revenue by product](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/stacked.gif) | |
 
 ## Why
 
@@ -111,6 +112,7 @@ out/
 | `timeline` | A sequence of up to 7 events, with an emphasized moment |
 | `compare` | One measure before and after, with the change in percent or as a difference |
 | `waterfall` | How a starting value becomes a total through up to 6 increases and decreases |
+| `stacked` | Bars made of 2 or 3 parts, e.g. revenue per year split by product |
 
 `vizreel new TYPE` prints a commented template for each. Every field is documented in the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md).
 

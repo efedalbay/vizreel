@@ -69,7 +69,8 @@ vizreel/
 │   │   ├── timeline.py
 │   │   ├── compare.py
 │   │   ├── waterfall.py
-│   │   └── _bars.py         ← parts bar and waterfall share; not a chart type
+│   │   ├── stacked.py
+│   │   └── _bars.py         ← parts the bar-like types share; not a chart type
 │   ├── render/
 │   │   ├── engine.py        ← render a Spec: loop charts, configure Manim, write files
 │   │   ├── scene.py         ← generic Manim Scene that hosts one chart
