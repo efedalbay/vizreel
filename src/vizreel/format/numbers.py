@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Literal
 
-from vizreel.format.locales import Locale
+from vizreel.format.locales import Locale, UnitStyle
 from vizreel.spec.models import NumberFormat
 
 ChangeKind = Literal["percent", "absolute"]
@@ -70,7 +70,7 @@ def shared_decimals(values: Sequence[float], fmt: NumberFormat | None = None) ->
     fmt = fmt or _DEFAULT_FORMAT
     if fmt.decimals is not None:
         return [fmt.decimals] * len(values)
-    auto = [_auto_decimals(value, fmt.compact) for value in values]
+    auto = [_auto_decimals(value, _is_compact(fmt)) for value in values]
     most_by_unit: dict[int, int] = {}
     for unit_index, places in auto:
         most_by_unit[unit_index] = max(most_by_unit.get(unit_index, 0), places)
@@ -86,7 +86,7 @@ def decimals_for(values: Sequence[float], fmt: NumberFormat | None = None) -> in
     fmt = fmt or _DEFAULT_FORMAT
     if fmt.decimals is not None:
         return fmt.decimals
-    return max((_auto_decimals(value, fmt.compact)[1] for value in values), default=0)
+    return max((_auto_decimals(value, _is_compact(fmt))[1] for value in values), default=0)
 
 
 def change_amount(before: float, after: float, kind: ChangeKind) -> float:
@@ -140,7 +140,7 @@ def format_change(
         rounded = _round(_to_decimal(amount), places)
         text = locale.percent.format(_digits(abs(rounded), places, locale))
     else:
-        rounded, _ = _round_scaled(_to_decimal(amount), fmt.compact, places)
+        rounded, _ = _round_scaled(_to_decimal(amount), _is_compact(fmt), places)
         text = _format(abs(amount), fmt, places, locale)
     sign = "+" if rounded > 0 else MINUS_SIGN if rounded < 0 else ""
     return sign + text
@@ -174,10 +174,11 @@ def format_percent(percent: float, *, locale: Locale) -> str:
 
 
 def _format(value: float, fmt: NumberFormat, decimals: int, locale: Locale) -> str:
-    rounded, unit_index = _round_scaled(_to_decimal(value), fmt.compact, decimals)
+    rounded, unit_index = _round_scaled(_to_decimal(value), _is_compact(fmt), decimals)
     sign = MINUS_SIGN if rounded < 0 else ""
     digits = _digits(abs(rounded), decimals, locale)
-    return f"{sign}{fmt.prefix}{digits}{_unit(rounded, unit_index, locale)}{fmt.suffix}"
+    unit = locale.units(_unit_style(fmt, locale)).name(unit_index, rounded)
+    return f"{sign}{fmt.prefix}{digits}{unit}{fmt.suffix}"
 
 
 def _digits(number: Decimal, decimals: int, locale: Locale) -> str:
@@ -189,12 +190,15 @@ def _digits(number: Decimal, decimals: int, locale: Locale) -> str:
     return f"{digits}{locale.decimal}{fraction}" if fraction else digits
 
 
-def _unit(rounded: Decimal, unit_index: int, locale: Locale) -> str:
-    """Return the compact unit after a number, e.g. "M", or " millones" in es-ES."""
-    if unit_index == 0:
-        return ""
-    singular, plural = locale.units[unit_index - 1]
-    return locale.unit_separator + (singular if locale.is_singular(rounded) else plural)
+def _is_compact(fmt: NumberFormat) -> bool:
+    return fmt.compact is not False
+
+
+def _unit_style(fmt: NumberFormat, locale: Locale) -> UnitStyle:
+    """Return the unit names `fmt.compact` asks for; `true` means the locale's usual ones."""
+    if isinstance(fmt.compact, bool):
+        return locale.usual_units
+    return fmt.compact
 
 
 def _auto_decimals(value: float, compact: bool) -> tuple[int, int]:

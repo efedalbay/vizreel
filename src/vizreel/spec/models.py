@@ -90,8 +90,9 @@ class NumberFormat(SpecModel):
     """Text after the number, e.g. "%" or " users"."""
     decimals: Annotated[int, Field(ge=0, le=6)] | None = None
     """Fixed number of decimals. Leave out for automatic decimals."""
-    compact: bool = False
-    """Abbreviate large numbers: 740000000 becomes 740M."""
+    compact: bool | Literal["long", "short"] = False
+    """Abbreviate large numbers: 740000000 becomes 740M, or 740 milyon in tr-TR. `true` uses the
+    locale's usual unit names; `long` and `short` choose them: 740 million, 740 Mn."""
 
 
 class BaseChart(SpecModel):

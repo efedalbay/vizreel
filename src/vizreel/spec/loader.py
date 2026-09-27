@@ -72,9 +72,15 @@ def spec_model() -> type[Spec]:
     )
 
 
-_CELL_BRANCHES = frozenset({"constrained-str", "float"})
-"""Names Pydantic appends to the location of a value that is neither branch of a text-or-number
-field, such as a table cell; each branch reports its own error."""
+_COMPACT_VALUES = 'true, false, "long" or "short"'
+_UNION_BRANCHES: dict[str, str] = {
+    "constrained-str": "text or a number",
+    "float": "text or a number",
+    "bool": _COMPACT_VALUES,
+    "literal['long','short']": _COMPACT_VALUES,
+}
+"""Names Pydantic appends to the location of a value that matches no branch of a union field,
+such as a table cell or `compact`, each branch reporting its own error; and what the field takes."""
 
 
 def _validate(data: dict[str, Any], source: str) -> Spec:
@@ -85,16 +91,16 @@ def _validate(data: dict[str, Any], source: str) -> Spec:
 
 
 def _issues_from_errors(errors: list[ErrorDetails]) -> list[InputIssue]:
-    """Turn Pydantic's errors into issues, one per text-or-number value rather than per branch."""
+    """Turn Pydantic's errors into issues, one per union value rather than per branch."""
     issues = []
     reported: set[Location] = set()
     for error in errors:
         loc = _strip_chart_tag(error["loc"])
-        if loc and loc[-1] in _CELL_BRANCHES:
+        if loc and loc[-1] in _UNION_BRANCHES:
             if loc[:-1] not in reported:
                 reported.add(loc[:-1])
                 value = show(error.get("input"))
-                issues.append(_issue(loc[:-1], f"expected text or a number, got {value}"))
+                issues.append(_issue(loc[:-1], f"expected {_UNION_BRANCHES[loc[-1]]}, got {value}"))
             continue
         issues.append(_issue_from_error(error))
     return issues

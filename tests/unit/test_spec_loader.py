@@ -31,7 +31,7 @@ EXPECTED_ERRORS: dict[str, list[str]] = {
         "charts[0].duration: must be at least 2, got 1",
         "charts[0].value: must be a finite number",
         "charts[1].number.decimals: must be at most 6, got 7",
-        'charts[1].number.compact: expected true or false, got "yes"',
+        'charts[1].number.compact: expected true, false, "long" or "short", got "yes"',
     ],
     "line-highlight-gap": [
         'charts[0].highlight.x: "2020" has no value in any series; nothing to highlight',

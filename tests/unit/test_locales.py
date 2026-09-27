@@ -25,10 +25,11 @@ from vizreel.spec.loader import parse_spec
 from vizreel.spec.models import Meta, NumberFormat
 
 M = MINUS_SIGN
-NB = " "
-NN = " "
+NB = "\N{NO-BREAK SPACE}"
+NN = "\N{NARROW NO-BREAK SPACE}"
 PLAIN = NumberFormat()
 COMPACT = NumberFormat(compact=True)
+UNIT_SAMPLES = [12300, 740000000, 2250000000, 3.2e12]
 
 
 def test_every_locale_the_spec_accepts_is_defined() -> None:
@@ -144,6 +145,78 @@ def test_compact_numbers_use_the_locale_unit_names(
 )
 def test_the_unit_follows_the_number_shown(locale: Locale, expected: str) -> None:
     assert format_number(1000000, NumberFormat(compact=True, decimals=1), locale=locale) == expected
+
+
+@pytest.mark.parametrize(
+    ("locale", "expected"),
+    [
+        (EN_US, ["12.3K", "740M", "2.25B", "3.2T"]),
+        (TR_TR, [f"12,3{NB}B", f"740{NB}Mn", f"2,25{NB}Mr", f"3,2{NB}Tn"]),
+        (ES_ES, [f"12,3{NB}mil", f"740{NB}M", f"2,25{NB}mil M", f"3,2{NB}B"]),
+        (PT_BR, [f"12,3{NB}mil", f"740{NB}mi", f"2,25{NB}bi", f"3,2{NB}tri"]),
+        (FR_FR, [f"12,3{NB}k", f"740{NB}M", f"2,25{NB}Md", f"3,2{NB}Bn"]),
+    ],
+)
+def test_short_unit_names(locale: Locale, expected: list[str]) -> None:
+    fmt = NumberFormat(compact="short")
+
+    assert [format_number(v, fmt, locale=locale) for v in UNIT_SAMPLES] == expected
+
+
+@pytest.mark.parametrize(
+    ("locale", "expected"),
+    [
+        (
+            EN_US,
+            [f"12.3{NB}thousand", f"740{NB}million", f"2.25{NB}billion", f"3.2{NB}trillion"],
+        ),
+        (TR_TR, [f"12,3{NB}bin", f"740{NB}milyon", f"2,25{NB}milyar", f"3,2{NB}trilyon"]),
+        (
+            ES_ES,
+            [f"12,3{NB}mil", f"740{NB}millones", f"2,25{NB}mil millones", f"3,2{NB}billones"],
+        ),
+        (PT_BR, [f"12,3{NB}mil", f"740{NB}milhões", f"2,25{NB}bilhões", f"3,2{NB}trilhões"]),
+        (FR_FR, [f"12,3{NB}mille", f"740{NB}millions", f"2,25{NB}milliards", f"3,2{NB}billions"]),
+    ],
+)
+def test_long_unit_names(locale: Locale, expected: list[str]) -> None:
+    fmt = NumberFormat(compact="long")
+
+    assert [format_number(v, fmt, locale=locale) for v in UNIT_SAMPLES] == expected
+
+
+def test_true_uses_the_usual_unit_names_of_the_locale() -> None:
+    assert EN_US.usual_units == "short"
+    assert all(locale.usual_units == "long" for locale in (TR_TR, ES_ES, PT_BR, FR_FR))
+
+
+def test_long_and_short_behave_like_true_apart_from_the_names() -> None:
+    values = [1250000000, 412000000, 54300000, 999950, 999]
+    names = {"long": ["billion", "million", "million", "million", ""], "short": list("BMMM") + [""]}
+
+    for style, units in names.items():
+        fmt = NumberFormat(prefix="$", compact=style)
+        texts = format_numbers(values, fmt, locale=EN_US)
+        separator = NB if style == "long" else ""
+        assert texts == [
+            f"$1.25{separator}{units[0]}",
+            f"$412.0{separator}{units[1]}",
+            f"$54.3{separator}{units[2]}",
+            f"$1.0{separator}{units[3]}",
+            "$999",
+        ]
+
+
+def test_an_unknown_unit_style_is_a_spec_error() -> None:
+    with pytest.raises(SpecError) as caught:
+        parse_spec(
+            "version: 1\ncharts:\n"
+            "  - { id: users, type: stat, value: 1846, number: { compact: medium } }\n",
+            "spec.yaml",
+        )
+
+    [issue] = [str(issue) for issue in caught.value.issues]
+    assert "charts[0].number.compact" in issue
 
 
 @pytest.mark.parametrize(

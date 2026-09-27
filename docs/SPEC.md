@@ -75,7 +75,9 @@ Used by any field that displays values.
 | `prefix` | string | `""` | `$` |
 | `suffix` | string | `""` | `%`, ` users` |
 | `decimals` | integer, 0–6 | auto | `1` → `4.2` |
-| `compact` | boolean | `false` | `true` → `740M`, `2.25B` |
+| `compact` | `true` \| `false` \| `long` \| `short` | `false` | `true` → `740M`, `2.25B`; `long` → `740 million`; `short` → `740M` |
+
+`compact: true` names the units the way the spec's locale usually does: abbreviated in `en-US` (`740M`), in full elsewhere (`740 milyon`). `long` and `short` choose: `short` is narrower, which helps a big number in a vertical clip; `long` needs no knowledge of abbreviations. See [Locales](#locales) for every locale's names.
 
 Values in the spec are always plain numbers. `740000000` with `prefix: "$"` and `compact: true` renders as `$740M`. Never write `"740M"` as a value.
 
@@ -98,13 +100,16 @@ Formatting rules, shown for `en-US` (see [Locales](#locales) for the others):
 | Separators | `1,846.5` | `1.846,5` | `1846,5` · `18.460` | `1.846,5` | `1 846,5` |
 | Percent | `47%` | `%47` | `47 %` | `47%` | `47 %` |
 | Percent change | `−72%` · `+4.5%` | `−%72` · `+%4,5` | `−72 %` · `+4,5 %` | `−72%` · `+4,5%` | `−72 %` · `+4,5 %` |
-| `compact` | `12.3K` · `740M` · `2.25B` · `3.2T` | `12,3 bin` · `740 milyon` · `2,25 milyar` · `3,2 trilyon` | `12,3 mil` · `740 millones` · `2,25 mil millones` · `3,2 billones` | `12,3 mil` · `740 milhões` · `2,25 bilhões` · `3,2 trilhões` | `12,3 mille` · `740 millions` · `2,25 milliards` · `3,2 billions` |
+| `compact: long` | `12.3 thousand` · `740 million` · `2.25 billion` · `3.2 trillion` | `12,3 bin` · `740 milyon` · `2,25 milyar` · `3,2 trilyon` | `12,3 mil` · `740 millones` · `2,25 mil millones` · `3,2 billones` | `12,3 mil` · `740 milhões` · `2,25 bilhões` · `3,2 trilhões` | `12,3 mille` · `740 millions` · `2,25 milliards` · `3,2 billions` |
+| `compact: short` | `12.3K` · `740M` · `2.25B` · `3.2T` | `12,3 B` · `740 Mn` · `2,25 Mr` · `3,2 Tn` | `12,3 mil` · `740 M` · `2,25 mil M` · `3,2 B` | `12,3 mil` · `740 mi` · `2,25 bi` · `3,2 tri` | `12,3 k` · `740 M` · `2,25 Md` · `3,2 Bn` |
+| `compact: true` | short | long | long | long | long |
 
 The conventions follow the [Unicode CLDR](https://cldr.unicode.org/):
 
 - Spanish groups digits only in numbers of five digits or more: `1846`, but `18.460`.
 - French separates groups with a narrow no-break space, and puts one before `%`; Spanish puts a no-break space before `%`.
-- Outside `en-US`, a compact number is followed by its unit's name, joined by a no-break space so the two never part. Where the name has a plural, it agrees with the number shown: `1 millón` and `1,2 millones` in Spanish; `1,5 milhão` and `2 milhões` in Portuguese; `1,5 million` and `2 millions` in French.
+- A unit name is joined to its number by a no-break space so the two never part; only the English abbreviations follow the number directly (`740M`). Where a long name has a plural, it agrees with the number shown: `1 millón` and `1,2 millones` in Spanish; `1,5 milhão` and `2 milhões` in Portuguese; `1,5 million` and `2 millions` in French.
+- In Turkish, the short `B` means *bin* (thousand), not billion. Viewers who know English may misread it, which is why `compact: true` writes the names in full.
 - The minus sign comes first in every locale: `−%72`, `−5 €`.
 
 `prefix` and `suffix` are shown exactly as written, in every locale, so write them for yours. In Turkish the percent sign goes before the number: write `prefix: "%"` for `%12,5`. A currency after the number takes its space in the suffix: `suffix: " TL"` gives `740 milyon TL`.

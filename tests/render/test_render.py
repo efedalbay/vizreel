@@ -765,7 +765,7 @@ def test_composed_numbers_match_pango_layout(tmp_path: Path, size_px: float) -> 
     fonts, colors = load_theme("default", Path(".")).fonts, load_theme("default", Path(".")).colors
     samples = ["$740M", "$123M", "1,234,567", "$2.25B", "−$9.81K", "47%", "1,111 users", "7"]
     # Locales bring no-break spaces, narrow no-break spaces and unit names.
-    samples += ["−%72", "1 234,5", "47 %", "740 millones €", "2,25 milyar"]
+    samples += ["−%72", "1\u202f234,5", "47\u202f%", "740\u00a0millones €", "2,25\u00a0milyar"]
     with tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR"}):
         glyphs = NumberGlyphs(fonts.numbers, size_px, colors.text)
         for sample in samples:
