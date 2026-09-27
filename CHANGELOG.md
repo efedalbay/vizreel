@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.3] - 2026-09-27
+
+### Added
+
+- The `share` chart type: how a whole divides into two to six parts, as a ring with a legend of each part's percent. At the highlight beat the highlighted part, the largest by default, turns to the highlight color and its percent counts up in the middle. Percents are whole numbers that add up to 100.
+
 ## [0.4.2] - 2026-09-27
 
 ### Added
@@ -70,6 +76,7 @@ The first release.
 - `vizreel new TYPE` prints a commented template for each chart type.
 - The Inter typeface, bundled so that output looks the same on every machine.
 
+[0.4.3]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.3
 [0.4.2]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.2
 [0.4.1]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.1
 [0.4.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.0
