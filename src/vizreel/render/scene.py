@@ -1,11 +1,12 @@
 """A Manim scene that hosts one chart."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from manim import DEFAULT_WAIT_TIME, Scene, config
 
-from vizreel.charts.base import ChartType, FrameClock
+from vizreel.charts.base import ChartType, Continuation, FrameClock
 
 
 class ChartScene(Scene):
@@ -13,17 +14,44 @@ class ChartScene(Scene):
 
     Every `play` needs an explicit `run_time`. Run times and waits are rounded to whole
     frames through a `FrameClock`, so the clip is exactly as long as the chart's duration.
+
+    With a `continuation`, the scene renders a later clip of a sequence instead: the chart,
+    which emphasizes the previous item, is built without recording, then the emphasis moves
+    on (see `ChartType.continue_to`).
     """
 
-    def __init__(self, chart_type: ChartType, **kwargs: Any) -> None:
+    def __init__(
+        self, chart_type: ChartType, continuation: Continuation | None = None, **kwargs: Any
+    ) -> None:
         self.chart_type = chart_type
+        self.continuation = continuation
         self.clock = FrameClock(int(config.frame_rate))
         self._waiting = False
         super().__init__(**kwargs)
 
     def construct(self) -> None:
-        """Build the chart."""
-        self.chart_type.build(self)
+        """Build the chart, or the next clip of its sequence."""
+        if self.continuation is None:
+            self.chart_type.build(self)
+        else:
+            self.chart_type.continue_to(self, self.continuation.item, self.continuation.duration)
+
+    @contextmanager
+    def unrecorded(self) -> Iterator[None]:
+        """Play animations to their end without writing any frame.
+
+        Manim finishes each animation in one step, so the scene ends up exactly as it would
+        after playing them. The frame clock starts again afterwards, so the recorded part of
+        the clip has exactly the frames of its own length.
+        """
+        renderer = self.renderer
+        renderer._original_skipping_status = True
+        try:
+            yield
+        finally:
+            renderer._original_skipping_status = False
+            renderer.skip_animations = False
+            self.clock = FrameClock(int(config.frame_rate))
 
     def play(self, *args: Any, **kwargs: Any) -> None:
         """Play animations for a whole number of frames.

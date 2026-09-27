@@ -1,6 +1,6 @@
 """Pydantic models for the spec format. `docs/SPEC.md` is the reference for every field."""
 
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, ClassVar, Literal, Self
 
 from pydantic import (
     AfterValidator,
@@ -111,6 +111,66 @@ class BaseChart(SpecModel):
     """Total clip length in seconds, including the final hold. Minimum 2."""
 
 
+class SequencedChart(BaseChart):
+    """A chart that can also be told as a sequence of clips, the emphasis moving each time.
+
+    Subclasses name the elements a sequence can emphasize (`sequence_names`), say whether the
+    chart already emphasizes one (`has_highlight`), and make a copy that emphasizes a given
+    element (`with_highlight`).
+    """
+
+    sequence: list[Text] | None = Field(default=None, min_length=2, max_length=8)
+    """Two to eight elements to emphasize, one clip each. Each clip after the first starts
+    from the last frame of the one before and moves the emphasis to the next element."""
+    step_duration: Duration = 3
+    """Length in seconds of each clip after the first. Minimum 2."""
+
+    sequence_noun: ClassVar[str] = "element"
+    """What a sequence item names, in error messages, e.g. "bar label"."""
+
+    def sequence_names(self) -> list[str]:
+        """The names a sequence item can take."""
+        raise NotImplementedError
+
+    def has_highlight(self) -> bool:
+        """Whether the chart itself names what to emphasize."""
+        raise NotImplementedError
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the element a sequence item names."""
+        raise NotImplementedError
+
+    def _sequence_issues(self) -> list[RuleViolation]:
+        if self.sequence is None:
+            return []
+        issues: list[RuleViolation] = []
+        if self.has_highlight():
+            issues.append(
+                (
+                    ("sequence",),
+                    "cannot be used together with a highlight; the sequence says what to "
+                    "emphasize in each clip",
+                )
+            )
+        names = self.sequence_names()
+        for index, item in enumerate(self.sequence):
+            name = _sequence_name(item)
+            if name not in names:
+                issues.append(
+                    (
+                        ("sequence", index),
+                        f'"{name}" does not match any {self.sequence_noun}. '
+                        f"Choose from: {_quoted_list(names)}",
+                    )
+                )
+        return issues
+
+
+def _sequence_name(item: Any) -> str:
+    """The element a sequence item names: the item itself, or its `x` for a line chart."""
+    return item if isinstance(item, str) else str(item.x)
+
+
 class StatChart(BaseChart):
     """A single number that counts up (or down) to its value."""
 
@@ -147,8 +207,10 @@ class LineHighlight(SpecModel):
     """Callout text at the highlighted point."""
 
 
-class LineChart(BaseChart):
+class LineChart(SequencedChart):
     """One to three series drawn from left to right."""
+
+    sequence_noun: ClassVar[str] = "x label"
 
     type: Literal["line"]
     duration: Duration = 6
@@ -165,6 +227,31 @@ class LineChart(BaseChart):
     """Top of the vertical axis. Automatic if left out."""
     highlight: LineHighlight | None = None
     """A point to mark."""
+    # A line chart also accepts a point with a callout, where other charts take only names.
+    sequence: list[Text | LineHighlight] | None = Field(  # type: ignore[assignment]
+        default=None, min_length=2, max_length=8
+    )
+    """Two to eight points to mark, one clip each: an x label, or a point with a callout."""
+
+    def sequence_names(self) -> list[str]:
+        """The x labels that have a value in some series."""
+        return [
+            label
+            for index, label in enumerate(self.x)
+            if any(
+                index < len(series.values) and series.values[index] is not None
+                for series in self.series
+            )
+        ]
+
+    def has_highlight(self) -> bool:
+        """Whether a point is marked."""
+        return self.highlight is not None
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that marks the point a sequence item names."""
+        highlight = LineHighlight(x=item) if isinstance(item, str) else item
+        return self.model_copy(update={"highlight": highlight})
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
@@ -173,6 +260,7 @@ class LineChart(BaseChart):
             *self._series_issues(),
             *self._range_issues(),
             *self._highlight_issues(),
+            *self._sequence_issues(),
         ]
         raise_rule_violations(type(self).__name__, issues)
         return self
@@ -246,8 +334,10 @@ class BarHighlight(SpecModel):
     """Label of the bar to draw in the highlight color. Other bars are muted."""
 
 
-class BarChart(BaseChart):
+class BarChart(SequencedChart):
     """One bar per category, as columns or as rows."""
+
+    sequence_noun: ClassVar[str] = "bar label"
 
     type: Literal["bar"]
     duration: Duration = 5
@@ -264,6 +354,18 @@ class BarChart(BaseChart):
     highlight: BarHighlight | None = None
     """The bar to emphasize."""
 
+    def sequence_names(self) -> list[str]:
+        """The bar labels."""
+        return [bar.label for bar in self.bars]
+
+    def has_highlight(self) -> bool:
+        """Whether a bar is emphasized."""
+        return self.highlight is not None
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the bar with this label."""
+        return self.model_copy(update={"highlight": BarHighlight(label=item)})
+
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         labels = [bar.label for bar in self.bars]
@@ -276,6 +378,7 @@ class BarChart(BaseChart):
                     f"Bar labels: {_quoted_list(labels)}",
                 )
             )
+        issues += self._sequence_issues()
         raise_rule_violations(type(self).__name__, issues)
         return self
 
@@ -291,14 +394,32 @@ class TimelineEvent(SpecModel):
     """Draw this event in the highlight color, larger. At most one event per timeline."""
 
 
-class TimelineChart(BaseChart):
-    """Events placed in order along a horizontal line."""
+class TimelineChart(SequencedChart):
+    """Events placed in order along a line."""
+
+    sequence_noun: ClassVar[str] = "event date"
 
     type: Literal["timeline"]
     duration: Duration = 7
     """Total clip length in seconds, including the final hold. Minimum 2."""
     events: list[TimelineEvent] = Field(min_length=2, max_length=7)
     """Two to seven events, in chronological order."""
+
+    def sequence_names(self) -> list[str]:
+        """The event dates that name exactly one event."""
+        dates = [event.date for event in self.events]
+        return [date for date in dates if dates.count(date) == 1]
+
+    def has_highlight(self) -> bool:
+        """Whether an event has emphasis."""
+        return any(event.emphasis for event in self.events)
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the event with this date."""
+        events = [
+            event.model_copy(update={"emphasis": event.date == item}) for event in self.events
+        ]
+        return self.model_copy(update={"events": events})
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
@@ -310,6 +431,7 @@ class TimelineChart(BaseChart):
             )
             for index in emphasized[1:]
         ]
+        issues += self._sequence_issues()
         raise_rule_violations(type(self).__name__, issues)
         return self
 
@@ -388,8 +510,10 @@ class WaterfallHighlight(SpecModel):
     """Label of the start, a step or the end."""
 
 
-class WaterfallChart(BaseChart):
+class WaterfallChart(SequencedChart):
     """How a starting value becomes a total through increases and decreases."""
+
+    sequence_noun: ClassVar[str] = "bar label"
 
     type: Literal["waterfall"]
     duration: Duration = 6
@@ -411,6 +535,18 @@ class WaterfallChart(BaseChart):
     def labels(self) -> list[str]:
         """The label of every bar, in order: the start, each step, the end."""
         return [self.start.label, *(step.label for step in self.steps), self.end.label]
+
+    def sequence_names(self) -> list[str]:
+        """The labels of the start, the steps and the end."""
+        return self.labels
+
+    def has_highlight(self) -> bool:
+        """Whether a bar is named to emphasize."""
+        return self.highlight is not None
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the bar with this label."""
+        return self.model_copy(update={"highlight": WaterfallHighlight(label=item)})
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
@@ -449,6 +585,7 @@ class WaterfallChart(BaseChart):
                     f"Labels: {_quoted_list(self.labels)}",
                 )
             )
+        issues += self._sequence_issues()
         raise_rule_violations(type(self).__name__, issues)
         return self
 
@@ -469,8 +606,10 @@ class StackedHighlight(SpecModel):
     """Name of the series that keeps its color while the others dim."""
 
 
-class StackedChart(BaseChart):
+class StackedChart(SequencedChart):
     """Bars made of two or three parts, stacked, one bar per category."""
+
+    sequence_noun: ClassVar[str] = "series name"
 
     type: Literal["stacked"]
     duration: Duration = 6
@@ -485,6 +624,18 @@ class StackedChart(BaseChart):
     """Columns or rows, as for bar charts. auto uses columns at 16:9 and rows at 9:16."""
     highlight: StackedHighlight | None = None
     """The series to emphasize."""
+
+    def sequence_names(self) -> list[str]:
+        """The series names."""
+        return [series.name for series in self.series]
+
+    def has_highlight(self) -> bool:
+        """Whether a series is emphasized."""
+        return self.highlight is not None
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the series with this name."""
+        return self.model_copy(update={"highlight": StackedHighlight(series=item)})
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
@@ -508,6 +659,7 @@ class StackedChart(BaseChart):
                     f"Series: {_quoted_list(names)}",
                 )
             )
+        issues += self._sequence_issues()
         raise_rule_violations(type(self).__name__, issues)
         return self
 
@@ -534,8 +686,10 @@ class ShareHighlight(SpecModel):
     """Label of the part drawn in the highlight color, with its percent in the middle."""
 
 
-class ShareChart(BaseChart):
+class ShareChart(SequencedChart):
     """How a whole divides into parts, as a ring with the emphasized part's percent inside."""
+
+    sequence_noun: ClassVar[str] = "part label"
 
     type: Literal["share"]
     duration: Duration = 6
@@ -544,6 +698,18 @@ class ShareChart(BaseChart):
     """Two to six parts, in order around the ring, clockwise from the top."""
     highlight: ShareHighlight | None = None
     """The part to emphasize. The largest part, if not given."""
+
+    def sequence_names(self) -> list[str]:
+        """The part labels."""
+        return [part.label for part in self.parts]
+
+    def has_highlight(self) -> bool:
+        """Whether a part is named to emphasize."""
+        return self.highlight is not None
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the part with this label."""
+        return self.model_copy(update={"highlight": ShareHighlight(label=item)})
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
@@ -557,6 +723,7 @@ class ShareChart(BaseChart):
                     f"Parts: {_quoted_list(labels)}",
                 )
             )
+        issues += self._sequence_issues()
         raise_rule_violations(type(self).__name__, issues)
         return self
 
@@ -584,8 +751,10 @@ class TableHighlight(SpecModel):
     """Name of the row, as in its first cell."""
 
 
-class TableChart(BaseChart):
+class TableChart(SequencedChart):
     """A few rows and columns, the rows appearing one after another."""
+
+    sequence_noun: ClassVar[str] = "row name"
 
     type: Literal["table"]
     duration: Duration = 6
@@ -605,6 +774,18 @@ class TableChart(BaseChart):
     def numeric(self, column: int) -> bool:
         """Whether a column holds numbers rather than text. The first column never does."""
         return column > 0 and isinstance(self.rows[0][column], float | int)
+
+    def sequence_names(self) -> list[str]:
+        """The row names."""
+        return self.row_names
+
+    def has_highlight(self) -> bool:
+        """Whether a row is emphasized."""
+        return self.highlight is not None
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the row with this name."""
+        return self.model_copy(update={"highlight": TableHighlight(row=item)})
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
@@ -658,6 +839,7 @@ class TableChart(BaseChart):
                     f"Rows: {_quoted_list(self.row_names)}",
                 )
             )
+        issues += self._sequence_issues()
         raise_rule_violations(type(self).__name__, issues)
         return self
 

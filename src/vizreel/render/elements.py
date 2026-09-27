@@ -19,6 +19,7 @@ from manim import (
     Paragraph,
     RoundedRectangle,
     Text,
+    UpdateFromAlphaFunc,
     VGroup,
     VMobject,
     config,
@@ -259,6 +260,21 @@ def easing(theme: Theme) -> Callable[[float], float]:
     """Return the theme's easing curve as a Manim rate function."""
     curve: Callable[[float], float] = getattr(rate_functions, theme.motion.easing)
     return curve
+
+
+def fade_away(mobject: Mobject) -> UpdateFromAlphaFunc:
+    """Fade a mobject out by lowering its opacity, leaving its shape alone.
+
+    Manim's FadeOut first splits the mobject's curves to match its target, which moves a
+    few edge pixels by a shade; a clip of a sequence must start on exactly the frame the
+    clip before it ended on. The faded mobject stays on the scene, invisible.
+    """
+
+    def fade(target: Mobject, alpha: float) -> None:
+        target.set_opacity(1 - alpha)
+
+    # Manim calls the update function with (mobject, alpha) but types it with one argument.
+    return UpdateFromAlphaFunc(mobject, fade)  # type: ignore[arg-type]
 
 
 def panel(box: Box, theme: Theme) -> RoundedRectangle:

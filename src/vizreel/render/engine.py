@@ -8,13 +8,14 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
+from vizreel.charts.base import Continuation
 from vizreel.charts.registry import builtin_registry
 from vizreel.errors import OutputError, RenderError, VizreelError
 from vizreel.render.layout import Aspect, Layout, build_layout, frame_size
 from vizreel.spec.loader import load_spec
-from vizreel.spec.models import BaseChart, Spec
+from vizreel.spec.models import BaseChart, SequencedChart, Spec
 from vizreel.themes.loader import load_theme
 from vizreel.themes.models import Theme
 
@@ -53,7 +54,7 @@ class RenderOptions:
 
 @dataclass(frozen=True)
 class ChartResult:
-    """Outcome of rendering one chart.
+    """Outcome of rendering one clip of a chart.
 
     Attributes:
         chart_id: The chart's id.
@@ -61,6 +62,8 @@ class ChartResult:
         still: The PNG of the last frame, if requested and rendering succeeded.
         error: Why rendering failed, or None.
         seconds: Time spent rendering.
+        step: For a chart told as a sequence, which clip this is, from 1; else None.
+        steps: For a chart told as a sequence, how many clips it has; else None.
     """
 
     chart_id: str
@@ -68,6 +71,45 @@ class ChartResult:
     still: Path | None = None
     error: str | None = None
     seconds: float = 0.0
+    step: int | None = None
+    steps: int | None = None
+
+
+@dataclass(frozen=True)
+class ClipPlan:
+    """One clip to render for a chart.
+
+    Attributes:
+        chart: The chart as built for the clip, emphasizing the element of its step.
+        continuation: For the later clips of a sequence, what follows the build; else None.
+        step: For a chart told as a sequence, which clip this is, from 1; else None.
+    """
+
+    chart: BaseChart
+    continuation: Continuation | None = None
+    step: int | None = None
+
+
+def plan_clips(chart: BaseChart) -> list[ClipPlan]:
+    """Return the clips of a chart: one, or one per item of its sequence.
+
+    The first clip of a sequence is the chart emphasizing the first item. Each later clip
+    builds the chart emphasizing the item before (the end of the previous clip) and moves
+    the emphasis on to its own item.
+    """
+    if not isinstance(chart, SequencedChart) or not chart.sequence:
+        return [ClipPlan(chart)]
+    items = chart.sequence
+    plans = [ClipPlan(chart.with_highlight(items[0]), step=1)]
+    for index in range(1, len(items)):
+        plans.append(
+            ClipPlan(
+                chart.with_highlight(items[index - 1]),
+                Continuation(items[index], chart.step_duration),
+                step=index + 1,
+            )
+        )
+    return plans
 
 
 @dataclass(frozen=True)
@@ -107,15 +149,17 @@ def frame_settings(spec: Spec, options: RenderOptions) -> FrameSettings:
 
 
 def output_paths(
-    chart_id: str, options: RenderOptions, settings: FrameSettings
+    chart_id: str, options: RenderOptions, settings: FrameSettings, step: int | None = None
 ) -> tuple[Path, Path | None]:
     """Return the clip path and, if a still is requested, the PNG path for a chart.
 
-    Vertical files get a `.vertical` suffix and preview files a `.preview` suffix, so that
-    renders of one chart in another shape or quality never replace each other.
+    The clips of a sequence are numbered from 1. Vertical files get a `.vertical` suffix and
+    preview files a `.preview` suffix, so that renders of one chart in another shape or
+    quality never replace each other.
     """
     stem = (
         chart_id
+        + (f".{step}" if step is not None else "")
         + (VERTICAL_SUFFIX if settings.aspect == "9:16" else "")
         + (PREVIEW_SUFFIX if options.quality == "preview" else "")
     )
@@ -181,32 +225,44 @@ def render_spec(
     for chart in charts:
         if on_start:
             on_start(chart)
-        result = _render_safely(chart, theme, settings, options, reraise)
-        results.append(result)
-        if on_done:
-            on_done(result)
+        plans = plan_clips(chart)
+        steps = len(plans) if plans[0].step is not None else None
+        for plan in plans:
+            result = _render_safely(plan, steps, theme, settings, options, reraise)
+            results.append(result)
+            if on_done:
+                on_done(result)
+            if result.error:
+                # The later clips of a sequence would fail the same way.
+                break
     return results
 
 
 def _render_safely(
-    chart: BaseChart,
+    plan: ClipPlan,
+    steps: int | None,
     theme: Theme,
     settings: FrameSettings,
     options: RenderOptions,
     reraise: bool,
 ) -> ChartResult:
+    chart_id = plan.chart.id
     started = time.perf_counter()
-    video, still = output_paths(chart.id, options, settings)
+    video, still = output_paths(chart_id, options, settings, plan.step)
+
+    def result(**fields: Any) -> ChartResult:
+        seconds = time.perf_counter() - started
+        return ChartResult(chart_id, seconds=seconds, step=plan.step, steps=steps, **fields)
+
     try:
-        render_chart(chart, theme, settings, video, still)
+        render_chart(plan.chart, theme, settings, video, still, plan.continuation)
     except VizreelError as exc:
-        return ChartResult(chart.id, error=str(exc), seconds=time.perf_counter() - started)
+        return result(error=str(exc))
     except Exception as exc:
         if reraise:
             raise
-        error = f"unexpected error: {type(exc).__name__}: {exc}"
-        return ChartResult(chart.id, error=error, seconds=time.perf_counter() - started)
-    return ChartResult(chart.id, video, still, seconds=time.perf_counter() - started)
+        return result(error=f"unexpected error: {type(exc).__name__}: {exc}")
+    return result(video=video, still=still)
 
 
 def render_chart(
@@ -215,10 +271,13 @@ def render_chart(
     settings: FrameSettings,
     video_path: Path,
     still_path: Path | None,
+    continuation: Continuation | None = None,
 ) -> None:
     """Render one chart to `video_path` and, if given, its last frame to `still_path`.
 
-    Manim's cache and partial movie files go to a temporary folder that is removed afterwards.
+    With a `continuation`, render the later clip of a sequence that follows this chart's
+    clip instead. Manim's cache and partial movie files go to a temporary folder that is
+    removed afterwards.
     """
     from manim import Camera, tempconfig
 
@@ -263,7 +322,7 @@ def render_chart(
             width = layout_with(1, 1).title.width
             title, subtitle = elements.header_lines(chart.title, chart.subtitle, theme, width)
             layout = layout_with(len(title), len(subtitle))
-            scene = ChartScene(chart_type(chart, theme, layout))
+            scene = ChartScene(chart_type(chart, theme, layout), continuation)
             scene.render()
             _move(Path(scene.renderer.file_writer.movie_file_path), video_path)
             if still_path is not None:

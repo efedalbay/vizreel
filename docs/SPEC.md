@@ -132,6 +132,8 @@ At the highlight beat the lines dim, the highlighted point gets a guide line and
 | `y_min` / `y_max` | number | no | auto | Axis range. Auto range starts at 0 when all values are positive. `y_min` must be less than `y_max`, and every value must lie inside the range. |
 | `highlight.x` | string | if `highlight` is given | — | An `x` label to mark with a vertical line and dot. At least one series must have a value there. |
 | `highlight.label` | string | no | — | Callout text at the highlighted point. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
 
 Default `duration`: 6.
 
@@ -167,6 +169,8 @@ Bars are drawn as **columns** or as **rows**:
 | `sort` | `none` \| `asc` \| `desc` | no | `none` | Order of bars: left to right as columns, top to bottom as rows. |
 | `layout` | `auto` \| `columns` \| `rows` | no | `auto` | Columns or rows, see above. `auto` picks by the frame's aspect. |
 | `highlight.label` | string | if `highlight` is given | — | Bar to draw in the `highlight` color. Others use `muted`. Must match a bar label. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
 
 Default `duration`: 5.
 
@@ -196,6 +200,8 @@ At the highlight beat the emphasized event's dot grows and turns to the `highlig
 | `events[].date` | string | yes | — | Displayed as written, e.g. `"Mar 2016"`. |
 | `events[].label` | string | yes | — | Short description, max ~40 characters for readability. |
 | `events[].emphasis` | boolean | no | `false` | Draws this event in the `highlight` color, larger. At most one event per timeline. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
 
 Default `duration`: 7.
 
@@ -256,6 +262,8 @@ Bars are drawn as columns or rows, as for bar charts (`layout`); rows have no jo
 | `number` | number format | no | — | Formatting of the values. |
 | `layout` | `auto` \| `columns` \| `rows` | no | `auto` | As for bar charts: `auto` uses columns at 16:9 and rows at 9:16. |
 | `highlight.label` | string | no | the total | The bar to draw in the `highlight` color: the start, a step or the end. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
 
 Labels are unique across the start, the steps and the end. Default `duration`: 6.
 
@@ -287,6 +295,8 @@ A legend under the title names the parts by color, in the theme's `series` color
 | `number` | number format | no | — | Formatting of the totals. |
 | `layout` | `auto` \| `columns` \| `rows` | no | `auto` | As for bar charts: `auto` uses columns at 16:9 and rows at 9:16. |
 | `highlight.series` | string | no | — | The series that keeps its color while the others dim. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
 
 Default `duration`: 6.
 
@@ -316,6 +326,8 @@ Percents are whole numbers that always add up to 100: three equal parts show 34%
 | `parts[].label` | string | yes | — | What the part is. Unique. |
 | `parts[].value` | number | yes | — | The part's size in any unit, above zero; shown as a percent of the total. |
 | `highlight.label` | string | no | the largest part | The part drawn in the `highlight` color, with its percent in the middle. On a tie, the first of the largest. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
 
 Default `duration`: 6.
 
@@ -344,6 +356,8 @@ The column names and a thin line under them appear first; then the rows appear o
 | `rows[][0]` | string | yes | — | The row's name. Unique. |
 | `rows[][1:]` | number or string | yes | — | A column holds either numbers or text in every row; which one is decided by its first row. Quote years and codes that should stay text: `"2016"`. |
 | `highlight.row` | string | no | — | Name of the row to emphasize. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
 
 Default `duration`: 6.
 
@@ -361,6 +375,43 @@ Default `duration`: 6.
     - [Japan, 187500000, 21]
   highlight: { row: Japan }
 ```
+
+---
+
+## Sequences
+
+A chart that emphasizes one element can also be told as a **sequence**: the same chart in several clips, the emphasis moving on in each, for a narration that walks through the data ("first 2016... then 2018..."). Cut the clips back to back in an editor and they play as one continuous chart.
+
+```yaml
+- id: history
+  type: timeline
+  title: How Northwind grew
+  events:
+    - { date: "2016", label: "Founded" }
+    - { date: "2018", label: "Opens offices in three countries" }
+    - { date: "2020", label: "Reaches one million users" }
+  sequence: ["2016", "2018", "2020"]
+```
+
+```
+out/
+├── history.1.mov    ← the chart draws, then emphasizes 2016 (length: duration)
+├── history.2.mov    ← starts on the last frame of history.1, the emphasis moves to 2018
+└── history.3.mov    ← starts on the last frame of history.2, the emphasis moves to 2020
+```
+
+The first clip is the chart as usual, emphasizing the first item. Each later clip starts on exactly the frame the one before ended on, with no title or drawing animation; the emphasis moves to its item, the one before returns to how the other elements look, and the frame holds. Its length is `step_duration` (default 3 seconds), at least the theme's highlight time plus its final hold. Clip numbers come before the other suffixes: `history.2.vertical.preview.mov`.
+
+| Chart type | A `sequence` item names |
+|---|---|
+| `bar`, `waterfall` | A bar label. |
+| `timeline` | An event date. A date used by two events cannot be named. |
+| `stacked` | A series name. |
+| `share` | A part label. |
+| `table` | A row name. |
+| `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
+
+A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat` and `compare` charts have no elements to emphasize and no sequence.
 
 ---
 

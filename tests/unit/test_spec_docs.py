@@ -28,7 +28,7 @@ README_EXAMPLES = spec_examples(ROOT / "README.md")
 
 
 def test_examples_are_found() -> None:
-    assert len(SPEC_EXAMPLES) == 10
+    assert len(SPEC_EXAMPLES) == 11
     assert len(README_EXAMPLES) == 1
 
 

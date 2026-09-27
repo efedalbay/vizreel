@@ -349,7 +349,6 @@ class ShareChartType(ChartType):
         """
         from manim import (
             FadeIn,
-            FadeOut,
             ManimColor,
             UpdateFromAlphaFunc,
             VGroup,
@@ -357,6 +356,8 @@ class ShareChartType(ChartType):
         )
 
         assert isinstance(self.chart, ShareChart)
+        from vizreel.render import elements
+
         colors = self.theme.colors
         final = self._final
         labels = [part.label for part in self.chart.parts]
@@ -378,14 +379,19 @@ class ShareChartType(ChartType):
                 name.animate.set_color(colors.text if part == index else colors.muted),
             ]
         if final.shown is not None:
-            animations.append(FadeOut(final.shown))
+            animations.append(elements.fade_away(final.shown))
         baseline, center_name = self._center_text(index)
         cx, _ = final.center
         percent = final.percents[index]
-        number = final.glyphs.at(format_percent(0), cx, baseline)
+        number = VGroup()
 
         def count(mobject: "Mobject", alpha: float) -> None:
-            mobject.become(final.glyphs.at(format_percent(percent * alpha), cx, baseline))
+            # The percent fades in as it counts, so that the first frame of the emphasis is
+            # still the frame before it, where a sequence cuts. Each frame holds a fresh text
+            # rather than reshaping the last one, so the final text does not depend on how
+            # many frames led to it.
+            text = final.glyphs.at(format_percent(percent * alpha), cx, baseline)
+            mobject.submobjects = [text.set_opacity(alpha)]
 
         animations.append(UpdateFromAlphaFunc(number, count))  # type: ignore[arg-type]
         if center_name is not None:

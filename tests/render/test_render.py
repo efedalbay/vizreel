@@ -515,6 +515,59 @@ def test_table_bands_the_highlighted_row(tmp_path: Path, aspect: str) -> None:
     assert np.median(rows) > height / 2
 
 
+SEQUENCE_DURATIONS = {
+    "bar": 5,
+    "line": 6,
+    "timeline": 7,
+    "waterfall": 6,
+    "stacked": 6,
+    "share": 6,
+    "table": 6,
+}
+
+
+@pytest.mark.parametrize("aspect", ["16:9", "9:16"])
+@pytest.mark.parametrize("chart_id", list(SEQUENCE_DURATIONS))
+def test_a_sequence_cuts_together_without_a_jump(
+    tmp_path: Path, chart_id: str, aspect: str
+) -> None:
+    results = render_spec(
+        FIXTURES / "sequences.yaml",
+        RenderOptions(out_dir=tmp_path, only=(chart_id,), quality="preview", aspect=aspect),
+        reraise=True,
+    )
+
+    assert [(result.step, result.steps, result.error) for result in results] == [
+        (1, 2, None),
+        (2, 2, None),
+    ]
+    assert results[1].video is not None
+    assert results[1].video.name.startswith(f"{chart_id}.2.")
+    first, second = (frames_rgba(result.video) for result in results if result.video)
+    assert len(first) == SEQUENCE_DURATIONS[chart_id] * PREVIEW_FPS
+    assert len(second) == 3 * PREVIEW_FPS
+    # The second clip starts on exactly the frame the first one ends on...
+    assert np.array_equal(first[-1], second[0])
+    # ...and then the emphasis moves.
+    assert not np.array_equal(second[0], second[-1])
+
+
+def test_a_step_duration_too_short_for_the_theme_is_an_error(tmp_path: Path) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n"
+        "  - { id: b, type: bar, bars: [{ label: A, value: 1 }, { label: B, value: 2 }], "
+        "sequence: [A, B], step_duration: 2 }\n",
+        encoding="utf-8",
+    )
+
+    results = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+
+    assert results[0].error is None
+    assert results[1].error is not None
+    assert "step_duration 2s is too short" in results[1].error
+
+
 def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
     long = "Northwind signs a partnership with every airline in the region at once"
     events = ", ".join(f'{{ date: "{2010 + i}", label: "{long}" }}' for i in range(7))

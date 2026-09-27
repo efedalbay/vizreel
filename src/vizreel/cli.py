@@ -201,6 +201,8 @@ def _print_vizreel_error(error: VizreelError) -> None:
 
 def _print_chart_result(console: Console, result: ChartResult) -> None:
     name = escape(result.chart_id)
+    if result.step is not None:
+        name += f" {result.step}/{result.steps}"
     if result.error:
         _stderr().print(f"  [red]{name}[/]: {escape(result.error)}")
         return

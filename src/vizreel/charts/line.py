@@ -197,7 +197,9 @@ def _segment_hits_box(start: Point, end: Point, box: Box) -> bool:
 
 
 def marked_points(chart: LineChart) -> list[LineHighlight]:
-    """Every point the chart marks."""
+    """Every point the chart marks: each point of its sequence, or its one highlight."""
+    if chart.sequence:
+        return [LineHighlight(x=item) if isinstance(item, str) else item for item in chart.sequence]
     return [chart.highlight] if chart.highlight else []
 
 
@@ -577,7 +579,9 @@ class LineChartType(ChartType):
         marks of an earlier emphasis fade out. Dots at the line ends dim by blending toward
         the background, so that they stay opaque and the line end does not show through.
         """
-        from manim import Create, FadeIn, FadeOut, ManimColor, VGroup, interpolate_color
+        from manim import Create, FadeIn, ManimColor, VGroup, interpolate_color
+
+        from vizreel.render import elements
 
         colors = self.theme.colors
         final = self._final
@@ -593,7 +597,7 @@ class LineChartType(ChartType):
             ),
         ]
         if final.shown is not None:
-            animations.append(FadeOut(final.shown))
+            animations.append(elements.fade_away(final.shown))
         guide, dots, callout = final.marks(target)
         animations += [Create(guide), FadeIn(dots), *([FadeIn(callout)] if callout else [])]
         final.shown = VGroup(guide, dots, *([callout] if callout else []))

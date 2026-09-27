@@ -1,0 +1,11 @@
+# A chart told as a sequence: three clips that cut together into one. All data is fictional.
+version: 1
+charts:
+  - id: history
+    type: timeline
+    title: How Northwind grew
+    events:
+      - { date: "2016", label: "Founded in a garage" }
+      - { date: "2018", label: "Opens offices in three countries" }
+      - { date: "2020", label: "Reaches one million users" }
+    sequence: ["2016", "2018", "2020"]

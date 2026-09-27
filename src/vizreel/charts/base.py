@@ -13,6 +13,21 @@ from vizreel.themes.models import Theme
 if TYPE_CHECKING:
     from manim import Scene
 
+    from vizreel.render.scene import ChartScene
+
+
+@dataclass(frozen=True)
+class Continuation:
+    """What a clip of a sequence does after the clip before it.
+
+    Attributes:
+        item: The sequence item to emphasize.
+        duration: Length of the clip, in seconds.
+    """
+
+    item: Any
+    duration: float
+
 
 class ChartType(ABC):
     """A chart type: its spec model and how it builds itself on a Manim scene.
@@ -52,6 +67,36 @@ class ChartType(ABC):
         this; it is valid once `build` has run.
         """
         raise NotImplementedError(f"{self.name} charts cannot be told as a sequence")
+
+    def continue_to(self, scene: "ChartScene", item: Any, duration: float) -> None:
+        """Play the clip of a sequence that follows this chart's clip.
+
+        The chart is built again without recording a frame, which leaves the scene exactly
+        on the last frame of its own clip; then the emphasis moves to `item` and holds.
+
+        Args:
+            scene: The scene to play on.
+            item: The sequence item to emphasize next.
+            duration: Length of the clip, in seconds.
+
+        Raises:
+            RenderError: `duration` leaves less than the theme's hold after the emphasis.
+        """
+        from vizreel.render import elements
+
+        motion = self.theme.motion
+        hold = duration - motion.highlight
+        if hold < motion.hold - 1e-9:
+            raise RenderError(
+                f"step_duration {duration:g}s is too short for this theme; use at least "
+                f"{motion.highlight + motion.hold:g}s"
+            )
+        with scene.unrecorded():
+            self.build(scene)
+        scene.play(
+            *self.emphasis(item), run_time=motion.highlight, rate_func=elements.easing(self.theme)
+        )
+        scene.wait(hold)
 
 
 MAIN_SHARE_MAX = 0.5

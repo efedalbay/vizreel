@@ -1,0 +1,58 @@
+# One chart of every type that can be told as a sequence, each in two clips.
+version: 1
+charts:
+  - id: bar
+    type: bar
+    bars:
+      - { label: North, value: 412 }
+      - { label: South, value: 298 }
+      - { label: East, value: 187 }
+    sequence: [North, East]
+
+  - id: line
+    type: line
+    x: ["2019", "2020", "2021", "2022"]
+    series:
+      - { name: Cloud, values: [1.2, 2.4, 3.9, 5.1] }
+      - { name: Devices, values: [3.1, 2.9, 3.2, 3.0] }
+    sequence: ["2020", { x: "2021", label: "Cloud passes devices" }]
+
+  - id: timeline
+    type: timeline
+    events:
+      - { date: "2016", label: "Founded" }
+      - { date: "2018", label: "Opens offices" }
+      - { date: "2020", label: "One million users" }
+    sequence: ["2016", "2020"]
+
+  - id: waterfall
+    type: waterfall
+    start: { label: Revenue, value: 12 }
+    steps:
+      - { label: Salaries, value: -5 }
+      - { label: Other income, value: 1 }
+    sequence: [Salaries, Total]
+
+  - id: stacked
+    type: stacked
+    categories: ["2021", "2022"]
+    series:
+      - { name: Cloud, values: [1.2, 2.4] }
+      - { name: Devices, values: [3.1, 2.9] }
+    sequence: [Cloud, Devices]
+
+  - id: share
+    type: share
+    parts:
+      - { label: Northwind, value: 47 }
+      - { label: Contoso, value: 28 }
+      - { label: Others, value: 25 }
+    sequence: [Northwind, Contoso]
+
+  - id: table
+    type: table
+    columns: [{ name: Market }, { name: Revenue }]
+    rows:
+      - [Germany, 412]
+      - [France, 298]
+    sequence: [Germany, France]
