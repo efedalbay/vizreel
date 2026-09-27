@@ -4,6 +4,16 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-09-28
+
+### Added
+
+- Sequences: a bar, line, timeline, waterfall, stacked, share or table chart takes a `sequence` of 2 to 8 elements to emphasize and renders one clip per element, `ID.1.mov`, `ID.2.mov` and so on. Each clip after the first starts on exactly the last frame of the one before and moves the emphasis on, so the clips cut together into one continuous chart. `step_duration` sets the length of those clips, 3 seconds by default.
+
+### Changed
+
+- The percent in the middle of a share chart fades in as it counts up.
+
 ## [0.4.4] - 2026-09-28
 
 ### Added
@@ -82,6 +92,7 @@ The first release.
 - `vizreel new TYPE` prints a commented template for each chart type.
 - The Inter typeface, bundled so that output looks the same on every machine.
 
+[0.5.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.5.0
 [0.4.4]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.4
 [0.4.3]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.3
 [0.4.2]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.2
