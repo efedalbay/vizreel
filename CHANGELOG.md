@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.2] - 2026-09-27
+
+### Added
+
+- The `stacked` chart type: bars made of two or three parts, one bar per category, with each bar's total and a legend. The parts grow one series at a time, and a highlighted series keeps its color while the others dim. Columns at 16:9 and rows at 9:16, as for bar charts.
+
 ## [0.4.1] - 2026-09-27
 
 ### Added
@@ -64,6 +70,7 @@ The first release.
 - `vizreel new TYPE` prints a commented template for each chart type.
 - The Inter typeface, bundled so that output looks the same on every machine.
 
+[0.4.2]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.2
 [0.4.1]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.1
 [0.4.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.0
 [0.3.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.3.0
