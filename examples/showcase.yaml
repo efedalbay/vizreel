@@ -68,3 +68,11 @@ charts:
       - { name: Devices, values: [3.1, 2.9, 3.2] }
     number: { prefix: "$", suffix: "B" }
     highlight: { series: Cloud }
+
+  - id: market
+    type: share
+    title: Northwind's share of the market
+    parts:
+      - { label: Northwind, value: 47 }
+      - { label: Contoso, value: 28 }
+      - { label: Others, value: 25 }

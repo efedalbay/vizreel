@@ -454,6 +454,34 @@ def test_stacked_keeps_the_highlighted_series_color(tmp_path: Path, aspect: str)
     assert pixels(colors.series[1]) < 20
 
 
+@pytest.mark.parametrize("aspect", ["16:9", "9:16"])
+def test_share_highlights_the_largest_part(tmp_path: Path, aspect: str) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    [result] = render_spec(
+        SHOWCASE,
+        RenderOptions(
+            out_dir=tmp_path, only=("market",), quality="preview", still=True, aspect=aspect
+        ),
+        reraise=True,
+    )
+    assert result.error is None
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    rows, columns = np.nonzero(np.all(np.abs(rgb - hex_rgb(colors.highlight)) <= 6, axis=2))
+
+    assert len(frames) == 6 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    # Northwind, the largest part, is first: it starts at 12 o'clock, where the ring's top
+    # is, and runs clockwise through 47% of the ring, all on the right of that point.
+    assert rows.size > 500
+    ring_top_x = columns[rows < rows.min() + 3].min()
+    assert np.mean(columns >= ring_top_x - 2) > 0.95
+
+
 def test_timeline_label_too_long_is_an_error(tmp_path: Path) -> None:
     long = "Northwind signs a partnership with every airline in the region at once"
     events = ", ".join(f'{{ date: "{2010 + i}", label: "{long}" }}' for i in range(7))

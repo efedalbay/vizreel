@@ -518,6 +518,56 @@ class StackedChart(BaseChart):
         ]
 
 
+class SharePart(SpecModel):
+    """One part of the whole on a share chart."""
+
+    label: Text
+    """What the part is, e.g. "Northwind"."""
+    value: float = Field(gt=0)
+    """The part's size, in any unit; it is shown as a percent of the total. Above zero."""
+
+
+class ShareHighlight(SpecModel):
+    """The part to emphasize."""
+
+    label: Text
+    """Label of the part drawn in the highlight color, with its percent in the middle."""
+
+
+class ShareChart(BaseChart):
+    """How a whole divides into parts, as a ring with the emphasized part's percent inside."""
+
+    type: Literal["share"]
+    duration: Duration = 6
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    parts: list[SharePart] = Field(min_length=2, max_length=6)
+    """Two to six parts, in order around the ring, clockwise from the top."""
+    highlight: ShareHighlight | None = None
+    """The part to emphasize. The largest part, if not given."""
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        labels = [part.label for part in self.parts]
+        issues = _duplicate_issues(labels, "parts", "label", "part labels")
+        if self.highlight is not None and self.highlight.label not in labels:
+            issues.append(
+                (
+                    ("highlight", "label"),
+                    f'"{self.highlight.label}" does not match any part. '
+                    f"Parts: {_quoted_list(labels)}",
+                )
+            )
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+    def highlighted(self) -> int:
+        """Index of the emphasized part: the one named by `highlight`, else the largest."""
+        if self.highlight is not None:
+            return [part.label for part in self.parts].index(self.highlight.label)
+        values = [part.value for part in self.parts]
+        return values.index(max(values))
+
+
 def _location_text(location: Location) -> str:
     """Write a location the way error messages show it: steps[2].label."""
     text = ""

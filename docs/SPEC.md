@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`. |
+| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `share`. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -300,6 +300,33 @@ Default `duration`: 6.
     - { name: Devices, values: [3.1, 2.9, 3.2] }
   number: { prefix: "$", suffix: "B" }
   highlight: { series: Cloud }
+```
+
+## `share` — parts of a whole
+
+How a whole divides into two to six parts, e.g. shares of a market, as a ring.
+
+The ring draws clockwise from the top, and a legend beside it (under it at 9:16) lists each part with its percent of the total, which counts up as its part draws. The parts are shades of the theme's `muted` color. At the highlight beat the highlighted part turns to the `highlight` color and its percent counts up in the middle of the ring, with its label under it when both fit.
+
+Percents are whole numbers that always add up to 100: three equal parts show 34%, 33% and 33%, not 33% three times.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `parts` | list | yes | — | 2–6 parts, clockwise from the top. |
+| `parts[].label` | string | yes | — | What the part is. Unique. |
+| `parts[].value` | number | yes | — | The part's size in any unit, above zero; shown as a percent of the total. |
+| `highlight.label` | string | no | the largest part | The part drawn in the `highlight` color, with its percent in the middle. On a tie, the first of the largest. |
+
+Default `duration`: 6.
+
+```yaml
+- id: market
+  type: share
+  title: Northwind's share of the market
+  parts:
+    - { label: Northwind, value: 47 }
+    - { label: Contoso, value: 28 }
+    - { label: Others, value: 25 }
 ```
 
 ---

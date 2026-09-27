@@ -29,6 +29,7 @@ def test_builtin_registry_has_every_chart_type() -> None:
         "bar",
         "compare",
         "line",
+        "share",
         "stacked",
         "stat",
         "timeline",
