@@ -141,6 +141,33 @@ def format_change(
     return sign + text
 
 
+def whole_percents(values: Sequence[float]) -> list[int]:
+    """Return each value's share of the total in whole percents that add up to exactly 100.
+
+    Rounding each share on its own can give 99 or 101 (33 + 33 + 33); a viewer adds them up
+    and wonders what is missing. The largest remainder method floors every share, then gives
+    the missing points to the shares that lost the most, earlier values first on a tie.
+
+    Raises:
+        ValueError: The values do not add up to more than zero.
+    """
+    total = sum(values)
+    if total <= 0:
+        raise ValueError("percents need a total above zero")
+    exact = [value / total * 100 for value in values]
+    percents = [math.floor(share) for share in exact]
+    missing = 100 - sum(percents)
+    by_remainder = sorted(range(len(values)), key=lambda index: percents[index] - exact[index])
+    for index in by_remainder[:missing]:
+        percents[index] += 1
+    return percents
+
+
+def format_percent(percent: float) -> str:
+    """Format a whole percent, e.g. 47 → "47%"."""
+    return f"{_round(_to_decimal(percent), 0):,.0f}%"
+
+
 def _format(value: float, fmt: NumberFormat, decimals: int) -> str:
     rounded, unit_index = _round_scaled(_to_decimal(value), fmt.compact, decimals)
     sign = MINUS_SIGN if rounded < 0 else ""

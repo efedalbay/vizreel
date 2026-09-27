@@ -8,7 +8,9 @@ from vizreel.format.numbers import (
     format_change,
     format_number,
     format_numbers,
+    format_percent,
     shared_decimals,
+    whole_percents,
 )
 from vizreel.spec.models import NumberFormat
 
@@ -263,3 +265,30 @@ def test_a_counting_change_keeps_the_decimals_of_its_final_value() -> None:
 def test_percent_change_from_a_value_that_is_not_positive_is_an_error(before: float) -> None:
     with pytest.raises(ValueError, match="in percent"):
         change_amount(before, 10, "percent")
+
+
+@pytest.mark.parametrize(
+    ("values", "expected"),
+    [
+        ([47, 28, 25], [47, 28, 25]),
+        ([1, 1, 1], [34, 33, 33]),
+        ([2, 1], [67, 33]),
+        ([0.1, 99.9], [0, 100]),
+        ([5, 5, 5, 5, 5, 5], [17, 17, 17, 17, 16, 16]),
+    ],
+)
+def test_whole_percents_add_up_to_100(values: list[float], expected: list[int]) -> None:
+    percents = whole_percents(values)
+
+    assert percents == expected
+    assert sum(percents) == 100
+
+
+def test_whole_percents_need_a_positive_total() -> None:
+    with pytest.raises(ValueError, match="above zero"):
+        whole_percents([0, 0])
+
+
+@pytest.mark.parametrize(("percent", "expected"), [(47, "47%"), (0, "0%"), (46.6, "47%")])
+def test_format_percent(percent: float, expected: str) -> None:
+    assert format_percent(percent) == expected
