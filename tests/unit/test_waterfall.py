@@ -1,6 +1,6 @@
 import pytest
 
-from vizreel.charts.waterfall import WaterfallBar, sequential_progress, waterfall_bars
+from vizreel.charts.waterfall import WaterfallBar, waterfall_bars
 from vizreel.errors import SpecError
 from vizreel.spec.loader import parse_spec
 from vizreel.spec.models import WaterfallChart
@@ -102,13 +102,3 @@ def test_a_negative_start_is_an_error() -> None:
     [issue] = caught.value.issues
 
     assert str(issue).startswith("charts[0].start.value:")
-
-
-@pytest.mark.parametrize(
-    ("progress", "expected"),
-    [(0.0, [0, 0, 0, 0]), (0.25, [1, 0, 0, 0]), (0.375, [1, 0.5, 0, 0]), (1.0, [1, 1, 1, 1])],
-)
-def test_items_run_one_after_another(progress: float, expected: list[float]) -> None:
-    assert [sequential_progress(progress, index, 4) for index in range(4)] == pytest.approx(
-        expected
-    )

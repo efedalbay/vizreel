@@ -137,6 +137,20 @@ def staggered_progress(
     return min(max((progress * total - index * delay) / duration, 0.0), 1.0)
 
 
+def sequential_progress(progress: float, index: int, count: int) -> float:
+    """Progress of one of `count` items that run one after another, each in an equal share.
+
+    Args:
+        progress: How far the group is, from 0 to 1.
+        index: Position of the item in the group, from 0.
+        count: Number of items.
+
+    Returns:
+        How far the item is, from 0 to 1.
+    """
+    return min(max(progress * count - index, 0.0), 1.0)
+
+
 class FrameClock:
     """Turns the wanted length of each animation into whole frames.
 

@@ -5,6 +5,7 @@ from vizreel.charts.base import (
     Phases,
     check_reading_time,
     reading_time,
+    sequential_progress,
     split_duration,
     staggered_progress,
 )
@@ -137,3 +138,13 @@ def test_text_that_appears_too_late_names_the_duration_needed() -> None:
         r"set duration to at least 4.5s",
     ):
         check_reading_time([("Revenue grew for six straight years", 2.5)], 4)
+
+
+@pytest.mark.parametrize(
+    ("progress", "expected"),
+    [(0.0, [0, 0, 0, 0]), (0.25, [1, 0, 0, 0]), (0.375, [1, 0.5, 0, 0]), (1.0, [1, 1, 1, 1])],
+)
+def test_sequential_items_run_one_after_another(progress: float, expected: list[float]) -> None:
+    assert [sequential_progress(progress, index, 4) for index in range(4)] == pytest.approx(
+        expected
+    )

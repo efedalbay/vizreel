@@ -12,7 +12,12 @@ from vizreel.charts._bars import (
     plan_rows,
     uses_rows,
 )
-from vizreel.charts.base import ChartType, check_reading_time, split_duration
+from vizreel.charts.base import (
+    ChartType,
+    check_reading_time,
+    sequential_progress,
+    split_duration,
+)
 from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.format.numbers import format_change, format_number, shared_decimals
@@ -70,14 +75,6 @@ def waterfall_bars(chart: WaterfallChart) -> list[WaterfallBar]:
         total += step.value
     bars.append(WaterfallBar(chart.end.label, 0.0, total, "total"))
     return bars
-
-
-def sequential_progress(progress: float, index: int, count: int) -> float:
-    """Progress of one of `count` items that run one after another, from 0 to 1.
-
-    Each step of a waterfall starts where the previous one ended, so they do not overlap.
-    """
-    return min(max(progress * count - index, 0.0), 1.0)
 
 
 @register
