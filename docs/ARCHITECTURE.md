@@ -149,7 +149,7 @@ Rules:
 - A chart must respect `chart.duration`. The shared timing helpers in `base.py` split duration into intro, main animation, highlight and hold phases, and check that text stays on screen long enough to be read.
 - Number text always goes through `format/numbers.py`, with the chart's `self.locale`. The `locale` argument of its formatting functions has no default, so a call that forgets it fails type checking instead of writing English numbers into a Turkish video.
 - A chart module imports Manim, and `render/elements.py`, inside `build`, not at the top. `vizreel validate` imports every chart module through the registry, and importing Manim takes several seconds.
-- Text is never shrunk to fit. Text that does not fit at the theme size is a `RenderError` asking the user to shorten it.
+- Text is never shrunk to fit. Text that does not fit at the theme size is a `RenderError` asking the user to shorten it. The exception is a big number, which cannot wrap: `fitting_number_size` in `base.py` shrinks it to at most half its size, for the widest text of its count (`count_samples`); see `docs/DESIGN.md` §2.
 
 Adding a new chart type = one module in `charts/` (with its template) + one Pydantic model + one section in `docs/SPEC.md` + one example in `examples/showcase.yaml` + tests. Nothing else. The registry refuses a chart type without a template, and a test checks that every template is a valid spec, also with its commented optional fields uncommented.
 

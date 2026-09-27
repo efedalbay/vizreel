@@ -3,7 +3,13 @@
 from itertools import pairwise
 from typing import TYPE_CHECKING
 
-from vizreel.charts.base import ChartType, check_reading_time, split_duration
+from vizreel.charts.base import (
+    ChartType,
+    check_reading_time,
+    count_samples,
+    fitting_number_size,
+    split_duration,
+)
 from vizreel.charts.registry import register
 from vizreel.format.numbers import decimals_for, format_number
 from vizreel.render.layout import stack_gap
@@ -77,7 +83,19 @@ class StatChartType(ChartType):
             update={"decimals": decimals_for([chart.start, chart.value], chart.number)}
         )
 
-        glyphs = NumberGlyphs(fonts.numbers, sizes.big_number, number_color[chart.trend])
+        counted = [
+            format_number(value, number_format, locale=self.locale)
+            for value in count_samples(chart.start, chart.value)
+        ]
+        # The size fits the widest text of the count, and stays the same while it counts.
+        at_theme_size = NumberGlyphs(fonts.numbers, sizes.big_number, colors.text)
+        number_size = fitting_number_size(
+            sizes.big_number,
+            max(at_theme_size(text).width for text in counted),
+            self.layout.inner.width,
+            "the number",
+        )
+        glyphs = NumberGlyphs(fonts.numbers, number_size, number_color[chart.trend])
 
         def number(value: float) -> "VMobject":
             return glyphs(format_number(value, number_format, locale=self.locale))
@@ -88,8 +106,8 @@ class StatChartType(ChartType):
         source = line(chart.source, fonts.body, sizes.caption, colors.muted)
         footer = line(chart.label, fonts.body, sizes.label, colors.muted) + source
         final_number = number(chart.value)
-        widest_number = max(final_number, number(chart.start), key=lambda mobject: mobject.width)
-        lines = [*header, (final_number, sizes.big_number), *footer]
+        widest_number = max((glyphs(text) for text in counted), key=lambda mobject: mobject.width)
+        lines = [*header, (final_number, number_size), *footer]
 
         elements.check_fits(widest_number, self.layout.inner, "the number")
         # The header and the source line are set apart; the number and its label stay close.

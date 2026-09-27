@@ -3,7 +3,13 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from vizreel.charts.base import ChartType, check_reading_time, split_duration
+from vizreel.charts.base import (
+    ChartType,
+    check_reading_time,
+    count_samples,
+    fitting_number_size,
+    split_duration,
+)
 from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.format.numbers import (
@@ -202,11 +208,18 @@ class CompareChartType(ChartType):
         places = decimals_for([0, before_value, after_value], chart.number)
         number_format = chart.number.model_copy(update={"decimals": places})
         number_size = sizes.big_number * NUMBER_SCALE
-        before_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.muted)
-        after_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text)
         before_text = format_number(before_value, number_format, locale=self.locale)
         after_text = format_number(after_value, number_format, locale=self.locale)
-        widest = max(before_glyphs(before_text).width, after_glyphs(after_text).width)
+        # The earlier value counts up from zero, the later one from the earlier value.
+        counted = [
+            format_number(value, number_format, locale=self.locale)
+            for value in {
+                *count_samples(0, before_value),
+                *count_samples(before_value, after_value),
+            }
+        ]
+        at_scale = NumberGlyphs(fonts.numbers, number_size, colors.text)
+        widest = max(at_scale(text).width for text in counted)
 
         change_kind = chart.change
         amount = 0.0
@@ -231,8 +244,10 @@ class CompareChartType(ChartType):
         # Values too wide to sit side by side go one above the other, as in a vertical frame.
         stacked = layout.vertical or widest > side_column + 1e-9
         column = content.width if stacked else side_column
-        if widest > column + 1e-9:
-            raise RenderError("the values are too wide for the frame; use compact numbers")
+        number_size = fitting_number_size(number_size, widest, column, "the values")
+        before_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.muted)
+        after_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text)
+        widest = max(after_glyphs(text).width for text in counted)
 
         def label_block(text: str) -> "elements.TextBlock":
             return elements.wrapped_block(

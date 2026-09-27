@@ -133,7 +133,7 @@ This renders `740 milyon TL`.
 
 ## `stat` — big number card
 
-A single number that counts up (or down) to its value. Use it for the one figure the viewer must remember.
+A single number that counts up (or down) to its value. Use it for the one figure the viewer must remember. A number too wide for the frame, such as a long compact number in a vertical clip, shrinks until it fits, down to half the theme's size; one wider still is an error asking you to use `compact: short`.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
@@ -259,7 +259,7 @@ Default `duration`: 7.
 
 One measure at two moments: the earlier value, an arrow, the later value, and the change between them.
 
-The earlier value counts up and the arrow draws; then the later value counts from the earlier value to its own, so the viewer sees the change happen. At the highlight beat the earlier value dims and the change counts in. The values sit side by side at 16:9, and one above the other at 9:16 or when they are too wide to sit side by side. A value too wide even for that is an error asking you to use compact numbers.
+The earlier value counts up and the arrow draws; then the later value counts from the earlier value to its own, so the viewer sees the change happen. At the highlight beat the earlier value dims and the change counts in. The values sit side by side at 16:9, and one above the other at 9:16 or when they are too wide to sit side by side. Values too wide even for that shrink until they fit, down to half their size; values wider still are an error asking you to use `compact: short`.
 
 The change is always signed. In percent it is a whole number from 10% up (`−72%`) and keeps one decimal below (`+4.5%`); as a difference it uses the chart's `number` format (`+$150M`). With `trend: auto` a rise is drawn in the theme's `positive` color and a fall in its `negative` color; use `trend: none` when a rise is bad news, such as costs.
 

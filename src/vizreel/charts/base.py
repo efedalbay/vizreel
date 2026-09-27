@@ -259,3 +259,47 @@ def check_reading_time(texts: list[tuple[str, float]], duration: float) -> None:
                 f'"{text}" needs {reading_time(text):.1f}s on screen to be read; '
                 f"set duration to at least {needed:.1f}s"
             )
+
+
+SMALLEST_NUMBER_SCALE = 0.5
+"""A big number too wide for the frame shrinks to at most this share of its size
+(docs/DESIGN.md §2)."""
+
+
+def count_samples(start: float, end: float) -> list[float]:
+    """Return values whose text is as wide as the widest text a count from `start` to `end` shows.
+
+    With tabular figures, the width of a number in one format depends only on its sign, its
+    number of digits, its compact unit and whether the unit name is plural. Each of these
+    changes at zero, at a power of ten or at twice one, so the widest text is at one of those
+    or at an end of the count.
+    """
+    low, high = sorted((start, end))
+    samples = {start, end}
+    if low < 0 < high:
+        samples.add(0.0)
+    for exponent in range(25):
+        for magnitude in (10.0**exponent, 2 * 10.0**exponent):
+            samples.update(value for value in (magnitude, -magnitude) if low <= value <= high)
+    return sorted(samples)
+
+
+def fitting_number_size(size: float, width: float, room: float, what: str) -> float:
+    """Return the size at which a number `width` wide at `size` fits in `room`.
+
+    A number that fits keeps its size; a wider one shrinks, down to `SMALLEST_NUMBER_SCALE`
+    of it. Sizes are in px and widths in scene units.
+
+    Raises:
+        RenderError: The number does not fit even at the smallest size.
+    """
+    if width <= room:
+        return size
+    scale = room / width
+    if scale < SMALLEST_NUMBER_SCALE:
+        raise RenderError(
+            f"{what} is too wide to fit even at half the theme's size; "
+            "use compact: short, fewer decimals or a shorter prefix or suffix"
+        )
+    # Just under the exact scale, so that rounding in the text layout cannot push it over.
+    return size * scale * (1 - 1e-6)

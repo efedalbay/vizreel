@@ -608,21 +608,31 @@ def test_every_template_renders(tmp_path: Path, name: str) -> None:
 
 
 @pytest.mark.parametrize("locale", ["en-US", "tr-TR", "es-ES", "pt-BR", "fr-FR"])
-def test_every_locale_renders(tmp_path: Path, locale: str) -> None:
+def test_long_numbers_shrink_to_fit_a_vertical_frame_in_every_locale(
+    tmp_path: Path, locale: str
+) -> None:
     spec = tmp_path / "spec.yaml"
     spec.write_text(
         f"version: 1\nmeta: {{ locale: {locale} }}\ncharts:\n"
-        "  - id: revenue\n    type: stat\n    value: 18460000\n"
+        "  - id: revenue\n    type: stat\n    value: 1846000000\n"
         "    number: { suffix: ' €', compact: true }\n"
         "  - id: staff\n    type: compare\n"
-        "    before: { label: '2019', value: 12846.5 }\n"
-        "    after: { label: '2022', value: 3405 }\n",
+        "    before: { label: '2019', value: 1846000000 }\n"
+        "    after: { label: '2022', value: 740000000 }\n"
+        "    number: { suffix: ' €', compact: true }\n",
         encoding="utf-8",
     )
 
-    results = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+    results = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview", aspect="9:16"))
 
     assert [result.error for result in results] == [None, None]
+    width = PREVIEW[1]
+    for result in results:
+        assert result.video is not None
+        for frame in frames_rgba(result.video):
+            columns = np.nonzero(frame[:, :, 3])[1]
+            assert columns.min() >= width * 0.05 - 1
+            assert columns.max() <= width * 0.95 + 1
 
 
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
