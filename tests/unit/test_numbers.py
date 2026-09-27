@@ -2,7 +2,10 @@ import pytest
 
 from vizreel.format.numbers import (
     MINUS_SIGN,
+    change_amount,
+    change_decimals,
     decimals_for,
+    format_change,
     format_number,
     format_numbers,
     shared_decimals,
@@ -216,3 +219,47 @@ def test_decimals_for(values: list[float], fmt: NumberFormat | None, expected: i
 def test_non_finite_values_are_rejected(value: float) -> None:
     with pytest.raises(ValueError, match="cannot format"):
         format_number(value)
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "expected"),
+    [
+        (1200, 340, f"{M}72%"),
+        (100, 104.5, "+4.5%"),
+        (100, 95.5, f"{M}4.5%"),
+        (100, 109.96, "+10%"),
+        (100, 350, "+250%"),
+        (10, 1500, "+14,900%"),
+        (100, 100, "0%"),
+        (100, 100.01, "0.0%"),
+    ],
+)
+def test_percent_changes(before: float, after: float, expected: str) -> None:
+    assert format_change(change_amount(before, after, "percent"), "percent") == expected
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "fmt", "expected"),
+    [
+        (1200, 340, NumberFormat(), f"{M}860"),
+        (1_250_000_000, 1_400_000_000, NumberFormat(prefix="$", compact=True), "+$150M"),
+        (2.5, 1.25, NumberFormat(suffix=" kg"), f"{M}1.25 kg"),
+        (7, 7, NumberFormat(prefix="$"), "$0"),
+    ],
+)
+def test_absolute_changes(before: float, after: float, fmt: NumberFormat, expected: str) -> None:
+    assert format_change(change_amount(before, after, "absolute"), "absolute", fmt) == expected
+
+
+def test_a_counting_change_keeps_the_decimals_of_its_final_value() -> None:
+    final = change_amount(100, 104.5, "percent")
+    places = change_decimals(final, "percent")
+
+    assert format_change(final * 0.1, "percent", decimals=places) == "+0.5%"
+    assert format_change(0.0, "percent", decimals=places) == "0.0%"
+
+
+@pytest.mark.parametrize("before", [0, -5])
+def test_percent_change_from_a_value_that_is_not_positive_is_an_error(before: float) -> None:
+    with pytest.raises(ValueError, match="in percent"):
+        change_amount(before, 10, "percent")

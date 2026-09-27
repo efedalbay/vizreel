@@ -3,11 +3,19 @@
 import math
 from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Literal
 
 from vizreel.spec.models import NumberFormat
 
+ChangeKind = Literal["percent", "absolute"]
+"""How a change between two values is expressed."""
+
 MINUS_SIGN = "−"
 """Typographic minus. Same width as the digits, unlike the hyphen."""
+
+PERCENT_WHOLE_FROM = 10
+"""Percent changes at least this large are whole numbers (−72%); smaller ones keep one
+decimal (+4.5%), where the decimal still matters."""
 
 AUTO_MAX_DECIMALS = 2
 """Most decimals shown when `decimals` is not set and the number is not abbreviated."""
@@ -77,6 +85,60 @@ def decimals_for(values: Sequence[float], fmt: NumberFormat | None = None) -> in
     if fmt.decimals is not None:
         return fmt.decimals
     return max((_auto_decimals(value, fmt.compact)[1] for value in values), default=0)
+
+
+def change_amount(before: float, after: float, kind: ChangeKind) -> float:
+    """Return the change from `before` to `after`: in percent of `before`, or the difference.
+
+    Raises:
+        ValueError: A percent change from a value that is not positive. Spec validation
+            rejects these.
+    """
+    if kind == "absolute":
+        return after - before
+    if before <= 0:
+        raise ValueError(f"cannot express a change from {before} in percent")
+    return (after - before) / before * 100
+
+
+def change_decimals(amount: float, kind: ChangeKind, fmt: NumberFormat | None = None) -> int:
+    """Return the decimals a change is shown with.
+
+    A percent change has none from `PERCENT_WHOLE_FROM` percent up, and none when there is no
+    change at all; otherwise one. An absolute change follows the number format, like any
+    other value.
+    """
+    if kind == "absolute":
+        return decimals_for([amount], fmt)
+    size = abs(_round(_to_decimal(amount), 1))
+    return 0 if size >= PERCENT_WHOLE_FROM or amount == 0 else 1
+
+
+def format_change(
+    amount: float,
+    kind: ChangeKind,
+    fmt: NumberFormat | None = None,
+    decimals: int | None = None,
+) -> str:
+    """Format a change with its sign, e.g. "−72%", "+4.5%" or "+$1.2M". No change has no sign.
+
+    Args:
+        amount: The change, from `change_amount`.
+        kind: Percent or absolute.
+        fmt: The chart's number format, for absolute changes. Percent changes ignore it.
+        decimals: Decimals to show; by default those of `change_decimals`. A change that counts
+            up keeps the decimals of its final value in every frame.
+    """
+    fmt = fmt or _DEFAULT_FORMAT
+    places = change_decimals(amount, kind, fmt) if decimals is None else decimals
+    if kind == "percent":
+        rounded = _round(_to_decimal(amount), places)
+        text = f"{abs(rounded):,.{places}f}%"
+    else:
+        rounded, _ = _round_scaled(_to_decimal(amount), fmt.compact, places)
+        text = _format(abs(amount), fmt, places)
+    sign = "+" if rounded > 0 else MINUS_SIGN if rounded < 0 else ""
+    return sign + text
 
 
 def _format(value: float, fmt: NumberFormat, decimals: int) -> str:
