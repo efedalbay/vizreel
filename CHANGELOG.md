@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The `grouped` chart type: bars side by side in groups of two or three, one group per category, each bar with its value, under a legend. The groups grow one after another, and a highlighted series keeps its color while the others dim. Columns at 16:9 and 1:1, rows at 9:16, and rows in any frame when the values are too wide to sit side by side. It can be told as a sequence and read its data from a CSV file.
+
 ## [0.10.0] - 2026-09-28
 
 ### Added

@@ -41,6 +41,14 @@ charts:
       - { name: Devices, values: [3.1, 2.9] }
     sequence: [Cloud, Devices]
 
+  - id: grouped
+    type: grouped
+    categories: [North, South]
+    series:
+      - { name: "2022", values: [310, 240] }
+      - { name: "2023", values: [412, 298] }
+    sequence: ["2023", "2022"]
+
   - id: share
     type: share
     parts:

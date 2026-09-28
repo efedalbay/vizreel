@@ -702,6 +702,81 @@ class StackedChart(SequencedChart):
         ]
 
 
+class GroupedSeries(SpecModel):
+    """One bar in every group of a grouped bar chart."""
+
+    name: Text
+    """Shown in the legend."""
+    values: list[Annotated[float, Field(ge=0)]]
+    """One value per category, zero or more."""
+
+
+class GroupedHighlight(SpecModel):
+    """The series to emphasize."""
+
+    series: Text
+    """Name of the series that keeps its color while the others dim."""
+
+
+class GroupedChart(SequencedChart):
+    """Bars side by side in groups of two or three, one group per category."""
+
+    sequence_noun: ClassVar[str] = "series name"
+
+    type: Literal["grouped"]
+    duration: Duration = 6
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    categories: list[Text] = Field(min_length=2, max_length=6)
+    """Two to six categories, one group each, in order."""
+    series: list[GroupedSeries] = Field(min_length=2, max_length=3)
+    """Two or three series, one bar in each group, in order within the group."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of the value labels."""
+    layout: Literal["auto", "columns", "rows"] = "auto"
+    """Columns or rows, as for bar charts. auto uses rows at 9:16, and columns elsewhere
+    unless their values do not fit side by side."""
+    highlight: GroupedHighlight | None = None
+    """The series to emphasize."""
+
+    def sequence_names(self) -> list[str]:
+        """The series names."""
+        return [series.name for series in self.series]
+
+    def has_highlight(self) -> bool:
+        """Whether a series is emphasized."""
+        return self.highlight is not None
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the series with this name."""
+        return self.model_copy(update={"highlight": GroupedHighlight(series=item)})
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues = _duplicate_issues(self.categories, "categories", None, "categories")
+        names = [series.name for series in self.series]
+        issues += _duplicate_issues(names, "series", "name", "series names")
+        for index, series in enumerate(self.series):
+            if len(series.values) != len(self.categories):
+                issues.append(
+                    (
+                        ("series", index, "values"),
+                        f"has {len(series.values)} values but there are "
+                        f"{len(self.categories)} categories; give one value per category",
+                    )
+                )
+        if self.highlight is not None and self.highlight.series not in names:
+            issues.append(
+                (
+                    ("highlight", "series"),
+                    f'"{self.highlight.series}" does not match any series. '
+                    f"Series: {_quoted_list(names)}",
+                )
+            )
+        issues += self._sequence_issues()
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+
 class SharePart(SpecModel):
     """One part of the whole on a share chart."""
 

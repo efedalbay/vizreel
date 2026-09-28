@@ -10,6 +10,7 @@ from typer.testing import CliRunner
 
 from vizreel.cli import app
 from vizreel.render.engine import ChartResult, RenderOptions, render_spec
+from vizreel.themes.models import ThemeColors
 
 pytestmark = pytest.mark.render
 
@@ -480,6 +481,67 @@ def test_stacked_keeps_the_highlighted_series_color(tmp_path: Path, aspect: str)
     assert pixels(colors.series[1]) < 20
 
 
+@pytest.mark.parametrize("aspect", ["16:9", "9:16", "1:1"])
+def test_grouped_keeps_the_highlighted_series_color(tmp_path: Path, aspect: str) -> None:
+    from vizreel.themes.loader import load_theme
+
+    colors = load_theme("default", Path(".")).colors
+    [result] = render_one_in(tmp_path, "region-growth", aspect)
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+
+    def pixels(color: str) -> int:
+        return int(np.all(np.abs(rgb - hex_rgb(color)) <= 6, axis=2).sum())
+
+    assert len(frames) == 6 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    # 2023, the second series, is highlighted and keeps its color; 2022 is dimmed.
+    assert pixels(colors.series[1]) > 500
+    assert pixels(colors.series[0]) < 20
+
+
+def test_grouped_columns_too_narrow_for_their_values_become_rows(tmp_path: Path) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n"
+        "  - id: g\n    type: grouped\n    categories: [A, B, C, D]\n    series:\n"
+        + "".join(
+            f"      - {{ name: S{index}, values: [41200000, 29800000, 18700000, 35600000] }}\n"
+            for index in range(2)
+        ),
+        encoding="utf-8",
+    )
+
+    result = render_one(spec, tmp_path, "g")
+
+    assert result.still is not None
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    first = np.all(np.abs(rgb - hex_rgb(load_default_colors().series[0])) <= 6, axis=2)
+    rows, columns = np.nonzero(first)
+    # Rows grow from the left edge of the content, so the first series is wider than tall.
+    assert columns.max() - columns.min() > rows.max() - rows.min()
+
+
+def load_default_colors() -> ThemeColors:
+    from vizreel.themes.loader import load_theme
+
+    return load_theme("default", Path(".")).colors
+
+
+def render_one_in(out_dir: Path, chart_id: str, aspect: str) -> list[ChartResult]:
+    results = render_spec(
+        SHOWCASE,
+        RenderOptions(
+            out_dir=out_dir, only=(chart_id,), quality="preview", still=True, aspect=aspect
+        ),
+        reraise=True,
+    )
+    assert all(result.error is None for result in results)
+    return results
+
+
 @pytest.mark.parametrize("aspect", ["16:9", "9:16"])
 def test_share_highlights_the_largest_part(tmp_path: Path, aspect: str) -> None:
     from vizreel.themes.loader import load_theme
@@ -547,6 +609,7 @@ SEQUENCE_DURATIONS = {
     "timeline": 7,
     "waterfall": 6,
     "stacked": 6,
+    "grouped": 6,
     "share": 6,
     "table": 6,
 }

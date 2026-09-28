@@ -28,6 +28,7 @@ CHARTS = {
     "headcount": "compare",
     "profit": "waterfall",
     "revenue-mix": "stacked",
+    "region-growth": "grouped",
     "market": "share",
     "top-markets": "table",
 }

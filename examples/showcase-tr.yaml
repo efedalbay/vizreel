@@ -68,6 +68,16 @@ charts:
     number: { suffix: " milyar TL" }
     highlight: { series: Bulut }
 
+  - id: region-growth
+    type: grouped
+    title: Bölgelere göre Northwind geliri
+    subtitle: Milyon TL
+    categories: [Kuzey, Güney, Doğu, Batı]
+    series:
+      - { name: "2022", values: [310, 240, 150, 280] }
+      - { name: "2023", values: [412, 298, 188, 356] }
+    highlight: { series: "2023" }
+
   - id: market
     type: share
     title: Northwind'in pazar payı

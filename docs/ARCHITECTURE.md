@@ -71,6 +71,7 @@ vizreel/
 │   │   ├── compare.py
 │   │   ├── waterfall.py
 │   │   ├── stacked.py
+│   │   ├── grouped.py
 │   │   ├── share.py
 │   │   ├── table.py
 │   │   └── _bars.py         ← parts the bar-like types share; not a chart type

@@ -69,6 +69,17 @@ charts:
     number: { prefix: "$", suffix: "B" }
     highlight: { series: Cloud }
 
+  - id: region-growth
+    type: grouped
+    title: Northwind revenue by region
+    subtitle: In millions of dollars
+    categories: [North, South, East, West]
+    series:
+      - { name: "2022", values: [310, 240, 150, 280] }
+      - { name: "2023", values: [412, 298, 188, 356] }
+    number: { prefix: "$", suffix: "M" }
+    highlight: { series: "2023" }
+
   - id: market
     type: share
     title: Northwind's share of the market

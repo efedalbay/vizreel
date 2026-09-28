@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `share`, `table`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
+| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -354,6 +354,39 @@ Default `duration`: 6.
   highlight: { series: Cloud }
 ```
 
+## `grouped` — bars side by side
+
+Bars in groups of two or three, one group per category, e.g. revenue in each region for two years.
+
+A legend under the title names the series by color, in the theme's `series` colors, in order, and every bar shows its value. The groups grow one after another while their values count up. At the highlight beat the highlighted series keeps its color and the others dim. Bars are drawn as columns or rows (`layout`); with `auto`, a 9:16 frame uses rows, and other frames use columns unless the values are too wide to sit side by side, when they use rows.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `categories` | list of strings | yes | — | 2–6 categories, one group each, in order. Unique. |
+| `series` | list | yes | — | 2–3 series, one bar in each group, in order within the group (from the left, or from the top in rows). |
+| `series[].name` | string | yes | — | Shown in the legend. Unique. |
+| `series[].values` | list of numbers | yes | — | One value per category, zero or more. |
+| `number` | number format | no | — | Formatting of the values. |
+| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | `auto` uses rows at 9:16, and columns elsewhere unless the values do not fit side by side. |
+| `highlight.series` | string | no | — | The series that keeps its color while the others dim. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
+
+Default `duration`: 6.
+
+```yaml
+- id: region-growth
+  type: grouped
+  title: Northwind revenue by region
+  subtitle: In millions of dollars
+  categories: [North, South, East, West]
+  series:
+    - { name: "2022", values: [310, 240, 150, 280] }
+    - { name: "2023", values: [412, 298, 188, 356] }
+  number: { prefix: "$", suffix: "M" }
+  highlight: { series: "2023" }
+```
+
 ## `share` — parts of a whole
 
 How a whole divides into two to six parts, e.g. shares of a market, as a ring.
@@ -448,7 +481,7 @@ The first clip is the chart as usual, emphasizing the first item. Each later cli
 |---|---|
 | `bar`, `waterfall` | A bar label. |
 | `timeline` | An event date. A date used by two events cannot be named. |
-| `stacked` | A series name. |
+| `stacked`, `grouped` | A series name. |
 | `share` | A part label. |
 | `table` | A row name. |
 | `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
@@ -518,6 +551,7 @@ With more columns than the chart reads, name the ones to read, in order:
 | `timeline` | A date and a label. | One event each. Emphasize an event with a `sequence`. | `events` |
 | `line` | The x labels, then one column per series, named by its first row. | One x label each; an empty cell leaves a gap. | `x`, `series` |
 | `stacked` | The categories, then one column per series, named by its first row. | One bar each. | `categories`, `series` |
+| `grouped` | The categories, then one column per series, named by its first row. | One group each. | `categories`, `series` |
 | `waterfall` | A label and a value. | The first row is the start and the others are steps; a last row with a label and no value names the total. | `start`, `steps`, and `end` if the last row names it |
 | `compare` | A label and a value. | Two: the earlier value, then the later one. | `before`, `after` |
 | `table` | Two to four. A column holds numbers if its first row does; the first holds the row names. | One row each. | `rows`, and `columns` named by the first row, unless the spec writes `columns` to name them and set their number formats |

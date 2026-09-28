@@ -266,6 +266,7 @@ def test_json_schema_lists_every_chart_type() -> None:
     assert sorted(discriminator["mapping"]) == [
         "bar",
         "compare",
+        "grouped",
         "line",
         "share",
         "stacked",

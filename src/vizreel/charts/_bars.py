@@ -69,10 +69,11 @@ def plan_rows(
     label_height: float,
     label_gap: float,
     thickness_range: tuple[float, float],
+    fill: float = BAR_FILL,
 ) -> list[Row]:
     """Stack `count` rows, each a label above a bar, centered between `bottom` and `top`.
 
-    Each row gets an equal share of the height. The bar takes `BAR_FILL` of what the label
+    Each row gets an equal share of the height. The bar takes `fill` of what the label
     leaves, within `thickness_range`; the gap between rows is at most `MAX_ROW_GAP` rows, so a
     few rows stay together instead of spreading over a tall frame.
 
@@ -81,7 +82,7 @@ def plan_rows(
     """
     thinnest, thickest = thickness_range
     share = (top - bottom) / count
-    thickness = min((share - label_height - label_gap) * BAR_FILL, thickest)
+    thickness = min((share - label_height - label_gap) * fill, thickest)
     if thickness < thinnest:
         raise RenderError("not enough room for the bars; shorten the title or the labels")
     row_height = label_height + label_gap + thickness

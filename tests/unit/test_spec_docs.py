@@ -31,7 +31,7 @@ README_EXAMPLES = spec_examples(ROOT / "README.md")
 
 
 def test_examples_are_found() -> None:
-    assert len(SPEC_EXAMPLES) == 14
+    assert len(SPEC_EXAMPLES) == 15
     assert len(README_EXAMPLES) == 3
 
 
@@ -51,6 +51,7 @@ def test_showcase_is_valid() -> None:
     assert sorted(chart.type for chart in spec.charts) == [
         "bar",
         "compare",
+        "grouped",
         "line",
         "share",
         "stacked",

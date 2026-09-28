@@ -7,7 +7,9 @@ from vizreel.spec.loader import load_spec, parse_spec
 from vizreel.spec.models import StatChart
 
 INVALID_DIR = Path(__file__).parent / "fixtures" / "invalid"
-VALID_TYPES = "Valid types: bar, compare, line, share, stacked, stat, table, timeline, waterfall"
+VALID_TYPES = (
+    "Valid types: bar, compare, grouped, line, share, stacked, stat, table, timeline, waterfall"
+)
 
 EXPECTED_ERRORS: dict[str, list[str]] = {
     "bar-rules": [

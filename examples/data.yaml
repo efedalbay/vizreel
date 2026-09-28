@@ -47,6 +47,14 @@ charts:
     number: { prefix: "$", suffix: "B" }
     highlight: { series: Cloud }
 
+  - id: region-growth
+    type: grouped
+    title: Northwind revenue by region
+    subtitle: In millions of dollars
+    data: data/regions-by-year.csv
+    number: { prefix: "$", suffix: "M" }
+    highlight: { series: "2023" }
+
   - id: history
     type: timeline
     title: How Northwind grew

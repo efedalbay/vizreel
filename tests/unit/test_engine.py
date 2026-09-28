@@ -95,6 +95,7 @@ def test_select_all_charts_in_spec_order() -> None:
         "headcount",
         "profit",
         "revenue-mix",
+        "region-growth",
         "market",
         "top-markets",
     ]
@@ -114,7 +115,7 @@ def test_select_unknown_id_lists_ids() -> None:
     with pytest.raises(
         RenderError,
         match="no chart with id 'nope'. Ids in the spec: peak-valuation, valuation, offers, "
-        "final-years, headcount, profit, revenue-mix, market, top-markets",
+        "final-years, headcount, profit, revenue-mix, region-growth, market, top-markets",
     ):
         select_charts(spec, ("nope",))
 
