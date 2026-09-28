@@ -329,7 +329,12 @@ def render_chart(
             width = layout_with(1, 1).title.width
             title, subtitle = elements.header_lines(chart.title, chart.subtitle, theme, width)
             layout = layout_with(len(title), len(subtitle))
-            scene = ChartScene(chart_type(chart, theme, layout, locale), continuation)
+            fit = settings.aspect == "9:16" and chart_type.fits_to_content
+            scene = ChartScene(
+                chart_type(chart, theme, layout, locale),
+                continuation,
+                relayout=(lambda fitted: chart_type(chart, theme, fitted, locale)) if fit else None,
+            )
             scene.render()
             _move(Path(scene.renderer.file_writer.movie_file_path), video_path)
             if still_path is not None:

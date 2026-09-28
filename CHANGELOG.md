@@ -6,6 +6,10 @@ All notable changes to vizreel are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- A vertical chart with little content, such as three bars, a short timeline or a small table, no longer floats in the middle of an empty panel. The title, the source line and the panel close in around the content, and the card is centered in the safe area.
+
 ### Fixed
 
 - Wrapped titles, subtitles and labels had almost no space between their lines, so a descender nearly touched the line below. Their baselines are now 1.2 times the font size apart.

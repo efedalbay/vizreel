@@ -5,7 +5,7 @@ computed here is resolution-independent, and a size is as large on a vertical fr
 landscape one. Theme sizes are pixels at 1080p (on the short side) and are converted here.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal
 
 from vizreel.themes.models import ThemeSizes
@@ -166,6 +166,33 @@ class Layout:
     def panel_around(self, content: Box) -> Box:
         """Background panel surrounding `content`, kept inside the safe area."""
         return content.expand(self.panel_padding, self.safe)
+
+    def fitted_to_content(self, bottom: float, top: float) -> "Layout":
+        """Return this layout closed in around chart content that spans `bottom` to `top`.
+
+        The title band goes just above the content and the source band just below it, and
+        `inner`, which the panel surrounds, shrinks to them. The card is centered where
+        `inner` was, and `content` moves with the content without changing size, so a chart
+        built in it draws exactly what it drew before, only shifted.
+        """
+        title_height, source_height = self.title.height, self.source.height
+        title_gap = self.band_gap if title_height else 0.0
+        source_gap = self.band_gap if source_height else 0.0
+        card = title_height + title_gap + (top - bottom) + source_gap + source_height
+        if card >= self.inner.height - 1e-9:
+            return self
+        center = self.inner.center[1]
+        left, right = self.inner.left, self.inner.right
+        inner = Box(left, center - card / 2, right, center + card / 2)
+        shift = inner.top - title_height - title_gap - top
+        content = self.content
+        return replace(
+            self,
+            inner=inner,
+            title=Box(left, inner.top - title_height, right, inner.top),
+            source=Box(left, inner.bottom, right, inner.bottom + source_height),
+            content=Box(content.left, content.bottom + shift, content.right, content.top + shift),
+        )
 
 
 def build_layout(

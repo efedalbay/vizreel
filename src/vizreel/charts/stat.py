@@ -30,6 +30,8 @@ class StatChartType(ChartType):
 
     name = "stat"
     model = StatChart
+    # The card is already fitted: it surrounds the title, number, label and source it stacks.
+    fits_to_content = False
     template = """\
 - id: customers                    # unique; lowercase letters, digits and hyphens
   type: stat

@@ -680,6 +680,54 @@ def test_the_example_plugin_renders(tmp_path: Path, aspect: str) -> None:
     assert near.sum() > 100
 
 
+def panel_rows(path: Path) -> tuple[int, int]:
+    """First and last row of the opaque panel in the last frame of a clip."""
+    rows = np.nonzero(frames_rgba(path)[-1][:, :, 3].max(axis=1) == 255)[0]
+    return int(rows.min()), int(rows.max())
+
+
+def test_a_vertical_chart_with_little_content_gets_a_fitted_card(tmp_path: Path) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n"
+        "  - id: few\n    type: bar\n    title: Offers Northwind received\n"
+        "    bars: [{ label: A, value: 3 }, { label: B, value: 2 }]\n    source: Example\n"
+        "  - id: full\n    type: line\n    title: Northwind users\n"
+        "    x: ['2020', '2021', '2022']\n    series: [{ values: [1, 3, 2] }]\n",
+        encoding="utf-8",
+    )
+
+    results = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview", aspect="9:16"))
+
+    assert [result.error for result in results] == [None, None]
+    height = PREVIEW[0]
+    safe_top, safe_bottom = height * 0.10, height * 0.80
+    few_top, few_bottom = panel_rows(tmp_path / "few.vertical.preview.mov")
+    full_top, full_bottom = panel_rows(tmp_path / "full.vertical.preview.mov")
+    assert few_bottom - few_top < (safe_bottom - safe_top) * 0.6
+    assert (few_top + few_bottom) / 2 == pytest.approx((safe_top + safe_bottom) / 2, abs=2)
+    assert full_top == pytest.approx(safe_top, abs=2)
+    assert full_bottom == pytest.approx(safe_bottom, abs=2)
+
+
+def test_content_extent_ignores_the_panel_and_what_is_outside_the_content(
+    tmp_path: Path,
+) -> None:
+    from manim import Square, VGroup
+
+    from vizreel.render.elements import PANEL_Z_INDEX
+    from vizreel.render.layout import Box
+    from vizreel.render.scene import content_extent
+
+    content = Box(-2, -2, 2, 2)
+    title = Square(0.5).move_to((0, 3, 0))
+    inside = Square(1).move_to((0, 0.5, 0))
+    panel = Square(6).set_z_index(PANEL_Z_INDEX)
+
+    assert content_extent([VGroup(title, inside), panel], content) == pytest.approx((0.0, 1.0))
+    assert content_extent([title, panel], content) is None
+
+
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     too_wide = "Northwind " * 20
     spec = tmp_path / "spec.yaml"

@@ -48,6 +48,10 @@ class ChartType(ABC):
             `vizreel new`. It must be a valid chart.
         api_version: The version of this contract the chart type is written for. A chart type
             from another package sets it to the `CHART_API_VERSION` it was written for.
+        fits_to_content: In a vertical frame, whether the title, the source line and the
+            panel close in around the chart's content when it leaves much of the frame empty.
+            A chart type that draws the title and source in their bands and its panel around
+            `layout.inner` gets this for free; one that places them itself sets it to False.
         chart: The chart to build, an instance of `model`.
         theme: All styling.
         layout: All geometry.
@@ -58,6 +62,7 @@ class ChartType(ABC):
     model: ClassVar[type[BaseChart]]
     template: ClassVar[str]
     api_version: ClassVar[int] = CHART_API_VERSION
+    fits_to_content: ClassVar[bool] = True
 
     def __init__(self, chart: BaseChart, theme: Theme, layout: Layout, locale: Locale) -> None:
         self.chart = chart

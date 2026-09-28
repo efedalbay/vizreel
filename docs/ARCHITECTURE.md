@@ -75,7 +75,7 @@ vizreel/
 │   │   └── _bars.py         ← parts the bar-like types share; not a chart type
 │   ├── render/
 │   │   ├── engine.py        ← render a Spec: loop charts, configure Manim, write files
-│   │   ├── scene.py         ← generic Manim Scene that hosts one chart
+│   │   ├── scene.py         ← generic Manim Scene that hosts one chart; fits vertical cards
 │   │   ├── layout.py        ← frame geometry in scene units (pure functions)
 │   │   ├── elements.py      ← shared Manim building blocks: text, panel, easing
 │   │   ├── numbers_text.py  ← counting numbers composed from cached glyphs
@@ -149,6 +149,7 @@ A chart type whose model is a `SequencedChart` (every type with a highlight) imp
 Rules:
 
 - Registered with `@register` from `charts/registry.py`. The registry is the only place that maps `type` strings to classes.
+- In a 9:16 frame, `ChartScene.fit_to_content` builds the chart once without recording and measures what it draws inside `layout.content`. If that is less than 90% of its height, the chart is built again in `Layout.fitted_to_content`: the title and source bands and `inner` close in around the content, and `content` keeps its size but moves, so the chart draws exactly the same content, shifted. That is why every chart centers its content in `layout.content` and draws its panel around `layout.inner`; a chart type that does not (`stat`, which fits its own card) sets `fits_to_content = False`.
 - `api_version` is the version of the contract (`CHART_API_VERSION`) the chart type is written for. Built-in types inherit the current one; a plugin must declare it.
 - A chart reads **all** styling from `theme` and **all** geometry from `layout` (safe area, title area, plot area). No literal colors, font names or pixel sizes inside chart modules.
 - A chart builds from Manim primitives (`Line`, `Rectangle`, `Text`, `VGroup`, `ValueTracker`) rather than Manim's high-level `BarChart`/`Axes` when those limit styling.

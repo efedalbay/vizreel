@@ -81,6 +81,7 @@ class ProgressChartType(ChartType):
 | `model` | The spec model. |
 | `template` | A commented example chart as a YAML list item, printed by `vizreel new`. It must be valid. |
 | `api_version` | The chart API version the chart type is written for, `CHART_API_VERSION`. Required. |
+| `fits_to_content` | Optional, `True` by default. In a 9:16 frame, vizreel builds the chart once without recording to measure its content; if it leaves much of the frame empty, the chart is built again in a layout whose title, source and panel close in around it. Draw the header with `render.header`, the source with `render.source_line` and the panel around `layout.inner`, and center your content in `layout.content`, and this works by itself; set it to `False` if you place them yourself. |
 | `build(scene)` | Adds mobjects to the Manim scene and plays the animation. |
 | `emphasis(item)` | Only for a `SequencedChart`: the animations that move the emphasis to the element a sequence item names. |
 

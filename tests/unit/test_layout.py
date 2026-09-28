@@ -134,3 +134,37 @@ def test_vertical_safe_area_keeps_clear_of_platform_overlays() -> None:
 
 def test_sizes_are_the_same_in_both_aspects() -> None:
     assert frame_size("16:9")[1] == frame_size("9:16")[0] == px(1080)
+
+
+def vertical(*, title: int = 1, source: int = 1) -> Layout:
+    return build_layout(
+        SIZES, aspect="9:16", panel=True, title_lines=title, subtitle_lines=0, source_lines=source
+    )
+
+
+@pytest.mark.parametrize(("title", "source"), [(1, 1), (2, 0), (0, 1), (0, 0)])
+def test_fitted_layout_closes_in_around_the_content(title: int, source: int) -> None:
+    full = vertical(title=title, source=source)
+    bottom, top = full.content.center[1] - 1.0, full.content.center[1] + 1.0
+
+    fitted = full.fitted_to_content(bottom, top)
+
+    shift = fitted.content.center[1] - full.content.center[1]
+    title_gap = full.band_gap if title else 0.0
+    source_gap = full.band_gap if source else 0.0
+    assert fitted.content.height == pytest.approx(full.content.height)
+    assert fitted.title.height == pytest.approx(full.title.height)
+    assert fitted.source.height == pytest.approx(full.source.height)
+    assert fitted.title.bottom == pytest.approx(top + shift + title_gap)
+    assert fitted.source.top == pytest.approx(bottom + shift - source_gap)
+    assert (fitted.inner.top, fitted.inner.bottom) == pytest.approx(
+        (fitted.title.top, fitted.source.bottom)
+    )
+    assert fitted.inner.center == pytest.approx(full.inner.center)
+    assert (fitted.inner.left, fitted.inner.right) == (full.inner.left, full.inner.right)
+
+
+def test_content_that_fills_the_layout_leaves_it_as_it_is() -> None:
+    full = vertical()
+
+    assert full.fitted_to_content(full.content.bottom, full.content.top) == full
