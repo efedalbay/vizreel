@@ -43,3 +43,15 @@ jobs:
 
       - name: Unit tests
         run: uv run pytest -m "not render"
+
+      # Installs the example plugin for real, without resolving its dependency on a released
+      # vizreel, and checks that its chart type is listed, templated, validated and rendered.
+      - name: Example plugin
+        shell: bash
+        run: |
+          uv pip install --no-deps -e ./examples/plugin
+          uv run --no-sync vizreel types 2>types-errors.txt | grep "progress.*vizreel-progress 0.1.0"
+          test ! -s types-errors.txt
+          uv run --no-sync vizreel new progress > progress-template.yaml
+          uv run --no-sync vizreel validate progress-template.yaml
+          uv run --no-sync vizreel render examples/plugin/progress.yaml --quality preview --out plugin-out
