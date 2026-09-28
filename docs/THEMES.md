@@ -86,6 +86,7 @@ Pixels at 1080p; they scale with the output resolution. Text sizes are font size
 | `title` | Chart title | 56 |
 | `subtitle` | Line under the title | 32 |
 | `big_number` | The number of a `stat` | 160 |
+| `affix_scale` | Optional, 1 by default. Size of what surrounds the digits of a big number (the `stat` number, the `compare` values, the `share` percent), relative to the digits: 0.6 sets `milyar` in `1,85 milyar` and `$` in `` at 60% of the digits, on their baseline. Not a pixel size. | 0.5, at most 1 |
 | `label` | Axis labels, category labels, event labels, the `stat` label | 32 |
 | `value` | Value labels on charts | 32 |
 | `caption` | Source line | 24 |

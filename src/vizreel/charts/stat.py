@@ -90,14 +90,18 @@ class StatChartType(ChartType):
             for value in count_samples(chart.start, chart.value)
         ]
         # The size fits the widest text of the count, and stays the same while it counts.
-        at_theme_size = NumberGlyphs(fonts.numbers, sizes.big_number, colors.text)
+        at_theme_size = NumberGlyphs(
+            fonts.numbers, sizes.big_number, colors.text, sizes.affix_scale
+        )
         number_size = fitting_number_size(
             sizes.big_number,
             max(at_theme_size(text).width for text in counted),
             self.layout.inner.width,
             "the number",
         )
-        glyphs = NumberGlyphs(fonts.numbers, number_size, number_color[chart.trend])
+        glyphs = NumberGlyphs(
+            fonts.numbers, number_size, number_color[chart.trend], sizes.affix_scale
+        )
 
         def number(value: float) -> "VMobject":
             return glyphs(

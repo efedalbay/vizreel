@@ -196,6 +196,21 @@ def format_percent(percent: float, *, locale: Locale) -> str:
     return locale.percent.format(_digits(_round(_to_decimal(percent), 0), 0, locale))
 
 
+def split_number_text(text: str) -> tuple[str, str, str, str]:
+    """Split formatted number text into sign, prefix, digits and suffix.
+
+    The digits include the separators between them: "−$1.85B" → ("−", "$", "1.85", "B"). Text
+    without digits is all prefix.
+    """
+    sign = MINUS_SIGN if text.startswith(MINUS_SIGN) else ""
+    rest = text[len(sign) :]
+    digits = [index for index, char in enumerate(rest) if char.isdigit()]
+    if not digits:
+        return sign, rest, "", ""
+    first, last = digits[0], digits[-1] + 1
+    return sign, rest[:first], rest[first:last], rest[last:]
+
+
 def _format(
     value: float, fmt: NumberFormat, decimals: int, locale: Locale, unit_of: float | None = None
 ) -> str:

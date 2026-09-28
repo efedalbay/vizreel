@@ -27,6 +27,7 @@ from manim import (
 )
 
 from vizreel.errors import RenderError
+from vizreel.format.numbers import split_number_text
 from vizreel.render.layout import LINE_STEP, Box, Layout, font_size, px, stack_gap
 from vizreel.render.scales import wrap_text
 from vizreel.themes.models import FontStyle, FontWeight, Theme
@@ -115,17 +116,34 @@ def paragraph(
     return VGroup(*mobjects).move_to(ORIGIN)
 
 
-def number_text(content: str, style: FontStyle, size_px: float, hex_color: str) -> VMobject:
+def number_text(
+    content: str, style: FontStyle, size_px: float, hex_color: str, affix_scale: float = 1.0
+) -> VMobject:
     """Build a number with tabular figures, so every digit has the same width.
+
+    Args:
+        content: Formatted number text.
+        style: The font.
+        size_px: The size of the digits.
+        hex_color: The color.
+        affix_scale: Size of what precedes and follows the digits (a currency, a unit name,
+            a percent sign), relative to the digits, on the same baseline. The minus sign
+            keeps the size of the digits.
 
     Raises:
         RenderError: Pango could not lay out every character.
     """
     size = font_size(size_px)
     oversample = max(1.0, LAYOUT_FONT_SIZE / size)
+    sign, prefix, digits, suffix = split_number_text(content)
+    markup = escape(content)
+    if affix_scale != 1.0:
+        small = f'<span size="{affix_scale:.0%}">'
+        affixes = [(small + escape(part) + "</span>") if part else "" for part in (prefix, suffix)]
+        markup = escape(sign) + affixes[0] + escape(digits) + affixes[1]
     with _text_surface():
         mobject = MarkupText(
-            f'<span font_features="tnum">{escape(content)}</span>',
+            f'<span font_features="tnum">{markup}</span>',
             font=style.family,
             weight=_PANGO_WEIGHTS[style.weight],
             font_size=size * oversample,

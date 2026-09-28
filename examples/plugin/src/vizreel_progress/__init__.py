@@ -100,14 +100,18 @@ class ProgressChartType(ChartType):
         percents = [
             format_percent(value, locale=self.locale) for value in count_samples(0, percent)
         ]
-        at_theme_size = render.NumberGlyphs(fonts.numbers, sizes.big_number, colors.text)
+        at_theme_size = render.NumberGlyphs(
+            fonts.numbers, sizes.big_number, colors.text, sizes.affix_scale
+        )
         percent_size = fitting_number_size(
             sizes.big_number,
             max(at_theme_size(text).width for text in percents),
             content.width,
             "the percent",
         )
-        percent_glyphs = render.NumberGlyphs(fonts.numbers, percent_size, colors.text)
+        percent_glyphs = render.NumberGlyphs(
+            fonts.numbers, percent_size, colors.text, sizes.affix_scale
+        )
 
         amount_format = chart.number.model_copy(
             update={"decimals": decimals_for([0, chart.value, chart.goal], chart.number)}

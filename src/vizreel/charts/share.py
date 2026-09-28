@@ -205,7 +205,7 @@ class ShareChartType(ChartType):
         legend_size = (percent_right, pitch * (count - 1) + px(sizes.label))
 
         number_size = sizes.big_number * NUMBER_SCALE
-        center_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text)
+        center_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text, sizes.affix_scale)
         widest_center = center_glyphs(format_percent(100, locale=self.locale)).width
         min_radius = max(px(MIN_RADIUS_PX), widest_center / (2 * INNER_RADIUS * CENTER_FILL))
         placement = place_share(content, layout.vertical, legend_size, gap * 3, min_radius)

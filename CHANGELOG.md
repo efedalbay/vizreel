@@ -6,6 +6,10 @@ All notable changes to vizreel are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `sizes.affix_scale` in themes sets what surrounds the digits of a big number (a unit name, a currency, a percent sign) smaller than the digits, on their baseline: `affix_scale: 0.6` gives a large `1,85` followed by a smaller `milyar TL`. The built-in themes keep 1; the example brand theme uses 0.6.
+
 ### Changed
 
 - A compact number counts in the unit of its final value: `0.37B` on the way to `1.85B` instead of passing through thousands and millions, so its unit and width no longer jump. A value too small in its unit to count smoothly, such as `2B`, still counts through the smaller units.

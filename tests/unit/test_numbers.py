@@ -11,6 +11,7 @@ from vizreel.format.numbers import (
     format_numbers,
     format_percent,
     shared_decimals,
+    split_number_text,
     whole_percents,
 )
 from vizreel.spec.models import NumberFormat
@@ -349,3 +350,21 @@ def test_an_absolute_change_counts_in_the_unit_of_its_final_value() -> None:
         format_change(-370_000_000, "absolute", fmt, 2, locale=EN, unit_of=-1_850_000_000)
         == f"{M}$0.37B"
     )
+
+
+@pytest.mark.parametrize(
+    ("text", "parts"),
+    [
+        (f"{M}$1.85B", (M, "$", "1.85", "B")),
+        ("1,85\u00a0milyar TL", ("", "", "1,85", "\u00a0milyar TL")),
+        ("%47", ("", "%", "47", "")),
+        (f"{M}%3", (M, "%", "3", "")),
+        ("+14,900%", ("", "+", "14,900", "%")),
+        ("1\u202f846,5", ("", "", "1\u202f846,5", "")),
+        ("7", ("", "", "7", "")),
+        ("n/a", ("", "n/a", "", "")),
+    ],
+)
+def test_split_number_text(text: str, parts: tuple[str, str, str, str]) -> None:
+    assert split_number_text(text) == parts
+    assert "".join(parts) == text

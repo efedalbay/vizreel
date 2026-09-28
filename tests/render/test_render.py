@@ -854,8 +854,11 @@ def test_watch_renders_again_only_the_changed_chart(tmp_path: Path) -> None:
     assert first_clip.stat().st_mtime_ns > rendered_at
 
 
+@pytest.mark.parametrize("affix_scale", [1.0, 0.6])
 @pytest.mark.parametrize("size_px", [180, 36])
-def test_composed_numbers_match_pango_layout(tmp_path: Path, size_px: float) -> None:
+def test_composed_numbers_match_pango_layout(
+    tmp_path: Path, size_px: float, affix_scale: float
+) -> None:
     from manim import tempconfig
 
     from vizreel.render import elements
@@ -870,10 +873,10 @@ def test_composed_numbers_match_pango_layout(tmp_path: Path, size_px: float) -> 
     # Locales bring no-break spaces, narrow no-break spaces and unit names.
     samples += ["−%72", "1\u202f234,5", "47\u202f%", "740\u00a0millones €", "2,25\u00a0milyar"]
     with tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR"}):
-        glyphs = NumberGlyphs(fonts.numbers, size_px, colors.text)
+        glyphs = NumberGlyphs(fonts.numbers, size_px, colors.text, affix_scale)
         for sample in samples:
             composed = glyphs(sample)
-            direct = elements.number_text(sample, fonts.numbers, size_px, colors.text)
+            direct = elements.number_text(sample, fonts.numbers, size_px, colors.text, affix_scale)
             assert len(composed.submobjects) == len(direct.submobjects)
             for ours, pango in zip(composed.submobjects, direct.submobjects, strict=True):
                 assert ours.get_left()[0] == pytest.approx(pango.get_left()[0], abs=px(0.5))

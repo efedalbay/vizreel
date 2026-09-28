@@ -217,7 +217,7 @@ class CompareChartType(ChartType):
             for start, end in counts
             for value in count_samples(start, end)
         ]
-        at_scale = NumberGlyphs(fonts.numbers, number_size, colors.text)
+        at_scale = NumberGlyphs(fonts.numbers, number_size, colors.text, sizes.affix_scale)
         widest = max(at_scale(text).width for text in counted)
 
         change_kind = chart.change
@@ -244,8 +244,8 @@ class CompareChartType(ChartType):
         stacked = layout.vertical or widest > side_column + 1e-9
         column = content.width if stacked else side_column
         number_size = fitting_number_size(number_size, widest, column, "the values")
-        before_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.muted)
-        after_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text)
+        before_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.muted, sizes.affix_scale)
+        after_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text, sizes.affix_scale)
         widest = max(after_glyphs(text).width for text in counted)
 
         def label_block(text: str) -> "elements.TextBlock":

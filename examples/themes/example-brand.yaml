@@ -32,6 +32,7 @@ sizes:                    # pixels at 1080p
   title: 66
   subtitle: 40
   big_number: 200
+  affix_scale: 0.6    # units and currency signs of big numbers at 60% of the digits
   label: 40
   value: 38
   caption: 28

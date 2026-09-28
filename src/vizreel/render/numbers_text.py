@@ -24,8 +24,20 @@ class NumberGlyphs:
     then copied in from a cached set and placed where Pango would have put it.
     """
 
-    def __init__(self, style: FontStyle, size_px: float, hex_color: str) -> None:
+    def __init__(
+        self, style: FontStyle, size_px: float, hex_color: str, affix_scale: float = 1.0
+    ) -> None:
+        """Prepare the digits of one style.
+
+        Args:
+            style: The font.
+            size_px: The size of the digits.
+            hex_color: The color.
+            affix_scale: Size of what precedes and follows the digits, relative to them; see
+                `elements.number_text`. Big numbers use the theme's `affix_scale`.
+        """
         self._style, self._size_px, self._color = style, size_px, hex_color
+        self._affix_scale = affix_scale
         self._patterns: dict[str, VMobject] = {}
         digits = self._layout(DIGITS)
         zeros = self._layout("0" * len(DIGITS))
@@ -77,4 +89,6 @@ class NumberGlyphs:
         return glyph
 
     def _layout(self, content: str) -> VMobject:
-        return elements.number_text(content, self._style, self._size_px, self._color)
+        return elements.number_text(
+            content, self._style, self._size_px, self._color, self._affix_scale
+        )
