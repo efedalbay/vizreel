@@ -138,7 +138,10 @@ def _stacked_above_lines(
     floor = -math.inf
     for index in sorted(range(len(anchors)), key=lambda i: anchors[i][1]):
         (x, y), (width, height) = anchors[index], sizes[index]
-        bottom = max(y + gap, _highest(polylines, x, x + width) + gap / 2, floor + gap / 2)
+        # A quarter gap beside the label too, as `place_first_labels` keeps clear: a steep
+        # line just past the label's corner would otherwise touch it.
+        highest = _highest(polylines, x - gap / 4, x + width + gap / 4)
+        bottom = max(y + gap, highest + gap / 2, floor + gap / 2)
         stacked[index] = Box(x, bottom, x + width, bottom + height)
         floor = bottom + height
     return [stacked[index] for index in range(len(anchors))]

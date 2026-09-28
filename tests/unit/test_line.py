@@ -1,6 +1,6 @@
 import pytest
 
-from vizreel.charts.line import drawn, place_first_labels, runs, tip
+from vizreel.charts.line import _segment_hits_box, drawn, place_first_labels, runs, tip
 from vizreel.render.layout import Box
 
 XS = [0.0, 1.0, 2.0, 3.0, 4.0]
@@ -101,3 +101,15 @@ def test_labels_stack_above_the_lines_when_nothing_else_fits() -> None:
 
     assert low.bottom > 1.0 + (6.0 - 1.0) / 8
     assert high.bottom >= low.top + GAP / 2 - 1e-9
+
+
+def test_a_stacked_label_keeps_clear_of_a_steep_line_past_its_corner() -> None:
+    # The line starts at the bottom edge, so the label cannot go below, and climbs almost
+    # straight up just past the label's right edge, so it cannot go above either.
+    line = [(1.0, 0.2), (2.02, 0.4), (2.1, 9.0)]
+
+    [box] = place_first_labels([line[0]], [LABEL], [line], GAP, BOUNDS)
+
+    padded = box.inset(-GAP / 4)
+    segments = zip(line, line[1:], strict=False)
+    assert not any(_segment_hits_box(start, end, padded) for start, end in segments)
