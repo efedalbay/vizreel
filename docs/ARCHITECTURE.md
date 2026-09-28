@@ -62,7 +62,7 @@ vizreel/
 │   │   └── builtin/         ← default.yaml, light.yaml
 │   ├── charts/
 │   │   ├── base.py          ← ChartType base class, timing helpers
-│   │   ├── registry.py      ← @register decorator, lookup by type name
+│   │   ├── registry.py      ← @register decorator, plugin entry points, lookup by type name
 │   │   ├── stat.py
 │   │   ├── line.py
 │   │   ├── bar.py
@@ -81,6 +81,9 @@ vizreel/
 │   │   ├── numbers_text.py  ← counting numbers composed from cached glyphs
 │   │   ├── scales.py        ← axis ranges, ticks, label placement (pure functions)
 │   │   └── fonts.py         ← register bundled fonts with Pango
+│   ├── plugin/              ← the public API for chart types in other packages
+│   │   ├── __init__.py      ← contract, models, formatting, timing (no Manim)
+│   │   └── render.py        ← Manim building blocks
 │   ├── format/
 │   │   ├── numbers.py       ← number formatting (pure functions)
 │   │   └── locales.py       ← separators, percent sign and unit names per locale
@@ -90,7 +93,8 @@ vizreel/
 │   ├── showcase.yaml        ← one of every chart type (fictional data)
 │   ├── showcase-tr.yaml     ← the showcase in Turkish, numbers written for tr-TR
 │   ├── brand.yaml           ← charts in the example brand theme
-│   └── themes/example-brand.yaml  ← a complete custom theme
+│   ├── themes/example-brand.yaml  ← a complete custom theme
+│   └── plugin/              ← vizreel-progress, an example plugin package
 ├── scripts/
 │   └── readme_gifs.py       ← development tool: README GIFs
 └── tests/
@@ -109,7 +113,7 @@ Spec ──► themes/loader.py resolves theme (built-in name or file path)
    ▼
 render/engine.py
    for each chart in spec (optionally filtered by --only):
-       ChartType = registry.get(chart.type)
+       ChartType = chart_registry().get(chart.type)   # built-in or from a plugin
        layout = build_layout(theme sizes, panel, title/subtitle/source lines)
        configure Manim (resolution, fps, transparency, output path) via tempconfig
        ChartScene(ChartType(chart, theme, layout, locale)).render()
@@ -145,6 +149,7 @@ A chart type whose model is a `SequencedChart` (every type with a highlight) imp
 Rules:
 
 - Registered with `@register` from `charts/registry.py`. The registry is the only place that maps `type` strings to classes.
+- `api_version` is the version of the contract (`CHART_API_VERSION`) the chart type is written for. Built-in types inherit the current one; a plugin must declare it.
 - A chart reads **all** styling from `theme` and **all** geometry from `layout` (safe area, title area, plot area). No literal colors, font names or pixel sizes inside chart modules.
 - A chart builds from Manim primitives (`Line`, `Rectangle`, `Text`, `VGroup`, `ValueTracker`) rather than Manim's high-level `BarChart`/`Axes` when those limit styling.
 - A chart must respect `chart.duration`. The shared timing helpers in `base.py` split duration into intro, main animation, highlight and hold phases, and check that text stays on screen long enough to be read.
@@ -152,7 +157,11 @@ Rules:
 - A chart module imports Manim, and `render/elements.py`, inside `build`, not at the top. `vizreel validate` imports every chart module through the registry, and importing Manim takes several seconds.
 - Text is never shrunk to fit. Text that does not fit at the theme size is a `RenderError` asking the user to shorten it. The exception is a big number, which cannot wrap: `fitting_number_size` in `base.py` shrinks it to at most half its size, for the widest text of its count (`count_samples`); see `docs/DESIGN.md` §2.
 
-Adding a new chart type = one module in `charts/` (with its template) + one Pydantic model + one section in `docs/SPEC.md` + one example in `examples/showcase.yaml` + tests. Nothing else. The registry refuses a chart type without a template, and a test checks that every template is a valid spec, also with its commented optional fields uncommented.
+### Chart types from other packages
+
+`chart_registry()` holds the built-in types and, after them, the chart types installed packages list under the `vizreel.chart_types` entry point group (`importlib.metadata`, no extra dependency). Everything that needs chart types (the spec's discriminated union, the JSON Schema, `vizreel new`, the engine) reads this one registry, so a plugin type needs no code of its own anywhere else. A plugin that cannot be imported, uses a built-in name, has a mismatched `api_version` or breaks the contract is skipped and recorded in `registry.problems`; the CLI prints them as warnings, and an unknown type in a spec names the reason. A broken plugin must never make vizreel unusable. Plugins build only on `vizreel.plugin` and `vizreel.plugin.render`, which re-export the stable part of the code; `docs/PLUGINS.md` is the guide for authors.
+
+Adding a new built-in chart type = one module in `charts/` (with its template) + one Pydantic model + one section in `docs/SPEC.md` + one example in `examples/showcase.yaml` + tests. Nothing else. The registry refuses a chart type without a template, and a test checks that every template is a valid spec, also with its commented optional fields uncommented.
 
 ## Spec models
 

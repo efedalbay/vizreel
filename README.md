@@ -119,6 +119,8 @@ out/
 
 `vizreel new TYPE` prints a commented template for each. Every field is documented in the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md).
 
+Other packages can add chart types: install one next to vizreel and its type works like the built-in ones. `vizreel types` lists every type and where it comes from. To write your own, see [Writing a chart type](https://github.com/efedalbay/vizreel/blob/main/docs/PLUGINS.md) and the example plugin in [`examples/plugin`](https://github.com/efedalbay/vizreel/tree/main/examples/plugin).
+
 ## Vertical clips
 
 The same spec renders as vertical 9:16 clips for Shorts, Reels and TikTok:
@@ -168,6 +170,7 @@ vizreel render charts.yaml --quality preview --still --watch   # render again on
 vizreel render charts.yaml --aspect 9:16   # vertical clips for Shorts
 vizreel render examples/sequence.yaml   # a chart told as three clips
 vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
+vizreel types                           # every chart type, built-in or from a plugin
 vizreel themes list                     # built-in themes
 vizreel theme check my-brand.yaml       # contrast and color vision checks for a theme
 ```
@@ -209,6 +212,7 @@ Start from [`examples/themes/example-brand.yaml`](https://github.com/efedalbay/v
 - [Spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md)
 - [Theme reference](https://github.com/efedalbay/vizreel/blob/main/docs/THEMES.md)
 - [Design rules](https://github.com/efedalbay/vizreel/blob/main/docs/DESIGN.md)
+- [Writing a chart type](https://github.com/efedalbay/vizreel/blob/main/docs/PLUGINS.md)
 - [Architecture](https://github.com/efedalbay/vizreel/blob/main/docs/ARCHITECTURE.md)
 - [Roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md)
 - [Changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md)

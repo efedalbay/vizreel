@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `share`, `table`. |
+| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `share`, `table`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
