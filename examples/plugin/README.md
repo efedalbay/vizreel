@@ -6,12 +6,15 @@ It is a starting point for your own chart types, not a published package. [Writi
 
 ## Try it
 
-From a clone of the vizreel repository:
+From the root of a clone of the vizreel repository, install it into the development environment next to vizreel:
 
 ```bash
-uv run --with ./examples/plugin vizreel types
-uv run --with ./examples/plugin vizreel render examples/plugin/progress.yaml --quality preview --still
+uv pip install --no-deps -e ./examples/plugin
+uv run vizreel types
+uv run vizreel render examples/plugin/progress.yaml --quality preview --still
 ```
+
+`uv sync` removes it again, since the project does not depend on it; install it again after syncing.
 
 To use it with an installed vizreel, install it next to vizreel:
 

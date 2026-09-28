@@ -123,12 +123,12 @@ Declare the lowest vizreel version with your API version as a dependency: `vizre
 
 ## Trying a plugin
 
-From the plugin's folder, run vizreel with the plugin installed next to it:
+In the plugin's folder, `uv run` installs the plugin and the vizreel it depends on into the plugin's own environment:
 
 ```bash
-uv run --with . vizreel types
-uv run --with . vizreel new progress -o chart.yaml
-uv run --with . vizreel render chart.yaml --quality preview --still
+uv run vizreel types
+uv run vizreel new progress -o chart.yaml
+uv run vizreel render chart.yaml --quality preview --still
 ```
 
 `vizreel types` lists every chart type with the package it comes from. A chart type that could not be loaded is not listed; vizreel prints a warning saying why, and so does every other command that reads specs. A spec that uses it gets an "unknown type" error with the same reason.
@@ -137,10 +137,10 @@ For tests, `render_spec` from `vizreel.plugin` renders a spec file and returns e
 
 ## Using a plugin
 
-Install it in the same environment as vizreel. With uv:
+Install it in the same environment as vizreel. With uv, name the plugin's package, or its folder, next to vizreel:
 
 ```bash
-uv tool install vizreel --with vizreel-progress
+uv tool install vizreel --with PLUGIN-PACKAGE
 ```
 
 Installing a plugin runs its code whenever vizreel starts, like any Python package; install plugins you trust.
