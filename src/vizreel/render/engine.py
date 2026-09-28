@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from vizreel.charts.base import Continuation
-from vizreel.charts.registry import builtin_registry
+from vizreel.charts.registry import BUILT_IN, chart_registry
 from vizreel.errors import OutputError, RenderError, VizreelError
 from vizreel.format.locales import Locale, locale_for
 from vizreel.render.layout import Aspect, Layout, build_layout, frame_size
@@ -264,7 +264,10 @@ def _render_safely(
     except Exception as exc:
         if reraise:
             raise
-        return result(error=f"unexpected error: {type(exc).__name__}: {exc}")
+        source = chart_registry().source(plan.chart.type)
+        # A bug in another package's chart type is reported to that package, not to vizreel.
+        where = "" if source == BUILT_IN else f" in chart type {plan.chart.type} from {source}"
+        return result(error=f"unexpected error{where}: {type(exc).__name__}: {exc}")
     return result(video=video, still=still)
 
 
@@ -288,7 +291,7 @@ def render_chart(
     from vizreel.render import elements
     from vizreel.render.scene import ChartScene
 
-    chart_type = builtin_registry().get(chart.type)
+    chart_type = chart_registry().get(chart.type)
 
     def layout_with(title_lines: int, subtitle_lines: int) -> Layout:
         return build_layout(

@@ -8,7 +8,7 @@ from typing import Annotated, Any
 from pydantic import Field, ValidationError, create_model
 from pydantic_core import ErrorDetails
 
-from vizreel.charts.registry import builtin_registry
+from vizreel.charts.registry import chart_registry
 from vizreel.errors import InputIssue, SpecError
 from vizreel.spec.models import Spec
 from vizreel.validation import (
@@ -59,7 +59,7 @@ def spec_json_schema() -> dict[str, Any]:
 @cache
 def spec_model() -> type[Spec]:
     """Return the `Spec` model with `charts` narrowed to every registered chart type."""
-    models = builtin_registry().models()
+    models = chart_registry().models()
     chart_union: Any = Annotated[reduce(operator.or_, models), Field(discriminator="type")]
     return create_model(
         "Spec",
@@ -110,11 +110,13 @@ def _issue_from_error(error: ErrorDetails) -> InputIssue:
     loc = _strip_chart_tag(error["loc"])
     kind = error["type"]
     value = error.get("input")
-    valid_types = ", ".join(builtin_registry().names())
+    registry = chart_registry()
+    valid_types = ", ".join(registry.names())
 
     if kind == "union_tag_invalid":
         tag = error.get("ctx", {})["tag"]
-        return _issue((*loc, "type"), f'unknown type "{tag}". Valid types: {valid_types}')
+        hint = registry.unknown_type_hint(tag)
+        return _issue((*loc, "type"), f'unknown type "{tag}". Valid types: {valid_types}{hint}')
     if kind == "union_tag_not_found":
         return _issue((*loc, "type"), f"required field is missing. Valid types: {valid_types}")
     if kind == "literal_error" and loc == ("version",):
@@ -137,6 +139,6 @@ def _issue(loc: Location, message: str) -> InputIssue:
 def _strip_chart_tag(loc: Location) -> Location:
     """Remove the chart type name Pydantic inserts after `charts[i]` in discriminated unions."""
     is_chart_field = len(loc) >= 3 and loc[0] == "charts" and isinstance(loc[1], int)
-    if is_chart_field and loc[2] in builtin_registry().names():
+    if is_chart_field and loc[2] in chart_registry().names():
         return (*loc[:2], *loc[3:])
     return loc

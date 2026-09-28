@@ -17,6 +17,11 @@ if TYPE_CHECKING:
     from vizreel.render.scene import ChartScene
 
 
+CHART_API_VERSION = 1
+"""Version of the chart type contract. It goes up when a change to `ChartType` or
+`vizreel.plugin` would break chart types written for the previous version."""
+
+
 @dataclass(frozen=True)
 class Continuation:
     """What a clip of a sequence does after the clip before it.
@@ -41,6 +46,8 @@ class ChartType(ABC):
         model: Pydantic model for this chart's fields.
         template: A commented example of this chart as a YAML list item, printed by
             `vizreel new`. It must be a valid chart.
+        api_version: The version of this contract the chart type is written for. A chart type
+            from another package sets it to the `CHART_API_VERSION` it was written for.
         chart: The chart to build, an instance of `model`.
         theme: All styling.
         layout: All geometry.
@@ -50,6 +57,7 @@ class ChartType(ABC):
     name: ClassVar[str]
     model: ClassVar[type[BaseChart]]
     template: ClassVar[str]
+    api_version: ClassVar[int] = CHART_API_VERSION
 
     def __init__(self, chart: BaseChart, theme: Theme, layout: Layout, locale: Locale) -> None:
         self.chart = chart

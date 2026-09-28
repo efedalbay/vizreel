@@ -2,7 +2,7 @@
 
 import textwrap
 
-from vizreel.charts.registry import builtin_registry
+from vizreel.charts.registry import BUILT_IN, chart_registry
 from vizreel.errors import UsageError
 
 _HEADER = """\
@@ -12,6 +12,10 @@ _HEADER = """\
 version: 1
 charts:
 """
+_PLUGIN_HEADER = _HEADER.replace(
+    "Every field is described in docs/SPEC.md.",
+    "It comes from {source}; see that package for its fields.",
+)
 
 
 def spec_template(type_name: str) -> str:
@@ -20,10 +24,13 @@ def spec_template(type_name: str) -> str:
     Raises:
         UsageError: No chart type has that name.
     """
-    registry = builtin_registry()
+    registry = chart_registry()
     if type_name not in registry.names():
         raise UsageError(
             f'unknown chart type "{type_name}". Valid types: {", ".join(registry.names())}'
+            + registry.unknown_type_hint(type_name)
         )
     template = registry.get(type_name).template
-    return _HEADER.format(name=type_name) + textwrap.indent(template, "  ")
+    source = registry.source(type_name)
+    header = _HEADER if source == BUILT_IN else _PLUGIN_HEADER
+    return header.format(name=type_name, source=source) + textwrap.indent(template, "  ")

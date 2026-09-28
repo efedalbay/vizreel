@@ -14,6 +14,7 @@ from rich.console import Console
 from rich.markup import escape
 
 from vizreel import __version__
+from vizreel.charts.registry import chart_registry
 from vizreel.errors import InputFileError, OutputError, VizreelError
 from vizreel.render.engine import ChartResult, RenderOptions, render_spec
 from vizreel.spec.loader import load_spec, spec_json_schema
@@ -65,6 +66,7 @@ def validate(
     spec: Annotated[Path, typer.Argument(help="Spec file to check.", show_default=False)],
 ) -> None:
     """Check a spec file and list every error."""
+    _warn_about_plugins()
     with _reporting_errors(ctx):
         loaded = load_spec(spec)
     count = len(loaded.charts)
@@ -140,6 +142,7 @@ def render(
     ] = False,
 ) -> None:
     """Render each chart of a spec to its own clip."""
+    _warn_about_plugins()
     options = RenderOptions(
         out_dir=out,
         only=tuple(only or ()),
@@ -224,6 +227,7 @@ def schema(
     ] = None,
 ) -> None:
     """Print the JSON Schema of the spec format, for editors and tools."""
+    _warn_about_plugins()
     text = json.dumps(spec_json_schema(), indent=2) + "\n"
     if output is None:
         sys.stdout.write(text)
@@ -240,8 +244,7 @@ def new(
         str,
         typer.Argument(
             metavar="TYPE",
-            help="Chart type: stat, line, bar, timeline, compare, waterfall, stacked, share "
-            "or table.",
+            help="Chart type, e.g. stat or bar. vizreel types lists them all.",
             show_default=False,
         ),
     ],
@@ -256,6 +259,7 @@ def new(
     ] = None,
 ) -> None:
     """Print a commented spec template for a chart type."""
+    _warn_about_plugins()
     with _reporting_errors(ctx):
         text = spec_template(chart_type)
         if output is not None and output.exists():
@@ -266,6 +270,24 @@ def new(
     with _reporting_errors(ctx):
         _write_text(output, text)
     _stdout().print(f"Wrote a {escape(chart_type)} template to {escape(str(output))}")
+
+
+@app.command()
+def types(ctx: typer.Context) -> None:
+    """List every chart type, built-in or from an installed package."""
+    with _reporting_errors(ctx):
+        registry = chart_registry()
+    console = _stdout()
+    names = registry.names()
+    name_width = max(len(name) for name in names)
+    source_width = max(len(registry.source(name)) for name in names)
+    for name in names:
+        summary = (registry.get(name).__doc__ or "").strip().split("\n")[0]
+        console.print(
+            f"[bold]{escape(name.ljust(name_width))}[/]  "
+            f"{escape(registry.source(name).ljust(source_width))}  [dim]{escape(summary)}[/]"
+        )
+    _warn_about_plugins()
 
 
 themes_app = typer.Typer(help="Built-in themes.", no_args_is_help=True)
@@ -310,6 +332,12 @@ def theme_check(
         _stderr().print(f"[red]{escape(theme)}: {failed} of {len(results)} checks failed[/]")
         raise typer.Exit(1)
     console.print(f"[green]{escape(theme)}: all {len(results)} checks passed[/]")
+
+
+def _warn_about_plugins() -> None:
+    """Say which chart types from installed packages could not be loaded."""
+    for problem in chart_registry().problems:
+        _stderr().print(f"[yellow]warning:[/] {escape(str(problem))}")
 
 
 def _write_text(path: Path, text: str) -> None:
