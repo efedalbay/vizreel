@@ -34,6 +34,7 @@ from vizreel.format.numbers import (
     shared_decimals,
     whole_percents,
 )
+from vizreel.render.engine import ChartResult, RenderOptions, render_spec
 from vizreel.render.layout import Box, Layout, px, stack_gap, stroke_width
 from vizreel.spec.models import BaseChart, Duration, NumberFormat, SequencedChart, SpecModel, Text
 from vizreel.themes.models import FontStyle, Theme
@@ -44,6 +45,7 @@ __all__ = [
     "SMALLEST_NUMBER_SCALE",
     "BaseChart",
     "Box",
+    "ChartResult",
     "ChartType",
     "Duration",
     "FontStyle",
@@ -52,6 +54,7 @@ __all__ = [
     "NumberFormat",
     "Phases",
     "RenderError",
+    "RenderOptions",
     "SequencedChart",
     "SpecModel",
     "Text",
@@ -67,6 +70,7 @@ __all__ = [
     "format_numbers",
     "format_percent",
     "px",
+    "render_spec",
     "sequential_progress",
     "shared_decimals",
     "split_duration",
