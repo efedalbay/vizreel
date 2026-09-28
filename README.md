@@ -182,7 +182,7 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 | `--out DIR` | Output folder (default `out`) |
 | `--only ID` | Render only this chart; repeat for several |
 | `--quality preview\|final` | `preview` is low resolution and fast, and writes `ID.preview.mov`; `final` uses the spec settings |
-| `--format mov\|webm\|mp4` | `mov` and `webm` keep transparency; `mp4` uses the theme background |
+| `--format mov\|webm\|mp4\|prores\|png` | `mov`, `webm`, `prores` (ProRes 4444, `ID.prores.mov`) and `png` (a folder of PNG frames) keep transparency; `mp4` uses the theme background |
 | `--still` | Also save the final frame as a PNG |
 | `--fps RATE` | Frames per second of a final render: `23.976`, `24`, `25`, `29.97`, `30`, `50`, `59.94` or `60`. Match your editor's timeline. Default `meta.fps`, or 60 |
 | `--aspect 16:9\|9:16\|1:1` | `9:16` renders vertical clips for Shorts, Reels and TikTok, named `ID.vertical.mov`; `1:1` renders square clips for feeds, named `ID.square.mov` |
@@ -197,7 +197,7 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 | CapCut | Transparent | Not transparent (dark background) | Opaque, by design |
 | DaVinci Resolve | Not tested yet | Not tested yet | Opaque, by design |
 
-`webm` clips also contain transparency, but not every editor reads it. Use `--format mp4` when you do not need transparency: the chart is drawn on the theme's background color.
+`webm` clips also contain transparency, but not every editor reads it. `--format prores` writes ProRes 4444, the format professional editors such as DaVinci Resolve, Premiere Pro and Final Cut Pro expect for transparent clips, and `--format png` a folder of PNG frames that any editor imports as an image sequence. Use `--format mp4` when you do not need transparency: the chart is drawn on the theme's background color.
 
 ## Themes
 

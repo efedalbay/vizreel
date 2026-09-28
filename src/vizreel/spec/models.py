@@ -91,8 +91,9 @@ class Meta(SpecModel):
     fps: FrameRate = 60
     """Frames per second: 23.976, 24, 25, 29.97, 30, 50, 59.94 or 60. Match the editor's
     timeline, or it blends or drops frames."""
-    format: Literal["mov", "webm", "mp4"] = "mov"
-    """mov and webm have a transparent background. mp4 is opaque."""
+    format: Literal["mov", "webm", "mp4", "prores", "png"] = "mov"
+    """mov, webm, prores and png have a transparent background; mp4 is opaque. prores is ProRes
+    4444 in ID.prores.mov, png a folder of numbered PNG frames."""
     locale: Literal["en-US", "tr-TR", "es-ES", "pt-BR", "fr-FR"] = "en-US"
     """How numbers are written: separators, the percent sign and compact unit names."""
 

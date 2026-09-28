@@ -773,6 +773,23 @@ def test_every_showcase_chart_renders_square(tmp_path: Path) -> None:
             assert (stream.width, stream.height) == (480, 480)
 
 
+def test_prores_and_png_outputs_keep_the_frames_and_the_alpha(tmp_path: Path) -> None:
+    prores = render_stat(tmp_path, format="prores")
+    png = render_stat(tmp_path, format="png")
+
+    assert prores.video == tmp_path / f"{STAT_ID}.preview.prores.mov"
+    assert png.video == tmp_path / f"{STAT_ID}.preview"
+    with av.open(str(prores.video)) as container:
+        assert container.streams.video[0].codec_context.name == "prores"
+    prores_frames = frames_rgba(prores.video)
+    png_files = sorted(png.video.glob("*.png"))
+    assert len(prores_frames) == len(png_files) == STAT_DURATION * PREVIEW_FPS
+    assert png_files[0].name == f"{STAT_ID}.preview_00001.png"
+    for last in (prores_frames[-1], image_rgba(png_files[-1])):
+        assert last[2, 2, 3] == 0
+        assert last[PREVIEW[1] // 2, PREVIEW[0] // 2, 3] == 255
+
+
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     too_wide = "Northwind " * 20
     spec = tmp_path / "spec.yaml"

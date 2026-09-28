@@ -108,6 +108,8 @@ class FormatChoice(StrEnum):
     mov = "mov"
     webm = "webm"
     mp4 = "mp4"
+    prores = "prores"
+    png = "png"
 
 
 @app.command()
@@ -129,8 +131,8 @@ def render(
         FormatChoice | None,
         typer.Option(
             "--format",
-            help="mov and webm keep transparency; mp4 uses the theme background. "
-            "Default: meta.format.",
+            help="mov, webm, prores (ProRes 4444) and png (a folder of PNG frames) keep "
+            "transparency; mp4 uses the theme background. Default: meta.format.",
             show_default=False,
         ),
     ] = None,

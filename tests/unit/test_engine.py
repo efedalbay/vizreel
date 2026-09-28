@@ -201,3 +201,17 @@ def test_square_frames_have_equal_sides_and_a_suffix(tmp_path: Path) -> None:
 
     assert (settings.width, settings.height) == (1080, 1080)
     assert video == tmp_path / "sales.square.mov"
+
+
+@pytest.mark.parametrize(
+    ("output_format", "name"),
+    [("mov", "sales.mov"), ("prores", "sales.prores.mov"), ("png", "sales"), ("mp4", "sales.mp4")],
+)
+def test_output_paths_of_each_format(tmp_path: Path, output_format: str, name: str) -> None:
+    spec = spec_with_meta(f"{{ format: {output_format} }}")
+    settings = frame_settings(spec, RenderOptions())
+
+    video, _ = output_paths("sales", RenderOptions(out_dir=tmp_path), settings)
+
+    assert video == tmp_path / name
+    assert settings.transparent is (output_format != "mp4")

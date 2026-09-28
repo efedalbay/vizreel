@@ -22,7 +22,7 @@ from vizreel.themes.loader import load_theme
 from vizreel.themes.models import Theme
 
 Quality = Literal["preview", "final"]
-OutputFormat = Literal["mov", "webm", "mp4"]
+OutputFormat = Literal["mov", "webm", "mp4", "prores", "png"]
 
 SHORT_SIDES: dict[str, int] = {"720p": 720, "1080p": 1080, "1440p": 1440, "4k": 2160}
 """Pixels on the short side of the frame for each `meta.resolution`."""
@@ -31,7 +31,9 @@ PREVIEW_FPS = 15
 PREVIEW_SUFFIX = ".preview"
 ASPECT_SUFFIXES: dict[str, str] = {"16:9": "", "9:16": ".vertical", "1:1": ".square"}
 """What a clip's file name says about its shape, so that shapes never replace each other."""
-TRANSPARENT_FORMATS = frozenset({"mov", "webm"})
+TRANSPARENT_FORMATS = frozenset({"mov", "webm", "prores", "png"})
+MANIM_FORMATS: dict[str, str] = {"prores": "mov", "png": "mov"}
+"""What Manim writes for the formats it does not write itself; `transcode` converts it."""
 
 
 @dataclass(frozen=True)
@@ -174,6 +176,9 @@ def output_paths(
 ) -> tuple[Path, Path | None]:
     """Return the clip path and, if a still is requested, the PNG path for a chart.
 
+    A PNG sequence goes in a folder named like the clip, and a ProRes clip is `ID.prores.mov`,
+    so it never replaces a QuickTime Animation clip of the same chart.
+
     The clips of a sequence are numbered from 1. Vertical files get a `.vertical` suffix and
     preview files a `.preview` suffix, so that renders of one chart in another shape or
     quality never replace each other.
@@ -184,8 +189,12 @@ def output_paths(
         + ASPECT_SUFFIXES[settings.aspect]
         + (PREVIEW_SUFFIX if options.quality == "preview" else "")
     )
-    output_format = settings.format
-    video = options.out_dir / f"{stem}.{output_format}"
+    if settings.format == "png":
+        video = options.out_dir / stem
+    elif settings.format == "prores":
+        video = options.out_dir / f"{stem}.prores.mov"
+    else:
+        video = options.out_dir / f"{stem}.{settings.format}"
     still = options.out_dir / f"{stem}.png" if options.still else None
     return video, still
 
@@ -308,7 +317,7 @@ def render_chart(
     """
     from manim import Camera, tempconfig
 
-    from vizreel.render import elements
+    from vizreel.render import elements, transcode
     from vizreel.render.scene import ChartScene
 
     chart_type = chart_registry().get(chart.type)
@@ -336,7 +345,7 @@ def render_chart(
             "frame_height": scene_height,
             "frame_rate": float(settings.fps),
             "transparent": settings.transparent,
-            "format": settings.format,
+            "format": MANIM_FORMATS.get(settings.format, settings.format),
             "background_color": theme.colors.background,
             "disable_caching": True,
             "write_to_movie": True,
@@ -356,7 +365,13 @@ def render_chart(
                 relayout=(lambda fitted: chart_type(chart, theme, fitted, locale)) if fit else None,
             )
             scene.render()
-            _move(Path(scene.renderer.file_writer.movie_file_path), video_path)
+            movie = Path(scene.renderer.file_writer.movie_file_path)
+            if settings.format == "prores":
+                transcode.to_prores(movie, video_path)
+            elif settings.format == "png":
+                transcode.to_png_sequence(movie, video_path)
+            else:
+                _move(movie, video_path)
             if still_path is not None:
                 camera = scene.renderer.camera
                 assert isinstance(camera, Camera)
