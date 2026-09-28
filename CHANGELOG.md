@@ -4,7 +4,7 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.11.0] - 2026-09-28
 
 ### Added
 
@@ -162,6 +162,7 @@ The first release.
 - `vizreel new TYPE` prints a commented template for each chart type.
 - The Inter typeface, bundled so that output looks the same on every machine.
 
+[0.11.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.11.0
 [0.10.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.10.0
 [0.9.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.9.0
 [0.8.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.8.0
