@@ -211,12 +211,11 @@ class CompareChartType(ChartType):
         before_text = format_number(before_value, number_format, locale=self.locale)
         after_text = format_number(after_value, number_format, locale=self.locale)
         # The earlier value counts up from zero, the later one from the earlier value.
+        counts = ((0.0, before_value), (before_value, after_value))
         counted = [
-            format_number(value, number_format, locale=self.locale)
-            for value in {
-                *count_samples(0, before_value),
-                *count_samples(before_value, after_value),
-            }
+            format_number(value, number_format, locale=self.locale, unit_of=end)
+            for start, end in counts
+            for value in count_samples(start, end)
         ]
         at_scale = NumberGlyphs(fonts.numbers, number_size, colors.text)
         widest = max(at_scale(text).width for text in counted)
@@ -342,11 +341,15 @@ class CompareChartType(ChartType):
             # argument.
             return UpdateFromAlphaFunc(tracker, step, run_time=run_time, rate_func=ease)  # type: ignore[arg-type]
 
-        def number_text(value: float) -> str:
-            return format_number(value, number_format, locale=self.locale)
+        def number_text(final: float) -> "Callable[[float], str]":
+            return lambda value: format_number(
+                value, number_format, locale=self.locale, unit_of=final
+            )
 
         before_tracker = ValueTracker(0.0)
-        counting_before = counting(before_tracker, number_text, before_glyphs, placement.before)
+        counting_before = counting(
+            before_tracker, number_text(before_value), before_glyphs, placement.before
+        )
         scene.add(counting_before)
         scene.play(
             AnimationGroup(
@@ -361,7 +364,9 @@ class CompareChartType(ChartType):
         scene.add(final_before)
 
         after_tracker = ValueTracker(before_value)
-        counting_after = counting(after_tracker, number_text, after_glyphs, placement.after)
+        counting_after = counting(
+            after_tracker, number_text(after_value), after_glyphs, placement.after
+        )
         scene.add(counting_after)
         scene.play(
             AnimationGroup(
@@ -387,7 +392,9 @@ class CompareChartType(ChartType):
             kind = change_kind
 
             def change_text(value: float) -> str:
-                return format_change(value, kind, chart.number, change_places, locale=self.locale)
+                return format_change(
+                    value, kind, chart.number, change_places, locale=self.locale, unit_of=amount
+                )
 
             change_tracker = ValueTracker(0.0)
             change_x, change_y = placement.change

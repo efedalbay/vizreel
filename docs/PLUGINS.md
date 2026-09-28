@@ -97,7 +97,7 @@ In `build`, the chart type has:
 A plugin chart looks at home next to the built-in ones when it follows the same rules:
 
 - **Styling from the theme, geometry from the layout.** No literal colors, font names or pixel sizes. Convert theme sizes, which are px at 1080p, with `px()`.
-- **Numbers through the formatting functions**, with `locale=self.locale`: `format_number`, `format_numbers`, `format_percent`, `format_change`. Counting numbers use `NumberGlyphs` from `vizreel.plugin.render`, which keeps digits from jittering.
+- **Numbers through the formatting functions**, with `locale=self.locale`: `format_number`, `format_numbers`, `format_percent`, `format_change`. Counting numbers use `NumberGlyphs` from `vizreel.plugin.render`, which keeps digits from jittering, and pass `unit_of=` the value they count to, so they count in its unit.
 - **Exactly `chart.duration` long.** Divide the clip with `split_duration` and end with the theme's hold, in which nothing moves. `check_reading_time` checks that text stays on screen long enough to be read.
 - **Text that does not fit is an error, not smaller text.** `wrapped_block` wraps text onto two lines and raises `RenderError` when it still does not fit; `check_fits` does the same for one mobject. A big number may shrink, with `fitting_number_size` and `count_samples`, as the built-in types do.
 - **Expected failures raise `RenderError`** with a message the user can act on. Other exceptions are reported as unexpected errors in your package.

@@ -86,7 +86,7 @@ class StatChartType(ChartType):
         )
 
         counted = [
-            format_number(value, number_format, locale=self.locale)
+            format_number(value, number_format, locale=self.locale, unit_of=chart.value)
             for value in count_samples(chart.start, chart.value)
         ]
         # The size fits the widest text of the count, and stays the same while it counts.
@@ -100,7 +100,9 @@ class StatChartType(ChartType):
         glyphs = NumberGlyphs(fonts.numbers, number_size, number_color[chart.trend])
 
         def number(value: float) -> "VMobject":
-            return glyphs(format_number(value, number_format, locale=self.locale))
+            return glyphs(
+                format_number(value, number_format, locale=self.locale, unit_of=chart.value)
+            )
 
         header = line(chart.title, fonts.heading, sizes.title, colors.text) + line(
             chart.subtitle, fonts.body, sizes.subtitle, colors.muted

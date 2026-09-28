@@ -87,6 +87,7 @@ Formatting rules, shown for `en-US` (see [Locales](#locales) for the others):
 - **Automatic decimals** (no `decimals` set): whole numbers get none; other numbers get at most 2, without trailing zeros (`4.2`, `0.05`, `1.23`). With `compact: true`, abbreviated numbers keep 3 significant digits (`740M`, `2.25B`, `1.2M`, `12.3M`).
 - **Fixed decimals** (`decimals` set): always that many, trailing zeros kept (`decimals: 2` → `2.20`). With `compact: true`, `decimals` applies to the abbreviated number (`decimals: 1` → `740.0M`).
 - **Compact units:** `K` from 1,000, `M` from 1,000,000, `B` from 1,000,000,000, `T` from 1,000,000,000,000. Numbers below 1,000 are not abbreviated. When rounding reaches 1,000 of a unit, the next unit is used: `999950` → `1M`, not `1000K`.
+- **Counting:** a value that counts up or grows is shown in the unit of its final value, so its unit and width do not jump: `$0.37B` on the way to `$1.85B`, not `$370M`. A final value that would count through fewer than 10 values in its own unit, such as `$2B`, counts through the smaller units instead.
 - **Rounding:** halves round away from zero: `2.675` → `2.68`, `2.5` → `3`.
 - **Negative numbers:** the minus sign (−, U+2212) comes before the prefix: `−$1.2M`. A value that rounds to zero never shows a sign.
 - **Same decimals within a chart:** values shown together in one chart, such as axis or bar labels, share the number of decimals of the most precise value: `$0.05B`, `$0.20B`, `$2.25B`. With `compact: true`, only values with the same unit share decimals: `$1.25B`, `$412.0M`, `$7.8M`.

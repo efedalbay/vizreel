@@ -24,21 +24,40 @@ AUTO_MAX_DECIMALS = 2
 COMPACT_SIGNIFICANT_DIGITS = 3
 """Significant digits of an abbreviated number when `decimals` is not set: 740M, 2.25B, 12.3K."""
 
+MIN_UNIT_COUNT_STEPS = 10
+"""A count keeps the unit of its final value only if it then shows at least this many values.
+A count to 2B would show only 0B, 1B and 2B, so it goes through thousands and millions."""
+
 COMPACT_POWERS: tuple[int, ...] = (1, 10**3, 10**6, 10**9, 10**12)
 """Size of each compact unit: none, thousand, million, billion, trillion."""
 
 _DEFAULT_FORMAT = NumberFormat()
 
 
-def format_number(value: float, fmt: NumberFormat | None = None, *, locale: Locale) -> str:
+def format_number(
+    value: float,
+    fmt: NumberFormat | None = None,
+    *,
+    locale: Locale,
+    unit_of: float | None = None,
+) -> str:
     """Format one value for display, e.g. 740000000 → "$740M", or "740 milyon" in tr-TR.
 
     Args:
         value: The number to format.
         fmt: Prefix, suffix, decimals and compact notation. Defaults to plain formatting.
         locale: Separators and compact unit names.
+        unit_of: For a number counting toward this value: show it in this value's compact
+            unit and decimals, so a count to 1.85B reads 0.37B, not 370M, and keeps its unit
+            and width. The count's last frame reads exactly as the value on its own. A value
+            too small in its unit to count smoothly (see `MIN_UNIT_COUNT_STEPS`) is counted in
+            the natural units.
     """
-    return format_numbers([value], fmt, locale=locale)[0]
+    if unit_of is None:
+        return format_numbers([value], fmt, locale=locale)[0]
+    fmt = fmt or _DEFAULT_FORMAT
+    places = fmt.decimals if fmt.decimals is not None else shared_decimals([unit_of], fmt)[0]
+    return _format(value, fmt, places, locale, unit_of)
 
 
 def format_numbers(
@@ -123,6 +142,7 @@ def format_change(
     decimals: int | None = None,
     *,
     locale: Locale,
+    unit_of: float | None = None,
 ) -> str:
     """Format a change with its sign, e.g. "−72%", "+4.5%" or "+$1.2M". No change has no sign.
 
@@ -133,6 +153,8 @@ def format_change(
         decimals: Decimals to show; by default those of `change_decimals`. A change that counts
             up keeps the decimals of its final value in every frame.
         locale: Separators, the percent sign's place and compact unit names.
+        unit_of: For an absolute change counting toward this one: show it in this change's
+            compact unit, as `format_number` does.
     """
     fmt = fmt or _DEFAULT_FORMAT
     places = change_decimals(amount, kind, fmt) if decimals is None else decimals
@@ -140,8 +162,9 @@ def format_change(
         rounded = _round(_to_decimal(amount), places)
         text = locale.percent.format(_digits(abs(rounded), places, locale))
     else:
-        rounded, _ = _round_scaled(_to_decimal(amount), _is_compact(fmt), places)
-        text = _format(abs(amount), fmt, places, locale)
+        unit = _unit_index(unit_of, fmt, places)
+        rounded, _ = _round_scaled(_to_decimal(amount), _is_compact(fmt), places, unit)
+        text = _format(abs(amount), fmt, places, locale, unit_of)
     sign = "+" if rounded > 0 else MINUS_SIGN if rounded < 0 else ""
     return sign + text
 
@@ -173,8 +196,11 @@ def format_percent(percent: float, *, locale: Locale) -> str:
     return locale.percent.format(_digits(_round(_to_decimal(percent), 0), 0, locale))
 
 
-def _format(value: float, fmt: NumberFormat, decimals: int, locale: Locale) -> str:
-    rounded, unit_index = _round_scaled(_to_decimal(value), _is_compact(fmt), decimals)
+def _format(
+    value: float, fmt: NumberFormat, decimals: int, locale: Locale, unit_of: float | None = None
+) -> str:
+    forced = _unit_index(unit_of, fmt, decimals)
+    rounded, unit_index = _round_scaled(_to_decimal(value), _is_compact(fmt), decimals, forced)
     sign = MINUS_SIGN if rounded < 0 else ""
     digits = _digits(abs(rounded), decimals, locale)
     unit = locale.units(_unit_style(fmt, locale)).name(unit_index, rounded)
@@ -214,8 +240,24 @@ def _auto_decimals(value: float, compact: bool) -> tuple[int, int]:
     return rounded_unit, _decimals_needed(rounded)
 
 
-def _round_scaled(number: Decimal, compact: bool, decimals: int) -> tuple[Decimal, int]:
-    """Scale to the compact unit and round, moving up a unit if rounding reaches 1000."""
+def _unit_index(unit_of: float | None, fmt: NumberFormat, decimals: int) -> int | None:
+    """Return the compact unit `unit_of` is shown in, or None without `unit_of`."""
+    if unit_of is None or not _is_compact(fmt):
+        return None
+    rounded, unit = _round_scaled(_to_decimal(unit_of), True, decimals)
+    steps = abs(rounded).scaleb(decimals)
+    return unit if unit > 0 and steps >= MIN_UNIT_COUNT_STEPS else None
+
+
+def _round_scaled(
+    number: Decimal, compact: bool, decimals: int, unit: int | None = None
+) -> tuple[Decimal, int]:
+    """Scale to the compact unit and round, moving up a unit if rounding reaches 1000.
+
+    With `unit`, scale to that unit instead, whatever the number's size.
+    """
+    if unit is not None:
+        return _round(number / COMPACT_POWERS[unit], decimals), unit
     scaled, unit_index = _scale(number, compact)
     rounded = _round(scaled, decimals)
     if compact and unit_index > 0 and abs(rounded) >= 1000 and unit_index + 1 < len(COMPACT_POWERS):

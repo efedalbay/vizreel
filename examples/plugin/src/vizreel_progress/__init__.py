@@ -19,7 +19,7 @@ from vizreel.plugin import (
     count_samples,
     decimals_for,
     fitting_number_size,
-    format_numbers,
+    format_number,
     format_percent,
     px,
     split_duration,
@@ -118,9 +118,10 @@ class ProgressChartType(ChartType):
             return percent_glyphs(format_percent(percent * progress, locale=self.locale))
 
         def amount_text(progress: float) -> "VMobject":
-            value, goal = format_numbers(
-                [chart.value * progress, chart.goal], amount_format, locale=self.locale
+            value = format_number(
+                chart.value * progress, amount_format, locale=self.locale, unit_of=chart.value
             )
+            goal = format_number(chart.goal, amount_format, locale=self.locale)
             return amount_glyphs(f"{value} / {goal}")
 
         bar_width = content.width if layout.vertical else content.width * BAR_WIDTH_SHARE

@@ -111,4 +111,3 @@ From here on, each milestone ends with a minor release (M7 → 0.2.0, M8 → 0.3
 - macOS testing (needs a contributor with a Mac).
 - Verify that transparent clips import with alpha in DaVinci Resolve on Windows (M2 verified CapCut only). If the default `mov` (QuickTime Animation) does not keep alpha there, add a ProRes 4444 re-encode step.
 - Compact unit names set smaller than the digits (`1,85` large, `milyar` smaller on the same baseline), as a theme option. A typographic style rather than a locale rule; the number glyph composer lays out a number in one size today.
-- Count a compact number in the unit of its final value (`0,00 milyar` to `1,85 milyar`) instead of passing through `bin` and `milyon`. The width would stay the same while counting, so a big number that shrinks to fit could stay larger.

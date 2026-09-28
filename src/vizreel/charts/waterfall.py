@@ -142,11 +142,20 @@ class WaterfallChartType(ChartType):
         def value_text(index: int, grown: float) -> "VMobject":
             bar, value_format = bars[index], value_formats[index]
             if bar.kind == "total":
-                return glyphs(format_number(bar.amount * grown, value_format, locale=self.locale))
+                return glyphs(
+                    format_number(
+                        bar.amount * grown, value_format, locale=self.locale, unit_of=bar.amount
+                    )
+                )
             places = value_format.decimals
             return glyphs(
                 format_change(
-                    bar.amount * grown, "absolute", value_format, places, locale=self.locale
+                    bar.amount * grown,
+                    "absolute",
+                    value_format,
+                    places,
+                    locale=self.locale,
+                    unit_of=bar.amount,
                 )
             )
 

@@ -8,6 +8,7 @@ All notable changes to vizreel are documented here. The format follows
 
 ### Changed
 
+- A compact number counts in the unit of its final value: `0.37B` on the way to `1.85B` instead of passing through thousands and millions, so its unit and width no longer jump. A value too small in its unit to count smoothly, such as `2B`, still counts through the smaller units.
 - A vertical chart with little content, such as three bars, a short timeline or a small table, no longer floats in the middle of an empty panel. The title, the source line and the panel close in around the content, and the card is centered in the safe area.
 
 ### Fixed

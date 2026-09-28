@@ -299,7 +299,7 @@ class LineChartType(ChartType):
         glyphs = NumberGlyphs(fonts.numbers, sizes.value, colors.text)
 
         def value_text(value: float, final: float) -> "VMobject":
-            return glyphs(format_number(value, formats[final], locale=self.locale))
+            return glyphs(format_number(value, formats[final], locale=self.locale, unit_of=final))
 
         names = [
             elements.text(series.name, fonts.body, sizes.label, colors.text)

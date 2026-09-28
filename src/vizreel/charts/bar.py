@@ -106,7 +106,12 @@ class BarChartType(ChartType):
 
         def value_text(index: int, grown: float) -> "VMobject":
             return glyphs(
-                format_number(bars[index].value * grown, value_formats[index], locale=self.locale)
+                format_number(
+                    bars[index].value * grown,
+                    value_formats[index],
+                    locale=self.locale,
+                    unit_of=bars[index].value,
+                )
             )
 
         final_values = [value_text(index, 1.0) for index in range(count)]

@@ -141,7 +141,10 @@ class StackedChartType(ChartType):
         glyphs = NumberGlyphs(fonts.numbers, sizes.value, colors.text)
 
         def total_text(category: int, amount: float) -> "VMobject":
-            return glyphs(format_number(amount, total_formats[category], locale=self.locale))
+            total = totals[category]
+            return glyphs(
+                format_number(amount, total_formats[category], locale=self.locale, unit_of=total)
+            )
 
         final_totals = [total_text(index, total) for index, total in enumerate(totals)]
         if uses_rows(chart.layout, layout.vertical):

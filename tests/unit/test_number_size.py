@@ -40,13 +40,17 @@ def _dense(start: float, end: float) -> list[float]:
     ids=["plain", "compact", "short", "long", "decimals"],
 )
 @pytest.mark.parametrize(("start", "end"), [(0, 2250000000), (0, 1846.5), (0, 1500000)])
+@pytest.mark.parametrize("in_final_unit", [False, True], ids=["natural-units", "final-unit"])
 def test_no_text_of_a_count_is_longer_than_the_longest_sample(
-    locale: Locale, fmt: NumberFormat, start: float, end: float
+    locale: Locale, fmt: NumberFormat, start: float, end: float, in_final_unit: bool
 ) -> None:
     fixed = fmt.model_copy(update={"decimals": decimals_for([start, end], fmt)})
 
     def longest(values: list[float]) -> int:
-        return max(len(format_number(value, fixed, locale=locale)) for value in values)
+        unit_of = end if in_final_unit else None
+        return max(
+            len(format_number(value, fixed, locale=locale, unit_of=unit_of)) for value in values
+        )
 
     assert longest(_dense(start, end)) <= longest(count_samples(start, end))
 

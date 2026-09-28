@@ -303,3 +303,49 @@ def test_whole_percents_need_a_positive_total() -> None:
 @pytest.mark.parametrize(("percent", "expected"), [(47, "47%"), (0, "0%"), (46.6, "47%")])
 def test_format_percent(percent: float, expected: str) -> None:
     assert format_percent(percent, locale=EN) == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "final", "fmt", "expected"),
+    [
+        (370_000_000, 1_850_000_000, NumberFormat(compact=True, decimals=2), "0.37B"),
+        (0, 1_850_000_000, NumberFormat(compact=True, decimals=2), "0.00B"),
+        (370_000_000, 1_850_000_000, COMPACT, "0.37B"),
+        (1_850_000_000, 740_000_000, COMPACT, "1,850M"),
+        (-12_000, 740_000, DOLLARS_COMPACT, f"{M}$12K"),
+        (500_000, 2_000_000_000, COMPACT, "500K"),
+        (5, 1000, NumberFormat(), "5"),
+        (740, 740, COMPACT, "740"),
+    ],
+    ids=[
+        "billions",
+        "zero",
+        "auto-decimals",
+        "count-down",
+        "negative",
+        "too-few-steps",
+        "not-compact",
+        "below-a-thousand",
+    ],
+)
+def test_a_count_is_shown_in_the_unit_of_its_final_value(
+    value: float, final: float, fmt: NumberFormat, expected: str
+) -> None:
+    assert format_number(value, fmt, locale=EN, unit_of=final) == expected
+
+
+@pytest.mark.parametrize("final", [1_850_000_000, 740_000_000, 12_345, 2_000_000_000, 999_950])
+def test_the_last_frame_of_a_count_reads_as_the_value_alone(final: float) -> None:
+    assert format_number(final, COMPACT, locale=EN, unit_of=final) == format_number(
+        final, COMPACT, locale=EN
+    )
+
+
+def test_an_absolute_change_counts_in_the_unit_of_its_final_value() -> None:
+    fmt = NumberFormat(prefix="$", compact=True)
+
+    assert format_change(37_000_000, "absolute", fmt, 0, locale=EN, unit_of=150_000_000) == "+$37M"
+    assert (
+        format_change(-370_000_000, "absolute", fmt, 2, locale=EN, unit_of=-1_850_000_000)
+        == f"{M}$0.37B"
+    )

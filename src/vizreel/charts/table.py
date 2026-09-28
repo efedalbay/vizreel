@@ -182,7 +182,8 @@ class TableChartType(ChartType):
                 formats.append([])
 
         def number_text(row: int, column: int, value: float) -> str:
-            return format_number(value, formats[column][row], locale=self.locale)
+            final = float(rows[row][column])
+            return format_number(value, formats[column][row], locale=self.locale, unit_of=final)
 
         names = [
             elements.text_block(column.name, fonts.body, sizes.label, colors.muted)
