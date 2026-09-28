@@ -552,7 +552,7 @@ SEQUENCE_DURATIONS = {
 }
 
 
-@pytest.mark.parametrize("aspect", ["16:9", "9:16"])
+@pytest.mark.parametrize("aspect", ["16:9", "9:16", "1:1"])
 @pytest.mark.parametrize("chart_id", list(SEQUENCE_DURATIONS))
 def test_a_sequence_cuts_together_without_a_jump(
     tmp_path: Path, chart_id: str, aspect: str
@@ -755,6 +755,22 @@ def test_clips_have_the_exact_frames_of_every_frame_rate(
     with av.open(str(result.video)) as container:
         assert container.streams.video[0].average_rate == rate
     assert len(frames_rgba(result.video)) == frames == round(Fraction(24, 10) * rate)
+
+
+def test_every_showcase_chart_renders_square(tmp_path: Path) -> None:
+    options = RenderOptions(out_dir=tmp_path, quality="preview", aspect="1:1")
+
+    results = render_spec(SHOWCASE, options)
+
+    assert [(result.chart_id, result.error) for result in results] == [
+        (result.chart_id, None) for result in results
+    ]
+    for result in results:
+        assert result.video is not None
+        assert result.video.name.endswith(".square.preview.mov")
+        with av.open(str(result.video)) as container:
+            stream = container.streams.video[0]
+            assert (stream.width, stream.height) == (480, 480)
 
 
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:

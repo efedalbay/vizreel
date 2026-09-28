@@ -29,7 +29,8 @@ SHORT_SIDES: dict[str, int] = {"720p": 720, "1080p": 1080, "1440p": 1440, "4k": 
 PREVIEW_SHORT_SIDE = 480
 PREVIEW_FPS = 15
 PREVIEW_SUFFIX = ".preview"
-VERTICAL_SUFFIX = ".vertical"
+ASPECT_SUFFIXES: dict[str, str] = {"16:9": "", "9:16": ".vertical", "1:1": ".square"}
+"""What a clip's file name says about its shape, so that shapes never replace each other."""
 TRANSPARENT_FORMATS = frozenset({"mov", "webm"})
 
 
@@ -138,6 +139,8 @@ def frame_pixels(short_side: int, aspect: Aspect) -> tuple[int, int]:
     The long side is rounded up to an even number, which video encoders need.
     """
     long_side = math.ceil(short_side * 16 / 9 / 2) * 2
+    if aspect == "1:1":
+        return (short_side, short_side)
     return (long_side, short_side) if aspect == "16:9" else (short_side, long_side)
 
 
@@ -178,7 +181,7 @@ def output_paths(
     stem = (
         chart_id
         + (f".{step}" if step is not None else "")
-        + (VERTICAL_SUFFIX if settings.aspect == "9:16" else "")
+        + ASPECT_SUFFIXES[settings.aspect]
         + (PREVIEW_SUFFIX if options.quality == "preview" else "")
     )
     output_format = settings.format

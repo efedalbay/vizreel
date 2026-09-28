@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Any
 from vizreel.charts._bars import (
     MAX_ROW_THICKNESS,
     MIN_ROW_THICKNESS_PX,
+    by_bar_layout,
     category_label,
     plan_rows,
-    uses_rows,
 )
 from vizreel.charts.base import (
     ChartType,
@@ -147,10 +147,12 @@ class StackedChartType(ChartType):
             )
 
         final_totals = [total_text(index, total) for index, total in enumerate(totals)]
-        if uses_rows(chart.layout, layout.vertical):
-            geometry = self._rows(area, bounds, totals, total_text, final_totals)
-        else:
-            geometry = self._columns(area, bounds, totals, total_text, final_totals)
+        geometry = by_bar_layout(
+            chart.layout,
+            layout,
+            lambda: self._columns(area, bounds, totals, total_text, final_totals),
+            lambda: self._rows(area, bounds, totals, total_text, final_totals),
+        )
 
         intro = (motion.title_fade if len(header) else 0.0) + motion.structure
         phases = split_duration(

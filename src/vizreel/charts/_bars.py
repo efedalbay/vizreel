@@ -5,10 +5,11 @@ Not a chart type itself; the registry skips modules whose name starts with an un
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, TypeVar
 
+from vizreel.charts.base import arranged
 from vizreel.errors import RenderError
-from vizreel.render.layout import BAR_FILL
+from vizreel.render.layout import BAR_FILL, Layout
 from vizreel.render.scales import two_line_splits
 from vizreel.themes.models import Theme
 
@@ -24,12 +25,24 @@ MAX_ROW_THICKNESS = 1.5
 MAX_ROW_GAP = 0.8
 """Most space between rows, as a multiple of the height of a row."""
 
+T = TypeVar("T")
+
 BarLayout = Literal["auto", "columns", "rows"]
 
 
-def uses_rows(layout: BarLayout, vertical_frame: bool) -> bool:
-    """Whether the bars are drawn as rows rather than columns."""
-    return layout == "rows" or (layout == "auto" and vertical_frame)
+def by_bar_layout(
+    bar_layout: BarLayout, layout: Layout, columns: Callable[[], T], rows: Callable[[], T]
+) -> T:
+    """Build a bar chart's geometry as columns or rows, as its `layout` field asks.
+
+    `auto` uses what the frame calls for: columns at 16:9, rows at 9:16, and at 1:1 columns
+    if they fit, else rows (see `arranged`).
+    """
+    if bar_layout == "columns":
+        return columns()
+    if bar_layout == "rows":
+        return rows()
+    return arranged(layout, columns, rows)
 
 
 @dataclass(frozen=True)

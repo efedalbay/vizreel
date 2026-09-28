@@ -8,9 +8,9 @@ from vizreel.charts._bars import (
     MAX_ROW_THICKNESS,
     MIN_ROW_THICKNESS_PX,
     BarGeometry,
+    by_bar_layout,
     category_label,
     plan_rows,
-    uses_rows,
 )
 from vizreel.charts.base import (
     ChartType,
@@ -160,10 +160,12 @@ class WaterfallChartType(ChartType):
             )
 
         final_values = [value_text(index, 1.0) for index in range(count)]
-        if uses_rows(chart.layout, layout.vertical):
-            geometry, connector = self._rows(bars, value_text, final_values)
-        else:
-            geometry, connector = self._columns(bars, value_text, final_values)
+        geometry, connector = by_bar_layout(
+            chart.layout,
+            layout,
+            lambda: self._columns(bars, value_text, final_values),
+            lambda: self._rows(bars, value_text, final_values),
+        )
 
         intro = (motion.title_fade if len(header) else 0.0) + motion.structure
         phases = split_duration(

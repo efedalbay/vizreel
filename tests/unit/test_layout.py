@@ -168,3 +168,14 @@ def test_content_that_fills_the_layout_leaves_it_as_it_is() -> None:
     full = vertical()
 
     assert full.fitted_to_content(full.content.bottom, full.content.top) == full
+
+
+def test_a_square_frame_is_neither_landscape_nor_vertical() -> None:
+    square = build_layout(
+        SIZES, aspect="1:1", panel=True, title_lines=1, subtitle_lines=0, source_lines=0
+    )
+
+    assert frame_size("1:1") == (SHORT_SIDE, SHORT_SIDE)
+    assert square.square and not square.vertical
+    assert square.safe.width == pytest.approx(square.frame.width * 0.9)
+    assert not layout().square

@@ -24,6 +24,7 @@ Sizes are defined relative to a 1080p frame and scale with resolution. They refe
 
 - **Safe area:** keep all content inside the central 90% of the frame (5% margin on every side). Video platforms and editors overlay controls near the edges. In a 9:16 frame, Shorts, Reels and TikTok cover more: menus at the top, the caption, channel name and buttons at the bottom and lower right. There the margins are 6% on the sides, 10% at the top and 20% at the bottom.
 - **Narrow frames change the form, not the size.** Text is never shrunk to fit a vertical frame. Charts rearrange instead: bars become rows, a timeline runs down the frame, and titles wrap onto a second line. Wrapped lines have their baselines 1.2 times the font size apart, so a descender never touches the line below.
+- **A square frame takes what fits.** At 1:1 the frame is as narrow as a vertical one but not as tall. Each chart uses its landscape arrangement (columns, a horizontal timeline, the legend beside the ring) when it fits, and its vertical one when it does not. A ring takes whichever arrangement leaves it larger. The safe margin is 5% on every side.
 - **A vertical card fits its content.** A 9:16 chart with little content, such as three bars or a short timeline, does not float in the middle of an empty panel: the title, the source line and the panel close in around the content, and the card is centered in the safe area, with the footage visible around it. A chart whose content fills the frame, such as a line chart or a share ring, keeps the full panel.
 - **The one exception is a big number.** A number cannot wrap, and a compact number with a long unit name (`1,85 milyar`) can be wider than a vertical frame. The big number of a `stat` and the values of a `compare` then shrink until they fit, down to half their size. The size is chosen for the widest text the count shows, not only the final value, and stays the same while it counts; a number that jumps in size draws the eye away from its value. A number too wide even at half size is an error that suggests `compact: short`.
 - **Contrast:** text against its background must reach at least 4.5:1; large text (title, big numbers) at least 3:1. With transparent output, the chart draws its own background panel when the theme sets `background_panel: true`, because the footage underneath is unknown.
@@ -74,7 +75,7 @@ Motion guides the eye to the message. It is never decoration.
 
 Before a chart type or theme change is considered done:
 
-1. Render `examples/showcase.yaml` with `--still`, once as is and once with `--aspect 9:16`.
+1. Render `examples/showcase.yaml` with `--still`, once as is, once with `--aspect 9:16` and once with `--aspect 1:1`.
 2. Look at every PNG at 100% and at phone size (about 25%).
 3. Check: nothing clipped, nothing outside the safe area, no overlapping labels, highlight is obvious at phone size, source line readable.
 4. Play the clip once: motion eases, highlight beat is clear, final hold is still.

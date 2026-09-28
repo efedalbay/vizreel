@@ -4,11 +4,17 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from vizreel.charts.base import ChartType, check_reading_time, split_duration
+from vizreel.charts.base import (
+    SMALLEST_NUMBER_SCALE,
+    ChartType,
+    check_reading_time,
+    fitting_number_size,
+    split_duration,
+)
 from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.format.numbers import format_percent, whole_percents
-from vizreel.render.layout import Box, px, stack_gap, stroke_width
+from vizreel.render.layout import Box, Layout, px, stack_gap, stroke_width
 from vizreel.spec.models import ShareChart
 
 if TYPE_CHECKING:
@@ -92,6 +98,30 @@ def place_share(
     if radius < min_radius - 1e-9:
         raise RenderError("not enough room for the ring; shorten the labels or the title")
     return SharePlacement(center, radius, legend)
+
+
+def largest_ring(
+    content: Box, layout: Layout, legend_size: tuple[float, float], gap: float, min_radius: float
+) -> SharePlacement:
+    """Place the ring and legend as the frame calls for; a square frame takes the larger ring.
+
+    A square frame is as narrow as a vertical one but not as tall, so the legend may fit
+    beside the ring or under it; whichever leaves the larger ring wins.
+
+    Raises:
+        RenderError: The ring would be smaller than `min_radius` either way.
+    """
+    arrangements = (False, True) if layout.square else (layout.vertical,)
+    placements, error = [], None
+    for vertical in arrangements:
+        try:
+            placements.append(place_share(content, vertical, legend_size, gap, min_radius))
+        except RenderError as exc:
+            error = exc
+    if not placements:
+        assert error is not None
+        raise error
+    return max(placements, key=lambda placement: placement.radius)
 
 
 def part_shades(count: int, highlighted: int) -> list[float]:
@@ -205,12 +235,19 @@ class ShareChartType(ChartType):
         legend_size = (percent_right, pitch * (count - 1) + px(sizes.label))
 
         number_size = sizes.big_number * NUMBER_SCALE
-        center_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text, sizes.affix_scale)
-        widest_center = center_glyphs(format_percent(100, locale=self.locale)).width
-        min_radius = max(px(MIN_RADIUS_PX), widest_center / (2 * INNER_RADIUS * CENTER_FILL))
-        placement = place_share(content, layout.vertical, legend_size, gap * 3, min_radius)
+        at_scale = NumberGlyphs(fonts.numbers, number_size, colors.text, sizes.affix_scale)
+        widest_center = at_scale(format_percent(100, locale=self.locale)).width
+        # The ring needs room for the percent at the least size a big number may shrink to;
+        # the percent then takes the largest size the ring leaves it.
+        least_center = widest_center * SMALLEST_NUMBER_SCALE
+        min_radius = max(px(MIN_RADIUS_PX), least_center / (2 * INNER_RADIUS * CENTER_FILL))
+        placement = largest_ring(content, layout, legend_size, gap * 3, min_radius)
         (cx, cy), radius = placement.center, placement.radius
         inner = radius * INNER_RADIUS
+        number_size = fitting_number_size(
+            number_size, widest_center, 2 * inner * CENTER_FILL, "the percent"
+        )
+        center_glyphs = NumberGlyphs(fonts.numbers, number_size, colors.text, sizes.affix_scale)
 
         legend_left, legend_top = placement.legend
         rows_y = [legend_top - px(sizes.label) / 2 - index * pitch for index in range(count)]

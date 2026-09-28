@@ -22,7 +22,7 @@ vizreel is built for video from the start:
 
 - **Declarative.** Describe the chart and its data in YAML. No code, no timeline editing.
 - **Made to be watched.** Large type, one message per chart, a clear highlight moment, smooth eased motion, a clean final frame. See the [design rules](https://github.com/efedalbay/vizreel/blob/main/docs/DESIGN.md).
-- **Editor-ready.** One clip per chart, transparent background, 1080p or 4K at 60 fps, landscape or vertical.
+- **Editor-ready.** One clip per chart, transparent background, 1080p or 4K at the frame rate of your timeline, landscape, vertical or square.
 - **Consistent.** Colors, fonts and timing come from a theme, so every chart in a video matches.
 - **Easy to install.** Pure Python. No LaTeX, no separate FFmpeg install.
 
@@ -121,7 +121,7 @@ out/
 
 Other packages can add chart types: install one next to vizreel and its type works like the built-in ones. `vizreel types` lists every type and where it comes from. To write your own, see [Writing a chart type](https://github.com/efedalbay/vizreel/blob/main/docs/PLUGINS.md) and the example plugin in [`examples/plugin`](https://github.com/efedalbay/vizreel/tree/main/examples/plugin).
 
-## Vertical clips
+## Vertical and square clips
 
 The same spec renders as vertical 9:16 clips for Shorts, Reels and TikTok:
 
@@ -130,6 +130,8 @@ vizreel render charts.yaml --aspect 9:16
 ```
 
 Text stays the same size; charts rearrange for the narrow frame instead. Bar charts become rows, timelines run down the frame and long titles wrap onto a second line. A wider margin at the top and bottom keeps charts clear of the buttons and captions those apps draw over the video. To make vertical the default for a spec, set `aspect: "9:16"` in its `meta`.
+
+For square feed posts, use `--aspect 1:1`. A square frame is as narrow as a vertical one but not as tall, so each chart takes its landscape arrangement when it fits and its vertical one when it does not: three bars stay columns, five become rows.
 
 ## Sequences
 
@@ -183,7 +185,7 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 | `--format mov\|webm\|mp4` | `mov` and `webm` keep transparency; `mp4` uses the theme background |
 | `--still` | Also save the final frame as a PNG |
 | `--fps RATE` | Frames per second of a final render: `23.976`, `24`, `25`, `29.97`, `30`, `50`, `59.94` or `60`. Match your editor's timeline. Default `meta.fps`, or 60 |
-| `--aspect 16:9\|9:16` | `9:16` renders vertical clips for Shorts, Reels and TikTok, named `ID.vertical.mov` |
+| `--aspect 16:9\|9:16\|1:1` | `9:16` renders vertical clips for Shorts, Reels and TikTok, named `ID.vertical.mov`; `1:1` renders square clips for feeds, named `ID.square.mov` |
 | `--watch` | Keep running and render again whenever the spec or its theme file is saved. Only the charts that changed are rendered; an invalid spec prints its errors and watching goes on. Ctrl+C stops |
 
 ## Using the clips in a video editor

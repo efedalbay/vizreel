@@ -85,8 +85,9 @@ class Meta(SpecModel):
     """Built-in theme name, or a path to a theme YAML file (relative to the spec file)."""
     resolution: Literal["720p", "1080p", "1440p", "4k"] = "1080p"
     """Output resolution, named by the short side: 1080p is 1920×1080, or 1080×1920 at 9:16."""
-    aspect: Literal["16:9", "9:16"] = "16:9"
-    """Frame shape: 16:9 is landscape, 9:16 is vertical, for Shorts, Reels and TikTok."""
+    aspect: Literal["16:9", "9:16", "1:1"] = "16:9"
+    """Frame shape: 16:9 is landscape, 9:16 is vertical, for Shorts, Reels and TikTok, and 1:1
+    is square, for feeds."""
     fps: FrameRate = 60
     """Frames per second: 23.976, 24, 25, 29.97, 30, 50, 59.94 or 60. Match the editor's
     timeline, or it blends or drops frames."""

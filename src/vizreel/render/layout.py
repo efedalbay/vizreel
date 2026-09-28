@@ -10,8 +10,8 @@ from typing import Literal
 
 from vizreel.themes.models import ThemeSizes
 
-Aspect = Literal["16:9", "9:16"]
-"""Frame shape: landscape or vertical."""
+Aspect = Literal["16:9", "9:16", "1:1"]
+"""Frame shape: landscape, vertical or square."""
 
 SHORT_SIDE = 8.0
 """Short side of Manim's frame in scene units."""
@@ -38,6 +38,7 @@ class Margins:
 SAFE_MARGINS: dict[Aspect, Margins] = {
     "16:9": Margins(0.05, 0.05, 0.05, 0.05),
     "9:16": Margins(0.06, 0.20, 0.06, 0.10),
+    "1:1": Margins(0.05, 0.05, 0.05, 0.05),
 }
 """The safe area of each aspect (docs/DESIGN.md §2). Vertical platforms cover the top with
 menus and the bottom with the caption, the channel name and buttons."""
@@ -63,6 +64,8 @@ def px(pixels: float) -> float:
 
 def frame_size(aspect: Aspect) -> tuple[float, float]:
     """Width and height of Manim's frame in scene units."""
+    if aspect == "1:1":
+        return (SHORT_SIDE, SHORT_SIDE)
     return (LONG_SIDE, SHORT_SIDE) if aspect == "16:9" else (SHORT_SIDE, LONG_SIDE)
 
 
@@ -162,6 +165,11 @@ class Layout:
     def vertical(self) -> bool:
         """Whether the frame is taller than it is wide."""
         return self.frame.height > self.frame.width
+
+    @property
+    def square(self) -> bool:
+        """Whether the frame is as tall as it is wide."""
+        return abs(self.frame.height - self.frame.width) < 1e-9
 
     def panel_around(self, content: Box) -> Box:
         """Background panel surrounding `content`, kept inside the safe area."""

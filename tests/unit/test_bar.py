@@ -1,11 +1,17 @@
+from pathlib import Path
+
 import pytest
 
-from vizreel.charts._bars import MAX_ROW_GAP, plan_rows, uses_rows
+from vizreel.charts._bars import MAX_ROW_GAP, by_bar_layout, plan_rows
 from vizreel.charts.bar import sorted_bars
 from vizreel.errors import RenderError, SpecError
-from vizreel.render.layout import BAR_FILL
+from vizreel.render.layout import BAR_FILL, build_layout
 from vizreel.spec.loader import parse_spec
 from vizreel.spec.models import BarChart
+from vizreel.themes.loader import load_theme
+
+SIZES = load_theme("default", Path(".")).sizes
+NO_TEXT = {"title_lines": 0, "subtitle_lines": 0, "source_lines": 0}
 
 
 def bar_chart(sort: str) -> BarChart:
@@ -48,8 +54,24 @@ def chart_with_layout(layout: str) -> BarChart:
 def test_layout_picks_rows_or_columns(layout: str, landscape: bool, vertical: bool) -> None:
     chart = chart_with_layout(layout)
 
-    assert uses_rows(chart.layout, vertical_frame=False) is landscape
-    assert uses_rows(chart.layout, vertical_frame=True) is vertical
+    def rows_in(aspect: str) -> bool:
+        frame = build_layout(SIZES, aspect=aspect, panel=True, **NO_TEXT)  # type: ignore[arg-type]
+        return by_bar_layout(chart.layout, frame, lambda: False, lambda: True)
+
+    assert rows_in("16:9") is landscape
+    assert rows_in("9:16") is vertical
+    assert rows_in("1:1") is (layout == "rows")
+
+
+def test_a_square_frame_falls_back_to_rows_when_columns_do_not_fit() -> None:
+    frame = build_layout(SIZES, aspect="1:1", panel=True, **NO_TEXT)
+
+    def columns() -> str:
+        raise RenderError("too wide")
+
+    assert by_bar_layout("auto", frame, columns, lambda: "rows") == "rows"
+    with pytest.raises(RenderError):
+        by_bar_layout("columns", frame, columns, lambda: "rows")
 
 
 def test_unknown_layout_is_rejected() -> None:

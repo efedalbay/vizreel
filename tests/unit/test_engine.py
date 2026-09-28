@@ -191,3 +191,13 @@ def test_fps_option_overrides_meta_but_not_previews() -> None:
     assert frame_settings(spec, RenderOptions()).fps == Fraction(30000, 1001)
     assert frame_settings(spec, RenderOptions(fps=25)).fps == 25
     assert frame_settings(spec, RenderOptions(fps=25, quality="preview")).fps == 15
+
+
+def test_square_frames_have_equal_sides_and_a_suffix(tmp_path: Path) -> None:
+    spec = spec_with_meta("{ resolution: 1080p }")
+    settings = frame_settings(spec, RenderOptions(aspect="1:1"))
+
+    video, _ = output_paths("sales", RenderOptions(out_dir=tmp_path), settings)
+
+    assert (settings.width, settings.height) == (1080, 1080)
+    assert video == tmp_path / "sales.square.mov"

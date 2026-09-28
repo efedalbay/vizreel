@@ -86,6 +86,7 @@ class AspectChoice(StrEnum):
 
     landscape = "16:9"
     vertical = "9:16"
+    square = "1:1"
 
 
 class FpsChoice(StrEnum):
@@ -141,7 +142,7 @@ def render(
         typer.Option(
             "--aspect",
             help="16:9 is landscape; 9:16 is vertical, for Shorts, and adds .vertical to "
-            "file names. Default: meta.aspect.",
+            "file names; 1:1 is square, for feeds, and adds .square. Default: meta.aspect.",
             show_default=False,
         ),
     ] = None,

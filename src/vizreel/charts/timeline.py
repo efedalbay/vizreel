@@ -4,7 +4,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
-from vizreel.charts.base import ChartType, check_reading_time, split_duration
+from vizreel.charts.base import ChartType, arranged, check_reading_time, split_duration
 from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.render.layout import LABEL_FILL, px, stack_gap, stroke_width
@@ -223,7 +223,7 @@ class TimelineChartType(ChartType):
 
         header = elements.header(chart.title, chart.subtitle, theme, layout)
         source = elements.source_line(chart.source, theme, layout)
-        geometry = self._vertical() if layout.vertical else self._horizontal()
+        geometry = arranged(layout, self._horizontal, self._vertical)
         blocks = geometry.blocks
 
         intro = motion.title_fade if len(header) else 0.0

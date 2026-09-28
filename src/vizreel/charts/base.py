@@ -2,9 +2,10 @@
 
 import math
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from fractions import Fraction
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 from vizreel.errors import RenderError
 from vizreel.format.locales import Locale
@@ -16,6 +17,23 @@ if TYPE_CHECKING:
     from manim import Scene
 
     from vizreel.render.scene import ChartScene
+
+T = TypeVar("T")
+
+
+def arranged(layout: Layout, landscape: Callable[[], T], vertical: Callable[[], T]) -> T:
+    """Build a chart's geometry in the arrangement its frame calls for.
+
+    A landscape frame uses `landscape` and a vertical one `vertical`. A square frame is as
+    narrow as a vertical one but not as tall, so neither always fits: it tries `landscape`,
+    such as columns side by side, and uses `vertical` when that raises `RenderError`.
+    """
+    if not layout.square:
+        return vertical() if layout.vertical else landscape()
+    try:
+        return landscape()
+    except RenderError:
+        return vertical()
 
 
 CHART_API_VERSION = 1
