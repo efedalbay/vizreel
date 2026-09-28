@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The built-in themes set what surrounds the digits of a big number, a unit name, a currency or a percent sign, at 60% of the digits: a large `1,85` followed by a smaller `milyar TL`. `affix_scale` is now 0.6 by default; a theme sets it to 1 for the earlier look.
+
 ## [0.9.0] - 2026-09-28
 
 ### Added

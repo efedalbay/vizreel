@@ -106,10 +106,10 @@ class ThemeSizes(ThemeModel):
     """Line under the title. At least 32."""
     big_number: float = Field(ge=160)
     """The number of a stat chart. At least 160."""
-    affix_scale: float = Field(default=1.0, ge=0.5, le=1)
+    affix_scale: float = Field(default=0.6, ge=0.5, le=1)
     """Size of what surrounds the digits of a big number (a unit name, a currency, a percent
-    sign), relative to the digits: 0.6 sets "milyar" in "1,85 milyar" at 60% of the digits.
-    1, the default, sets them at the size of the digits."""
+    sign), relative to the digits: 0.6, the default, sets "milyar" in "1,85 milyar" at 60% of the
+    digits. 1 sets them at the size of the digits."""
     label: float = Field(ge=32)
     """Axis labels, category labels and the stat label. At least 32."""
     value: float = Field(ge=32)

@@ -22,6 +22,7 @@ sizes:
   title: 60
   subtitle: 38
   big_number: 180
+  affix_scale: 0.6
   label: 38
   value: 36
   caption: 26
