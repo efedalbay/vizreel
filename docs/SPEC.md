@@ -65,6 +65,7 @@ CLI flags override `meta` values.
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
 | `duration` | number (seconds) | no | depends on type | Total clip length, including the final hold. Minimum 2. |
 | `highlight` | object | no | — | Type-specific emphasis. See each type. `stat` has no `highlight`. |
+| `data` | string or object | no | — | A CSV file that gives the chart's data, such as its bars, in place of writing them in the spec. See [Data from files](#data-from-files). |
 
 ### Number format (`number`)
 
@@ -453,6 +454,73 @@ The first clip is the chart as usual, emphasizing the first item. Each later cli
 | `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
 
 A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat` and `compare` charts have no elements to emphasize and no sequence.
+
+---
+
+## Data from files
+
+A chart can read its data from a CSV file instead of the spec, so numbers exported from a spreadsheet or a script render without being copied by hand. `data` names the file, relative to the spec file:
+
+```yaml
+- id: regions
+  type: bar
+  title: Northwind revenue by region
+  data: data/regions.csv
+  number: { prefix: "$", compact: true }
+  highlight: { label: East }
+```
+
+```csv
+Region,Revenue
+North,412000000
+South,298000000
+East,187500000
+West,356000000
+```
+
+The file gives the chart's data fields, listed below; every other field, such as `title`, `number`, `highlight` or `sequence`, is written in the spec as usual. Writing a field the file gives as well is an error. The data is checked as if it were written in the spec: a bar chart still takes two to eight bars, zero or more each, and an error in a field the file gave names the file: `charts[0].bars[1].value: must be at least 0, got -2 (from data/regions.csv)`. `examples/data.yaml` has a chart of each kind.
+
+### The file
+
+- The first row names the columns.
+- Cells are separated by commas, semicolons or tabs, whichever the first row uses most, so the semicolons Excel writes in many European languages work too. Put a cell that holds the separator in double quotes: `"Revenue, net"`.
+- The file is UTF-8, with or without a byte order mark. In Excel, save it as *CSV UTF-8*.
+- Empty rows and spaces around cells are ignored.
+- Text is shown as written. Years and dates need no quotes: `2016` in a label column stays the text `2016`.
+- A number is written plainly, `1234.5`, or the way `meta.locale` writes numbers: `1.234,5` in `tr-TR`, with or without its group separators. Where the two read the same text differently, the locale's way wins: in `tr-TR`, `1.234` is one thousand two hundred and thirty-four. Leave out units, currencies and percent signs (`$12M` is an error) and format the numbers with `number`.
+- An error in the file names the file, the row, counted as lines of the file, and the column: `charts[0].data: data/regions.csv, row 4, column "Revenue" is not a number: "187,5M"`.
+
+### Choosing columns
+
+With more columns than the chart reads, name the ones to read, in order:
+
+```yaml
+- id: markets
+  type: bar
+  title: Northwind revenue by market
+  data: { file: data/markets.csv, columns: [Market, Revenue] }
+  number: { prefix: "$", compact: true }
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `file` | string | yes | Path to the CSV file, relative to the spec file. |
+| `columns` | list of strings | no | The columns to read, by the names in the first row, in this order. All of them if left out. |
+
+### What each chart type reads
+
+| Type | Columns | Rows | Gives |
+|---|---|---|---|
+| `bar` | A label and a value. | One bar each. | `bars` |
+| `share` | A label and a value. | One part each. | `parts` |
+| `timeline` | A date and a label. | One event each. Emphasize an event with a `sequence`. | `events` |
+| `line` | The x labels, then one column per series, named by its first row. | One x label each; an empty cell leaves a gap. | `x`, `series` |
+| `stacked` | The categories, then one column per series, named by its first row. | One bar each. | `categories`, `series` |
+| `waterfall` | A label and a value. | The first row is the start and the others are steps; a last row with a label and no value names the total. | `start`, `steps`, and `end` if the last row names it |
+| `compare` | A label and a value. | Two: the earlier value, then the later one. | `before`, `after` |
+| `table` | Two to four. A column holds numbers if its first row does; the first holds the row names. | One row each. | `rows`, and `columns` named by the first row, unless the spec writes `columns` to name them and set their number formats |
+
+`stat` charts read no data file. A chart type from a [plugin](PLUGINS.md) documents whether it reads one.
 
 ---
 

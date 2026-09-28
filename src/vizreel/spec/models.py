@@ -112,6 +112,16 @@ class NumberFormat(SpecModel):
     locale's usual unit names; `long` and `short` choose them: 740 million, 740 Mn."""
 
 
+class DataFile(SpecModel):
+    """A CSV file with a chart's data, and the columns to read from it."""
+
+    file: Text
+    """Path to the file, relative to the spec file."""
+    columns: list[Text] | None = Field(default=None, min_length=1)
+    """The columns to read, by the names in the header row and in this order. All of them if
+    left out."""
+
+
 class BaseChart(SpecModel):
     """Fields shared by every chart type."""
 
@@ -119,6 +129,10 @@ class BaseChart(SpecModel):
     """Unique in the spec, [a-z0-9-]+. Used as the output file name."""
     type: str
     """Chart type."""
+    data: Text | DataFile | None = None
+    """A CSV file that gives the chart's data in place of fields such as `bars`: its path,
+    relative to the spec file, or the path and the columns to read. See "Data from files" in
+    docs/SPEC.md."""
     title: Text | None = None
     """Shown at the top of the chart."""
     subtitle: Text | None = None

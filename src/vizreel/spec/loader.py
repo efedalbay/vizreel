@@ -1,6 +1,8 @@
 """Read a YAML spec into a validated `Spec`, collecting every error with its location."""
 
 import operator
+import re
+from dataclasses import dataclass, field
 from functools import cache, reduce
 from pathlib import Path
 from typing import Annotated, Any
@@ -10,9 +12,12 @@ from pydantic_core import ErrorDetails
 
 from vizreel.charts.registry import chart_registry
 from vizreel.errors import InputIssue, SpecError
-from vizreel.spec.models import Spec
+from vizreel.format.locales import EN_US, LOCALES, Locale
+from vizreel.spec.data import TableError, read_table
+from vizreel.spec.models import DataFile, Spec
 from vizreel.validation import (
     Location,
+    describe,
     format_location,
     issue_from_error,
     parse_yaml_mapping,
@@ -27,27 +32,49 @@ _REFERENCE = "docs/SPEC.md"
 
 
 def load_spec(path: Path) -> Spec:
-    """Read and validate a spec file.
+    """Read and validate a spec file, with the data files its charts read.
 
     Raises:
         SpecError: The file cannot be read, is not valid YAML, or is not a valid spec.
     """
     data = read_yaml_mapping(path, SpecError, _KIND, _REQUIRED)
-    return _validate(data, str(path))
+    return _validate(data, str(path), path.parent)
 
 
-def parse_spec(text: str, source: str) -> Spec:
+def parse_spec(text: str, source: str, base_dir: Path | None = None) -> Spec:
     """Validate spec YAML given as text.
 
     Args:
         text: The YAML document.
         source: Name of the document, used in error messages.
+        base_dir: The folder data file paths are relative to. The current folder if None.
 
     Raises:
         SpecError: The text is not valid YAML or not a valid spec.
     """
     data = parse_yaml_mapping(text, source, SpecError, _KIND, _REQUIRED)
-    return _validate(data, source)
+    return _validate(data, source, base_dir or Path())
+
+
+def spec_data_files(path: Path) -> list[Path]:
+    """Return the data files that exist among those a spec file names, even if it is invalid.
+
+    Watching uses it to render again when a data file changes, including one that made the
+    spec invalid.
+    """
+    try:
+        data = read_yaml_mapping(path, SpecError, _KIND, _REQUIRED)
+    except SpecError:
+        return []
+    charts = data.get("charts")
+    files = []
+    for chart in charts if isinstance(charts, list) else []:
+        reference = chart.get("data") if isinstance(chart, dict) else None
+        if isinstance(reference, dict):
+            reference = reference.get("file")
+        if isinstance(reference, str) and reference and (path.parent / reference).is_file():
+            files.append(path.parent / reference)
+    return list(dict.fromkeys(files))
 
 
 def spec_json_schema() -> dict[str, Any]:
@@ -83,26 +110,142 @@ _UNION_BRANCHES: dict[str, str] = {
 such as a table cell or `compact`, each branch reporting its own error; and what the field takes."""
 
 
-def _validate(data: dict[str, Any], source: str) -> Spec:
+@dataclass
+class _Filled:
+    """A spec's data after the charts' data files have filled in their fields.
+
+    Attributes:
+        data: The spec, each chart with the fields its data file gives.
+        issues: What is wrong with the data files and their references.
+        files: For each chart that reads a data file, by index: the file as the spec names it
+            and the fields it gave; empty if it could not be read.
+    """
+
+    data: dict[str, Any]
+    issues: list[InputIssue] = field(default_factory=list)
+    files: dict[int, tuple[str, set[str]]] = field(default_factory=dict)
+
+    def origin(self, loc: Location) -> str | None:
+        """The data file that gave the field at `loc`, or None if the spec wrote it."""
+        if len(loc) < 3 or loc[0] != "charts" or not isinstance(loc[1], int):
+            return None
+        file, fields = self.files.get(loc[1], ("", set()))
+        return file if loc[2] in fields else None
+
+    def unread(self, loc: Location) -> bool:
+        """Whether `loc` is a chart field that a data file could not give, being unreadable."""
+        if len(loc) != 3 or loc[0] != "charts" or loc[1] not in self.files:
+            return False
+        _, fields = self.files[int(loc[1])]
+        return not fields
+
+
+def _validate(data: dict[str, Any], source: str, base_dir: Path) -> Spec:
+    filled = _fill_from_data_files(data, base_dir)
     try:
-        return spec_model().model_validate(data)
+        spec = spec_model().model_validate(filled.data)
     except ValidationError as exc:
-        raise SpecError(source, _issues_from_errors(exc.errors())) from None
+        issues = [*filled.issues, *_issues_from_errors(exc.errors(), filled)]
+        raise SpecError(source, sorted(issues, key=_chart_order)) from None
+    if filled.issues:
+        raise SpecError(source, filled.issues)
+    return spec
 
 
-def _issues_from_errors(errors: list[ErrorDetails]) -> list[InputIssue]:
-    """Turn Pydantic's errors into issues, one per union value rather than per branch."""
+def _chart_order(issue: InputIssue) -> int:
+    """The index of the chart an issue is in, or -1 outside the charts, to sort issues by."""
+    match = re.match(r"charts\[(\d+)\]", issue.location)
+    return int(match.group(1)) if match else -1
+
+
+def _fill_from_data_files(data: dict[str, Any], base_dir: Path) -> _Filled:
+    """Give each chart that names a data file the fields its chart type reads from it."""
+    charts = data.get("charts")
+    if not isinstance(charts, list):
+        return _Filled(data)
+    filled = _Filled({**data, "charts": list(charts)})
+    locale = _spec_locale(data)
+    registry = chart_registry()
+    for index, chart in enumerate(charts):
+        if not isinstance(chart, dict) or "data" not in chart:
+            continue
+        name = chart.get("type")
+        if not isinstance(name, str) or name not in registry.names():
+            continue
+        loc: Location = ("charts", index, "data")
+        reference = _data_reference(chart["data"], loc, filled.issues)
+        filled.files[index] = ("", set())
+        if reference is None:
+            filled.data["charts"][index] = {key: chart[key] for key in chart if key != "data"}
+            continue
+        try:
+            table = read_table(base_dir / reference.file, locale, reference.columns)
+            fields = registry.get(name).from_table(table, chart)
+        except TableError as exc:
+            where = f", {exc.where()}" if exc.where() else ""
+            filled.issues.append(_issue(loc, f"{reference.file}{where} {exc.message}"))
+            continue
+        for key in fields:
+            if key in chart:
+                message = f"cannot be used together with data; {reference.file} gives the {key}"
+                filled.issues.append(_issue(("charts", index, key), message))
+        filled.data["charts"][index] = {**chart, **fields}
+        filled.files[index] = (reference.file, set(fields))
+    return filled
+
+
+def _data_reference(value: object, loc: Location, issues: list[InputIssue]) -> DataFile | None:
+    """Read the `data` field of a chart, adding what is wrong with it to `issues`."""
+    if isinstance(value, str):
+        if value:
+            return DataFile(file=value)
+        issues.append(_issue(loc, "must not be empty"))
+        return None
+    if not isinstance(value, dict):
+        expected = "expected the path of a CSV file, or file and columns"
+        issues.append(_issue(loc, f"{expected}, got {describe(value)}"))
+        return None
+    try:
+        return DataFile.model_validate(value)
+    except ValidationError as exc:
+        issues.extend(
+            issue_from_error(error, (*loc, *error["loc"]), _REFERENCE) for error in exc.errors()
+        )
+        return None
+
+
+def _spec_locale(data: dict[str, Any]) -> Locale:
+    """The locale the spec names, for reading its data files; validation reports a wrong one."""
+    meta = data.get("meta")
+    name = meta.get("locale") if isinstance(meta, dict) else None
+    return LOCALES.get(name, EN_US) if isinstance(name, str) else EN_US
+
+
+def _issues_from_errors(errors: list[ErrorDetails], filled: _Filled) -> list[InputIssue]:
+    """Turn Pydantic's errors into issues, one per union value rather than per branch.
+
+    A field missing from a chart whose data file could not be read is left out: the file
+    would give it. A problem in a field that a data file gave names the file.
+    """
     issues = []
     reported: set[Location] = set()
     for error in errors:
         loc = _strip_chart_tag(error["loc"])
+        if error["type"] == "missing" and filled.unread(loc):
+            continue
         if loc and loc[-1] in _UNION_BRANCHES:
             if loc[:-1] not in reported:
                 reported.add(loc[:-1])
                 value = show(error.get("input"))
-                issues.append(_issue(loc[:-1], f"expected {_UNION_BRANCHES[loc[-1]]}, got {value}"))
-            continue
-        issues.append(_issue_from_error(error))
+                issue = _issue(loc[:-1], f"expected {_UNION_BRANCHES[loc[-1]]}, got {value}")
+            else:
+                continue
+        else:
+            issue = _issue_from_error(error)
+        origin = filled.origin(loc)
+        if origin is not None:
+            issue = InputIssue(issue.location, f"{issue.message} (from {origin})")
+        issues.append(issue)
     return issues
 
 

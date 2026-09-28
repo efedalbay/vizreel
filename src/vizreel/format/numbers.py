@@ -1,11 +1,12 @@
 """Formatting of every number a chart displays, in the spec's locale. Pure functions."""
 
 import math
+import re
 from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Literal
 
-from vizreel.format.locales import Locale, UnitStyle
+from vizreel.format.locales import NARROW_NO_BREAK_SPACE, NO_BREAK_SPACE, Locale, UnitStyle
 from vizreel.spec.models import NumberFormat
 
 ChangeKind = Literal["percent", "absolute"]
@@ -209,6 +210,43 @@ def split_number_text(text: str) -> tuple[str, str, str, str]:
         return sign, rest, "", ""
     first, last = digits[0], digits[-1] + 1
     return sign, rest[:first], rest[first:last], rest[last:]
+
+
+def parse_number(text: str, *, locale: Locale) -> float:
+    """Read a number written the way `locale` writes it, or as a plain number.
+
+    The locale's way has its group separators, which may be left out, and its decimal
+    separator: "1.234,5" in tr-TR. A plain number has no group separators and a dot before its
+    decimals: "1234.5". Where the two read the same text differently, as "1.234" in tr-TR, the
+    locale's way wins. The sign may be "-", "+" or "−".
+
+    Raises:
+        ValueError: The text is not a number in either way.
+    """
+    body = text.strip()
+    negative = body[:1] in ("-", MINUS_SIGN)
+    if body[:1] in ("-", "+", MINUS_SIGN):
+        body = body[1:]
+    for pattern, group, decimal in _number_patterns(locale):
+        if pattern.fullmatch(body):
+            number = float(body.replace(group, "").replace(decimal, "."))
+            return -number if negative else number
+    raise ValueError(f"not a number: {text!r}")
+
+
+_SPACE_GROUPS = (" ", NO_BREAK_SPACE, NARROW_NO_BREAK_SPACE)
+
+
+def _number_patterns(locale: Locale) -> list[tuple[re.Pattern[str], str, str]]:
+    """Patterns of the locale's way and of the plain way, each with its separators."""
+    groups = _SPACE_GROUPS if locale.group in _SPACE_GROUPS else (locale.group,)
+    patterns = []
+    for group in groups:
+        g, d = re.escape(group), re.escape(locale.decimal)
+        grouped = re.compile(rf"(?:\d{{1,3}}(?:{g}\d{{3}})+|\d+)(?:{d}\d+)?")
+        patterns.append((grouped, group, locale.decimal))
+    patterns.append((re.compile(r"\d+(?:\.\d+)?"), "", "."))
+    return patterns
 
 
 def _format(

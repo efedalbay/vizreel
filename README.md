@@ -149,6 +149,20 @@ When a narration walks through a chart ("first 2016... then 2018..."), tell the 
 
 This renders `history.1.mov`, `history.2.mov` and `history.3.mov`. The first draws the chart and emphasizes 2016; each later clip starts on exactly the last frame of the one before and moves the emphasis on. Put them one after another on a track, with your narration between the moves, and they play as one continuous chart. Bar, line, timeline, waterfall, stacked, share and table charts can be told as sequences; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#sequences).
 
+## Data from CSV files
+
+A chart can read its data from a CSV file, such as one exported from a spreadsheet, instead of the spec:
+
+```yaml
+- id: regions
+  type: bar
+  title: Northwind revenue by region
+  data: data/regions.csv
+  number: { prefix: "$", compact: true }
+```
+
+The first row of the file names the columns, and a bar chart reads a label and a value from each row after it. Commas, semicolons and tabs all work, and numbers may be written the way your locale writes them (`1.234,5` with `locale: tr-TR`). An error names the file, row and column. Every chart type but `stat` can read one; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#data-from-files) for what each reads, and [`examples/data.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/data.yaml).
+
 ## Number locales
 
 Numbers are written the way your audience reads them. Set `locale` in the spec's `meta` to `en-US` (the default), `tr-TR`, `es-ES`, `pt-BR` or `fr-FR`:

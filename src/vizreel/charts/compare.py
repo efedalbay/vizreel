@@ -1,7 +1,7 @@
 """One measure before and after."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from vizreel.charts.base import (
     ChartType,
@@ -20,6 +20,7 @@ from vizreel.format.numbers import (
     format_number,
 )
 from vizreel.render.layout import px, stack_gap, stroke_width
+from vizreel.spec.data import Table
 from vizreel.spec.models import CompareChart
 
 if TYPE_CHECKING:
@@ -175,6 +176,16 @@ class CompareChartType(ChartType):
   # source: "Source: example data" # optional
   # duration: 5                    # optional: seconds, at least 2
 """
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
+        """Read two rows of a label and a value: the earlier value, then the later one."""
+        table.require_width(2, "a label and a value")
+        table.require_rows(2, "the earlier value and the later one")
+        before, after = (
+            {"label": table.text(row, 0), "value": table.number(row, 1)} for row in (0, 1)
+        )
+        return {"before": before, "after": after}
 
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""

@@ -9,6 +9,7 @@ from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.render.layout import LABEL_FILL, px, stack_gap, stroke_width
 from vizreel.render.scales import band_centers, clamp_center, wrap_text
+from vizreel.spec.data import Table
 from vizreel.spec.models import TimelineChart
 
 if TYPE_CHECKING:
@@ -198,6 +199,17 @@ class TimelineChartType(ChartType):
   # source: "Source: example data" # optional
   # duration: 7                    # optional: seconds, at least 2
 """
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
+        """Read one event per row: its date, then its label."""
+        table.require_width(2, "a date and a label")
+        return {
+            "events": [
+                {"date": table.text(row, 0), "label": table.text(row, 1)}
+                for row in range(len(table.rows))
+            ]
+        }
 
     def build(self, scene: "Scene") -> None:
         """Add the timeline to the scene and animate it."""

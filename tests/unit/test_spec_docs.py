@@ -13,7 +13,10 @@ YAML_BLOCK = re.compile(r"```yaml\n(.*?)```", re.DOTALL)
 
 
 def spec_examples(path: Path) -> list[str]:
-    """Return each YAML block that is a full spec or a list of charts, as a full spec."""
+    """Return each YAML block that is a full spec or a list of charts, as a full spec.
+
+    The examples read data files as if they were saved in `examples/`.
+    """
     examples = []
     for block in YAML_BLOCK.findall(path.read_text(encoding="utf-8")):
         if block.startswith("version:"):
@@ -28,18 +31,18 @@ README_EXAMPLES = spec_examples(ROOT / "README.md")
 
 
 def test_examples_are_found() -> None:
-    assert len(SPEC_EXAMPLES) == 12
-    assert len(README_EXAMPLES) == 2
+    assert len(SPEC_EXAMPLES) == 14
+    assert len(README_EXAMPLES) == 3
 
 
 @pytest.mark.parametrize("example", SPEC_EXAMPLES)
 def test_spec_md_example_is_valid(example: str) -> None:
-    parse_spec(example, "docs/SPEC.md")
+    parse_spec(example, "docs/SPEC.md", ROOT / "examples")
 
 
 @pytest.mark.parametrize("example", README_EXAMPLES)
 def test_readme_example_is_valid(example: str) -> None:
-    parse_spec(example, "README.md")
+    parse_spec(example, "README.md", ROOT / "examples")
 
 
 def test_showcase_is_valid() -> None:

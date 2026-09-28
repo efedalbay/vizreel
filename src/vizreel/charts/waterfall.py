@@ -23,6 +23,7 @@ from vizreel.errors import RenderError
 from vizreel.format.numbers import format_change, format_number, shared_decimals
 from vizreel.render.layout import BAR_FILL, LABEL_FILL, px, stack_gap, stroke_width
 from vizreel.render.scales import LinearScale, band_centers
+from vizreel.spec.data import Table
 from vizreel.spec.models import WaterfallChart
 
 if TYPE_CHECKING:
@@ -107,6 +108,25 @@ class WaterfallChartType(ChartType):
   # source: "Source: example data" # optional
   # duration: 6                    # optional: seconds, at least 2
 """
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
+        """Read a label and a value per row: the start, then each step.
+
+        A last row with a label and no value names the total.
+        """
+        table.require_width(2, "a label and a value")
+        last = len(table.rows) - 1
+        names_end = last > 0 and table.optional_number(last, 1) is None
+        steps = range(1, last if names_end else last + 1)
+        rows = [{"label": table.text(row, 0), "value": table.number(row, 1)} for row in steps]
+        fields: dict[str, Any] = {
+            "start": {"label": table.text(0, 0), "value": table.number(0, 1)},
+            "steps": rows,
+        }
+        if names_end:
+            fields["end"] = {"label": table.text(last, 0)}
+        return fields
 
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""

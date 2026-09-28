@@ -13,6 +13,7 @@ from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.format.numbers import format_number, shared_decimals
 from vizreel.render.layout import px, stroke_width
+from vizreel.spec.data import Table
 from vizreel.spec.models import NumberFormat, TableChart
 
 if TYPE_CHECKING:
@@ -136,6 +137,26 @@ class TableChartType(ChartType):
   # source: "Source: example data" # optional
   # duration: 6                    # optional: seconds, at least 2
 """
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
+        """Read a row of the chart from each row of the file.
+
+        A column holds numbers if its first row does; the first column holds the row names.
+        The header names the columns, unless the chart gives `columns`, with their number
+        formats.
+        """
+        numeric = [column > 0 and table.is_number(0, column) for column in range(table.width)]
+        rows = [
+            [
+                table.number(row, column) if numeric[column] else table.text(row, column)
+                for column in range(table.width)
+            ]
+            for row in range(len(table.rows))
+        ]
+        if "columns" in chart:
+            return {"rows": rows}
+        return {"columns": [{"name": name} for name in table.header], "rows": rows}
 
     def build(self, scene: "Scene") -> None:
         """Add the table to the scene and animate it."""

@@ -1,0 +1,59 @@
+# Every chart type that can read its data from a CSV file, reading it from data/.
+# See "Data from files" in docs/SPEC.md.
+version: 1
+
+charts:
+  - id: regions
+    type: bar
+    title: Northwind revenue by region
+    data: data/regions.csv
+    number: { prefix: "$", compact: true }
+    highlight: { label: East }
+    source: "Source: example data"
+
+  - id: revenue
+    type: line
+    title: Northwind revenue by product
+    subtitle: In billions of dollars
+    data: data/revenue.csv
+    number: { prefix: "$", suffix: "B" }
+    highlight: { x: "2021", label: "Cloud passes devices" }
+
+  - id: profit
+    type: waterfall
+    title: How Northwind's revenue became profit
+    data: data/profit.csv
+    number: { prefix: "$", compact: true }
+
+  - id: markets
+    type: table
+    title: Northwind's largest markets
+    data: { file: data/markets.csv, columns: [Market, Revenue, Growth] }
+    columns:
+      - { name: Market }
+      - { name: Revenue, number: { prefix: "$", compact: true } }
+      - { name: Growth, number: { suffix: "%" } }
+    highlight: { row: Japan }
+
+  - id: market
+    type: share
+    title: Northwind's share of the market
+    data: data/market.csv
+
+  - id: revenue-mix
+    type: stacked
+    title: Northwind revenue by product
+    data: data/mix.csv
+    number: { prefix: "$", suffix: "B" }
+    highlight: { series: Cloud }
+
+  - id: history
+    type: timeline
+    title: How Northwind grew
+    data: data/history.csv
+    sequence: ["2016", "2018", "2020"]
+
+  - id: headcount
+    type: compare
+    title: Northwind's employees
+    data: data/headcount.csv

@@ -1063,3 +1063,29 @@ def test_text_uses_the_bundled_font(tmp_path: Path) -> None:
         fallback = Text("Northwind 1,234", font="No Such Font", warn_missing_font=False).width
 
     assert inter != pytest.approx(fallback, rel=1e-3)
+
+
+def test_a_chart_from_a_data_file_renders_as_if_its_data_were_written(tmp_path: Path) -> None:
+    data_spec = Path(__file__).parents[2] / "examples" / "data.yaml"
+    written = tmp_path / "written.yaml"
+    written.write_text(
+        "version: 1\ncharts:\n"
+        "  - id: regions\n"
+        "    type: bar\n"
+        "    title: Northwind revenue by region\n"
+        "    bars:\n"
+        "      - { label: North, value: 412000000 }\n"
+        "      - { label: South, value: 298000000 }\n"
+        "      - { label: East, value: 187500000 }\n"
+        "      - { label: West, value: 356000000 }\n"
+        '    number: { prefix: "$", compact: true }\n'
+        "    highlight: { label: East }\n"
+        '    source: "Source: example data"\n',
+        encoding="utf-8",
+    )
+
+    from_file = render_one(data_spec, tmp_path / "file", "regions")
+    from_spec = render_one(written, tmp_path / "spec", "regions")
+
+    assert from_file.still is not None and from_spec.still is not None
+    assert np.array_equal(image_rgba(from_file.still), image_rgba(from_spec.still))

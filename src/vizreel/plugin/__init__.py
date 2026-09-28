@@ -37,6 +37,7 @@ from vizreel.format.numbers import (
 )
 from vizreel.render.engine import ChartResult, RenderOptions, render_spec
 from vizreel.render.layout import Box, Layout, px, stack_gap, stroke_width
+from vizreel.spec.data import Table, TableError
 from vizreel.spec.models import BaseChart, Duration, NumberFormat, SequencedChart, SpecModel, Text
 from vizreel.themes.models import FontStyle, Theme
 
@@ -58,6 +59,8 @@ __all__ = [
     "RenderOptions",
     "SequencedChart",
     "SpecModel",
+    "Table",
+    "TableError",
     "Text",
     "Theme",
     "arranged",

@@ -15,6 +15,7 @@ from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.format.numbers import format_percent, whole_percents
 from vizreel.render.layout import Box, Layout, px, stack_gap, stroke_width
+from vizreel.spec.data import Table
 from vizreel.spec.models import ShareChart
 
 if TYPE_CHECKING:
@@ -179,6 +180,17 @@ class ShareChartType(ChartType):
   # source: "Source: example data" # optional
   # duration: 6                    # optional: seconds, at least 2
 """
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
+        """Read one part per row: its label, then its value."""
+        table.require_width(2, "a label and a value")
+        return {
+            "parts": [
+                {"label": table.text(row, 0), "value": table.number(row, 1)}
+                for row in range(len(table.rows))
+            ]
+        }
 
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""

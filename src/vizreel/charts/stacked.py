@@ -23,6 +23,7 @@ from vizreel.errors import RenderError
 from vizreel.format.numbers import format_number, shared_decimals
 from vizreel.render.layout import BAR_FILL, LABEL_FILL, Box, px, stack_gap, stroke_width
 from vizreel.render.scales import LinearScale, band_centers
+from vizreel.spec.data import Table
 from vizreel.spec.models import StackedChart
 
 if TYPE_CHECKING:
@@ -97,6 +98,26 @@ class StackedChartType(ChartType):
   # source: "Source: example data" # optional
   # duration: 6                    # optional: seconds, at least 2
 """
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
+        """Read the categories from the first column and a series from each other column.
+
+        A series is named by its column's header, and gives one part of every bar.
+        """
+        if table.width < 2:
+            table.require_width(2, "the categories and a series")
+        rows = range(len(table.rows))
+        return {
+            "categories": [table.text(row, 0) for row in rows],
+            "series": [
+                {
+                    "name": table.header[column],
+                    "values": [table.number(row, column) for row in rows],
+                }
+                for column in range(1, table.width)
+            ],
+        }
 
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""

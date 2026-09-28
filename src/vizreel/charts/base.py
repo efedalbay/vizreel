@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 from vizreel.errors import RenderError
 from vizreel.format.locales import Locale
 from vizreel.render.layout import Layout
+from vizreel.spec.data import Table, TableError
 from vizreel.spec.models import BaseChart
 from vizreel.themes.models import Theme
 
@@ -88,6 +89,25 @@ class ChartType(ABC):
         self.theme = theme
         self.layout = layout
         self.locale = locale
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
+        """Return the chart's data fields, as a spec would write them, from a data file.
+
+        A chart with `data:` gets these fields before it is validated, so the model checks
+        them as it checks fields written in the spec. Read cells with the table's methods,
+        which raise `TableError` naming the line and column of a cell that is wrong. A field
+        the spec also writes is an error, so leave out a field the spec may give instead.
+
+        Args:
+            table: The data file's cells.
+            chart: The chart's fields as the spec writes them, not yet validated.
+
+        Raises:
+            TableError: The table does not hold what the chart needs. By default every
+                table: a chart type reads data files only if it implements this.
+        """
+        raise TableError(f"cannot be used: {cls.name} charts do not read data from a file")
 
     @abstractmethod
     def build(self, scene: "Scene") -> None:

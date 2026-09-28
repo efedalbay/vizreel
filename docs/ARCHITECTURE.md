@@ -55,7 +55,8 @@ vizreel/
 │   ├── watch.py             ← `render --watch`: poll files, re-render changed charts
 │   ├── spec/
 │   │   ├── models.py        ← Pydantic models for the spec
-│   │   └── loader.py        ← read YAML → validated Spec
+│   │   ├── data.py          ← read a chart's CSV data file into a Table
+│   │   └── loader.py        ← read YAML and data files → validated Spec
 │   ├── themes/
 │   │   ├── models.py        ← Theme model
 │   │   ├── loader.py        ← resolve theme by name or path
@@ -93,6 +94,7 @@ vizreel/
 │   ├── showcase.yaml        ← one of every chart type (fictional data)
 │   ├── showcase-tr.yaml     ← the showcase in Turkish, numbers written for tr-TR
 │   ├── brand.yaml           ← charts in the example brand theme
+│   ├── data.yaml, data/     ← charts that read their data from CSV files
 │   ├── themes/example-brand.yaml  ← a complete custom theme
 │   └── plugin/              ← vizreel-progress, an example plugin package
 ├── scripts/
@@ -106,7 +108,9 @@ vizreel/
 
 ```
 spec.yaml
-   │  spec/loader.py  (YAML → dict → Pydantic Spec, all errors collected)
+   │  spec/loader.py  (YAML → dict; each chart's `data:` CSV file → spec/data.py Table
+   │                   → ChartType.from_table fills its fields; dict → Pydantic Spec,
+   │                   all errors collected)
    ▼
 Spec ──► themes/loader.py resolves theme (built-in name or file path)
    │
@@ -142,6 +146,10 @@ class ChartType(ABC):
 
     def emphasis(self, item) -> list[Animation]:
         """Animations that move the emphasis to the element a sequence item names."""
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict) -> dict:
+        """The chart's data fields, as a spec writes them, read from a CSV data file."""
 ```
 
 A chart type whose model is a `SequencedChart` (every type with a highlight) implements `emphasis`, and its own highlight beat plays it. `emphasis` sets the final look of every element that can be emphasized, whatever it looked like before, so emphasizing an element always ends on the same frame. That is what lets a sequence cut seamlessly: the engine renders a later clip of a sequence with `ChartType.continue_to`, which builds the chart emphasizing the previous item inside `ChartScene.unrecorded()` (Manim finishes every animation without writing a frame, leaving the scene on the previous clip's last frame), then plays `emphasis` for the next item and holds. `render/engine.py` plans the clips with `plan_clips`. Anything the emphasis makes appear must start invisible, and anything it removes fades by opacity (`elements.fade_away`) rather than with Manim's FadeOut, which reshapes curves; a render test compares the frames at every cut, for every type and aspect.
@@ -151,6 +159,7 @@ Rules:
 - Registered with `@register` from `charts/registry.py`. The registry is the only place that maps `type` strings to classes.
 - A chart type with a landscape and a vertical arrangement builds its geometry with `arranged(layout, landscape, vertical)` from `base.py`: 16:9 takes the first, 9:16 the second, and 1:1 tries the first and falls back to the second when it raises `RenderError`. Geometry is built before anything is added to the scene, so a failed attempt leaves nothing behind.
 - In a 9:16 frame, `ChartScene.fit_to_content` builds the chart once without recording and measures what it draws inside `layout.content`. If that is less than 90% of its height, the chart is built again in `Layout.fitted_to_content`: the title and source bands and `inner` close in around the content, and `content` keeps its size but moves, so the chart draws exactly the same content, shifted. That is why every chart centers its content in `layout.content` and draws its panel around `layout.inner`; a chart type that does not (`stat`, which fits its own card) sets `fits_to_content = False`.
+- A chart type that can read its data from a file implements `from_table`. The loader reads the file named by `data:` into a `Table` (`spec/data.py`: header, cells, the line of each row, and number parsing in the spec's locale through `format/numbers.py`), and puts the fields `from_table` returns into the chart before Pydantic validates it, so data from a file passes exactly the checks written data does. A field the spec also writes is an error. `Table.text` and `Table.number` raise `TableError` naming the line and column of a wrong cell. The default `from_table` raises, so a type reads data files only if it says how.
 - `api_version` is the version of the contract (`CHART_API_VERSION`) the chart type is written for. Built-in types inherit the current one; a plugin must declare it.
 - A chart reads **all** styling from `theme` and **all** geometry from `layout` (safe area, title area, plot area). No literal colors, font names or pixel sizes inside chart modules.
 - A chart builds from Manim primitives (`Line`, `Rectangle`, `Text`, `VGroup`, `ValueTracker`) rather than Manim's high-level `BarChart`/`Axes` when those limit styling.

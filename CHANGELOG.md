@@ -6,6 +6,11 @@ All notable changes to vizreel are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Data from CSV files: `data: data/regions.csv` gives a chart its bars, series, events, parts or rows from a file exported from a spreadsheet, and `data: { file, columns }` picks the columns to read. Every chart type but `stat` reads one. Cells may be separated by commas, semicolons or tabs, numbers may be written as the spec's locale writes them (`1.234,5` in `tr-TR`), the data passes the same checks as data written in the spec, and an error names the file, row and column. `examples/data.yaml` has a chart of each type.
+- Chart types from other packages can read data files too, by implementing `ChartType.from_table`; `Table` and `TableError` are part of `vizreel.plugin`.
+
 ### Changed
 
 - The built-in themes set what surrounds the digits of a big number, a unit name, a currency or a percent sign, at 60% of the digits: a large `1,85` followed by a smaller `milyar TL`. `affix_scale` is now 0.6 by default; a theme sets it to 1 for the earlier look.

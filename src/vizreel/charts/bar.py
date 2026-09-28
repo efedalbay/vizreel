@@ -22,6 +22,7 @@ from vizreel.errors import RenderError
 from vizreel.format.numbers import format_number, shared_decimals
 from vizreel.render.layout import BAR_FILL, LABEL_FILL, px, stack_gap, stroke_width
 from vizreel.render.scales import LinearScale, band_centers
+from vizreel.spec.data import Table
 from vizreel.spec.models import Bar, BarChart
 
 if TYPE_CHECKING:
@@ -72,6 +73,17 @@ class BarChartType(ChartType):
   # source: "Source: example data" # optional
   # duration: 5                    # optional: seconds, at least 2
 """
+
+    @classmethod
+    def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
+        """Read one bar per row: its label, then its value."""
+        table.require_width(2, "a label and a value")
+        return {
+            "bars": [
+                {"label": table.text(row, 0), "value": table.number(row, 1)}
+                for row in range(len(table.rows))
+            ]
+        }
 
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""
