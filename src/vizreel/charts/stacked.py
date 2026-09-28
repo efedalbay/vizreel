@@ -10,6 +10,8 @@ from vizreel.charts._bars import (
     by_bar_layout,
     category_label,
     plan_rows,
+    series_emphasis,
+    series_legend,
 )
 from vizreel.charts.base import (
     ChartType,
@@ -35,8 +37,6 @@ MIN_ROW_LENGTH = 0.4
 """Least share of the width left for the longest row after its total."""
 SEPARATOR_PX = 2
 """Width, in pixels at 1080p, of the line in the background color between two parts."""
-LEGEND_MARK = 0.3
-"""Radius of a legend dot, as a share of the label size, so the dot matches the name."""
 
 
 def stack_bounds(chart: StackedChart) -> list[list[tuple[float, float]]]:
@@ -147,7 +147,9 @@ class StackedChartType(ChartType):
 
         header = elements.header(chart.title, chart.subtitle, theme, layout)
         source = elements.source_line(chart.source, theme, layout)
-        legend = self._legend(series_colors)
+        legend = series_legend(
+            [series.name for series in chart.series], series_colors, theme, content
+        )
         area = Box(
             content.left,
             content.bottom,
@@ -274,60 +276,12 @@ class StackedChartType(ChartType):
 
     def emphasis(self, item: Any) -> list[Any]:
         """Keep the series named `item` in its color and dim the others, in the legend too."""
-        from manim import ManimColor, interpolate_color
-
         assert isinstance(self.chart, StackedChart)
-        colors = self.theme.colors
         final_parts, legend, series_colors = self._final
-        backdrop = ManimColor(colors.surface if self.layout.panel else colors.background)
-        animations: list[Any] = []
-        for index, series in enumerate(self.chart.series):
-            kept = series.name == item
-            fill = (
-                ManimColor(series_colors[index])
-                if kept
-                else interpolate_color(
-                    backdrop, ManimColor(series_colors[index]), colors.dim_opacity
-                )
-            )
-            name_color = (
-                ManimColor(colors.muted)
-                if kept
-                else interpolate_color(backdrop, ManimColor(colors.muted), colors.dim_opacity)
-            )
-            dot, name = legend[index]
-            animations += [part.animate.set_fill(fill) for part in final_parts[index]]
-            animations += [dot.animate.set_fill(fill), name.animate.set_color(name_color)]
-        return animations
-
-    def _legend(self, series_colors: list[str]) -> "VMobject":
-        """Build the legend, a dot and a name per series, at the top left of the content.
-
-        The items sit in one row, or one under another if the row is wider than the content.
-        """
-        from manim import DOWN, LEFT, RIGHT, UP, Dot, VGroup
-
-        from vizreel.render import elements
-
-        assert isinstance(self.chart, StackedChart)
-        fonts, sizes, colors = self.theme.fonts, self.theme.sizes, self.theme.colors
-        content = self.layout.content
-        gap = stack_gap(sizes.label, sizes.label)
-        items = VGroup(
-            *(
-                VGroup(
-                    Dot(radius=px(sizes.label) * LEGEND_MARK, color=color),
-                    elements.text(series.name, fonts.body, sizes.label, colors.muted),
-                ).arrange(RIGHT, buff=gap / 2)
-                for series, color in zip(self.chart.series, series_colors, strict=True)
-            )
+        names = [series.name for series in self.chart.series]
+        return series_emphasis(
+            names.index(item), final_parts, legend, series_colors, self.theme, self.layout
         )
-        items.arrange(RIGHT, buff=gap * 2)
-        if items.width > content.width:
-            items.arrange(DOWN, buff=gap / 2, aligned_edge=LEFT)
-        if items.width > content.width:
-            raise RenderError("the series names are too long for the legend; shorten them")
-        return items.align_to((content.left, content.top, 0.0), UP + LEFT)
 
     def _separator(self) -> tuple[str, float]:
         """The color and width of the line drawn between two parts of a bar."""
