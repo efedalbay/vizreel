@@ -88,6 +88,19 @@ class AspectChoice(StrEnum):
     vertical = "9:16"
 
 
+class FpsChoice(StrEnum):
+    """Values of --fps."""
+
+    film_ntsc = "23.976"
+    film = "24"
+    pal = "25"
+    ntsc = "29.97"
+    web = "30"
+    pal_high = "50"
+    ntsc_high = "59.94"
+    web_high = "60"
+
+
 class FormatChoice(StrEnum):
     """Values of --format."""
 
@@ -132,6 +145,15 @@ def render(
             show_default=False,
         ),
     ] = None,
+    fps: Annotated[
+        FpsChoice | None,
+        typer.Option(
+            "--fps",
+            help="Frames per second of a final render; match your editor's timeline. "
+            "Default: meta.fps.",
+            show_default=False,
+        ),
+    ] = None,
     watch: Annotated[
         bool,
         typer.Option(
@@ -150,6 +172,7 @@ def render(
         format=output_format.value if output_format else None,
         still=still,
         aspect=aspect.value if aspect else None,
+        fps=float(fps.value) if fps else None,
     )
     console = _stdout()
     if watch:

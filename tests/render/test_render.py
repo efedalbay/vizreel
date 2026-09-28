@@ -1,5 +1,6 @@
 """Render charts at preview quality and check the files. Slow: run with `pytest -m render`."""
 
+from fractions import Fraction
 from pathlib import Path
 
 import av
@@ -726,6 +727,34 @@ def test_content_extent_ignores_the_panel_and_what_is_outside_the_content(
 
     assert content_extent([VGroup(title, inside), panel], content) == pytest.approx((0.0, 1.0))
     assert content_extent([title, panel], content) is None
+
+
+@pytest.mark.parametrize(
+    ("fps", "rate", "frames"),
+    [
+        ("23.976", Fraction(24000, 1001), 58),
+        ("25", Fraction(25), 60),
+        ("29.97", Fraction(30000, 1001), 72),
+        ("50", Fraction(50), 120),
+        ("59.94", Fraction(60000, 1001), 144),
+    ],
+)
+def test_clips_have_the_exact_frames_of_every_frame_rate(
+    tmp_path: Path, fps: str, rate: Fraction, frames: int
+) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        f"version: 1\nmeta: {{ resolution: 720p, fps: {fps} }}\n"
+        "charts:\n  - { id: n, type: stat, value: 1846, duration: 2.4 }\n",
+        encoding="utf-8",
+    )
+
+    [result] = render_spec(spec, RenderOptions(out_dir=tmp_path), reraise=True)
+
+    assert result.video is not None
+    with av.open(str(result.video)) as container:
+        assert container.streams.video[0].average_rate == rate
+    assert len(frames_rgba(result.video)) == frames == round(Fraction(24, 10) * rate)
 
 
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:

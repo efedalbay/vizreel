@@ -182,6 +182,7 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 | `--quality preview\|final` | `preview` is low resolution and fast, and writes `ID.preview.mov`; `final` uses the spec settings |
 | `--format mov\|webm\|mp4` | `mov` and `webm` keep transparency; `mp4` uses the theme background |
 | `--still` | Also save the final frame as a PNG |
+| `--fps RATE` | Frames per second of a final render: `23.976`, `24`, `25`, `29.97`, `30`, `50`, `59.94` or `60`. Match your editor's timeline. Default `meta.fps`, or 60 |
 | `--aspect 16:9\|9:16` | `9:16` renders vertical clips for Shorts, Reels and TikTok, named `ID.vertical.mov` |
 | `--watch` | Keep running and render again whenever the spec or its theme file is saved. Only the charts that changed are rendered; an invalid spec prints its errors and watching goes on. Ctrl+C stops |
 

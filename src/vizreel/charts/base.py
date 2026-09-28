@@ -3,6 +3,7 @@
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from fractions import Fraction
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from vizreel.errors import RenderError
@@ -231,7 +232,7 @@ class FrameClock:
     `round(duration × fps)` frames and no animation is off by more than half a frame.
     """
 
-    def __init__(self, fps: int) -> None:
+    def __init__(self, fps: float | Fraction) -> None:
         self.fps = fps
         self._wanted = 0.0
         self._frames = 0

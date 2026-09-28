@@ -7,6 +7,7 @@ import tempfile
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from fractions import Fraction
 from pathlib import Path
 from typing import Any, Literal
 
@@ -43,6 +44,7 @@ class RenderOptions:
         format: Output format, overriding `meta.format`.
         still: Also save the last frame of each chart as PNG.
         aspect: Frame shape, overriding `meta.aspect`.
+        fps: Frame rate of a final render, overriding `meta.fps`. Previews stay at 15 fps.
     """
 
     out_dir: Path = Path("out")
@@ -51,6 +53,7 @@ class RenderOptions:
     format: OutputFormat | None = None
     still: bool = False
     aspect: Aspect | None = None
+    fps: float | None = None
 
 
 @dataclass(frozen=True)
@@ -119,7 +122,7 @@ class FrameSettings:
 
     width: int
     height: int
-    fps: int
+    fps: Fraction
     format: OutputFormat
     aspect: Aspect = "16:9"
 
@@ -142,11 +145,25 @@ def frame_settings(spec: Spec, options: RenderOptions) -> FrameSettings:
     """Combine the spec's `meta` with the command-line options."""
     output_format = options.format or spec.meta.format
     aspect = options.aspect or spec.meta.aspect
+    fps: float
     if options.quality == "preview":
         short_side, fps = PREVIEW_SHORT_SIDE, PREVIEW_FPS
     else:
-        short_side, fps = SHORT_SIDES[spec.meta.resolution], spec.meta.fps
-    return FrameSettings(*frame_pixels(short_side, aspect), fps, output_format, aspect)
+        short_side, fps = SHORT_SIDES[spec.meta.resolution], options.fps or spec.meta.fps
+    return FrameSettings(
+        *frame_pixels(short_side, aspect), exact_frame_rate(fps), output_format, aspect
+    )
+
+
+def exact_frame_rate(fps: float) -> Fraction:
+    """Return a frame rate as the exact ratio video files store: 29.97 is 30000/1001.
+
+    The NTSC rates 23.976, 29.97 and 59.94 are 24, 30 and 60 slowed by 1000/1001; the
+    others are whole numbers.
+    """
+    if fps == round(fps):
+        return Fraction(round(fps))
+    return Fraction(round(fps * 1001 / 1000) * 1000, 1001)
 
 
 def output_paths(
@@ -314,7 +331,7 @@ def render_chart(
             "pixel_height": settings.height,
             "frame_width": scene_width,
             "frame_height": scene_height,
-            "frame_rate": settings.fps,
+            "frame_rate": float(settings.fps),
             "transparent": settings.transparent,
             "format": settings.format,
             "background_color": theme.colors.background,

@@ -46,7 +46,21 @@ def _reject_reserved_name(value: str) -> str:
     return value
 
 
+FRAME_RATES: tuple[float, ...] = (23.976, 24, 25, 29.97, 30, 50, 59.94, 60)
+"""The frame rates a clip can have: film, PAL and NTSC rates, and 30 and 60 for the web."""
+
+
+def _check_frame_rate(value: float) -> float:
+    if value not in FRAME_RATES:
+        rates = ", ".join(f"{rate:g}" for rate in FRAME_RATES[:-1])
+        raise rule_error(f"{value:g} is not a supported frame rate. Use {rates} or 60")
+    return value
+
+
 ChartId = Annotated[str, Field(pattern=CHART_ID_PATTERN), AfterValidator(_reject_reserved_name)]
+FrameRate = Annotated[
+    float, AfterValidator(_check_frame_rate), Field(json_schema_extra={"enum": list(FRAME_RATES)})
+]
 Text = Annotated[str, Field(min_length=1)]
 Duration = Annotated[float, Field(ge=2)]
 
@@ -73,8 +87,9 @@ class Meta(SpecModel):
     """Output resolution, named by the short side: 1080p is 1920×1080, or 1080×1920 at 9:16."""
     aspect: Literal["16:9", "9:16"] = "16:9"
     """Frame shape: 16:9 is landscape, 9:16 is vertical, for Shorts, Reels and TikTok."""
-    fps: Literal[30, 60] = 60
-    """Frames per second."""
+    fps: FrameRate = 60
+    """Frames per second: 23.976, 24, 25, 29.97, 30, 50, 59.94 or 60. Match the editor's
+    timeline, or it blends or drops frames."""
     format: Literal["mov", "webm", "mp4"] = "mov"
     """mov and webm have a transparent background. mp4 is opaque."""
     locale: Literal["en-US", "tr-TR", "es-ES", "pt-BR", "fr-FR"] = "en-US"

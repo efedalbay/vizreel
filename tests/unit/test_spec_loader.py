@@ -48,7 +48,8 @@ EXPECTED_ERRORS: dict[str, list[str]] = {
     ],
     "meta": [
         'meta.resolution: expected one of "720p", "1080p", "1440p" or "4k", got "8k"',
-        "meta.fps: expected one of 30 or 60, got 24",
+        "meta.fps: 45 is not a supported frame rate. "
+        "Use 23.976, 24, 25, 29.97, 30, 50, 59.94 or 60",
         "meta.theem: unknown field. Check the spelling against docs/SPEC.md",
     ],
     "missing-type": [

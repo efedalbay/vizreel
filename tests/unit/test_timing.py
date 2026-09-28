@@ -1,3 +1,5 @@
+from fractions import Fraction
+
 import pytest
 
 from vizreel.charts.base import (
@@ -148,3 +150,12 @@ def test_sequential_items_run_one_after_another(progress: float, expected: list[
     assert [sequential_progress(progress, index, 4) for index in range(4)] == pytest.approx(
         expected
     )
+
+
+def test_the_clock_counts_ntsc_frames_exactly() -> None:
+    clock = FrameClock(Fraction(30000, 1001))
+
+    frames = [clock.frames_for(duration) for duration in (0.5, 1.25, 1.25)]
+
+    assert clock.frames == round(3 * 30000 / 1001) == 90
+    assert sum(frames) == 90

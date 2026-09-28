@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Any
 
 from manim import DEFAULT_WAIT_TIME, Mobject, Scene, config
+from manim.scene.scene_file_writer import to_av_frame_rate
 
 from vizreel.charts.base import ChartType, Continuation, FrameClock
 from vizreel.render.elements import PANEL_Z_INDEX
@@ -64,7 +65,7 @@ class ChartScene(Scene):
         self.chart_type = chart_type
         self.continuation = continuation
         self.relayout = relayout
-        self.clock = FrameClock(int(config.frame_rate))
+        self.clock = FrameClock(to_av_frame_rate(config.frame_rate))
         self._waiting = False
         super().__init__(**kwargs)
 
@@ -110,7 +111,7 @@ class ChartScene(Scene):
         finally:
             renderer._original_skipping_status = False
             renderer.skip_animations = False
-            self.clock = FrameClock(int(config.frame_rate))
+            self.clock = FrameClock(to_av_frame_rate(config.frame_rate))
 
     def play(self, *args: Any, **kwargs: Any) -> None:
         """Play animations for a whole number of frames.
