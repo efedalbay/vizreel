@@ -4,6 +4,15 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] - 2026-09-28
+
+### Added
+
+- Chart types from other packages. A package lists its chart types under the `vizreel.chart_types` entry point group, and once it is installed next to vizreel they validate, render, appear in `vizreel new` and in the JSON Schema like the built-in types. A package that fails to load, uses a built-in name or was written for another chart API version is skipped with a warning, and a spec that uses its type says why. [Writing a chart type](https://github.com/efedalbay/vizreel/blob/main/docs/PLUGINS.md) is the guide.
+- `vizreel.plugin` and `vizreel.plugin.render`, the API for these chart types, versioned by `CHART_API_VERSION` (now 1).
+- `vizreel types` lists every chart type and where it comes from.
+- `examples/plugin`: an example plugin package with a `progress` chart type, a bar that fills toward a goal.
+
 ## [0.6.0] - 2026-09-28
 
 ### Added
@@ -104,6 +113,7 @@ The first release.
 - `vizreel new TYPE` prints a commented template for each chart type.
 - The Inter typeface, bundled so that output looks the same on every machine.
 
+[0.7.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.7.0
 [0.6.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.6.0
 [0.5.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.5.0
 [0.4.4]: https://github.com/efedalbay/vizreel/releases/tag/v0.4.4
