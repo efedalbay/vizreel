@@ -43,6 +43,9 @@ SAFE_MARGINS: dict[Aspect, Margins] = {
 menus and the bottom with the caption, the channel name and buttons."""
 LINE_HEIGHT = 1.3
 """Height of a line of text as a multiple of its font size."""
+LINE_STEP = 1.2
+"""Distance between the baselines of wrapped lines, as a multiple of their font size. Less than
+`LINE_HEIGHT`, so wrapped text stays inside the room the layout gives it."""
 BAND_GAP = 0.5
 """Gap between the title, content and source bands, as a multiple of the title size."""
 STACK_GAP = 0.45

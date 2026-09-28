@@ -13,10 +13,10 @@ from xml.sax.saxutils import escape
 from manim import (
     DOWN,
     LEFT,
+    ORIGIN,
     ManimColor,
     MarkupText,
     Mobject,
-    Paragraph,
     RoundedRectangle,
     Text,
     UpdateFromAlphaFunc,
@@ -27,7 +27,7 @@ from manim import (
 )
 
 from vizreel.errors import RenderError
-from vizreel.render.layout import Box, Layout, font_size, px, stack_gap
+from vizreel.render.layout import LINE_STEP, Box, Layout, font_size, px, stack_gap
 from vizreel.render.scales import wrap_text
 from vizreel.themes.models import FontStyle, FontWeight, Theme
 
@@ -96,28 +96,23 @@ def paragraph(
     hex_color: str,
     align: Literal["center", "left"] = "center",
 ) -> VMobject:
-    """Build lines of text, spaced by Pango so that baselines are even.
+    """Build lines of text with their baselines `LINE_STEP` font sizes apart.
+
+    Pango's own spacing for Inter leaves almost nothing between a descender and the ascender
+    of the line below, which reads as cramped at title sizes.
 
     Raises:
         RenderError: Pango could not lay out every character.
     """
     lines = [line.strip() for line in lines]
-    size = font_size(size_px)
-    oversample = max(1.0, LAYOUT_FONT_SIZE / size)
-    with _text_surface():
-        mobject = Paragraph(
-            *lines,
-            font=style.family,
-            weight=_PANGO_WEIGHTS[style.weight],
-            font_size=size * oversample,
-            color=color(hex_color),
-            alignment=align,
-            disable_ligatures=True,
-            warn_missing_font=False,
-        )
-    for line, line_mobject in zip(lines, mobject.submobjects, strict=True):
-        _check_complete(line_mobject, line, len(line))
-    return mobject.scale(1 / oversample)
+    step = px(size_px) * LINE_STEP
+    mobjects = []
+    for index, line in enumerate(lines):
+        mobject = text(line, style, size_px, hex_color)
+        mobject.shift((0.0, -index * step - baseline(mobject, line, style, size_px), 0.0))
+        mobject.shift((-(mobject.get_left()[0] if align == "left" else mobject.get_x()), 0.0, 0.0))
+        mobjects.append(mobject)
+    return VGroup(*mobjects).move_to(ORIGIN)
 
 
 def number_text(content: str, style: FontStyle, size_px: float, hex_color: str) -> VMobject:

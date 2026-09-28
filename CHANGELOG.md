@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Wrapped titles, subtitles and labels had almost no space between their lines, so a descender nearly touched the line below. Their baselines are now 1.2 times the font size apart.
+
 ## [0.7.0] - 2026-09-28
 
 ### Added

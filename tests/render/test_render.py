@@ -352,6 +352,31 @@ def test_a_long_title_wraps_onto_two_lines(tmp_path: Path) -> None:
     assert result.error is None
 
 
+@pytest.mark.parametrize("align", ["center", "left"])
+def test_wrapped_lines_are_evenly_spaced_and_aligned(tmp_path: Path, align: str) -> None:
+    from manim import tempconfig
+
+    from vizreel.render import elements
+    from vizreel.render.fonts import register_bundled_fonts
+    from vizreel.render.layout import LINE_STEP, px
+    from vizreel.themes.loader import load_theme
+
+    register_bundled_fonts()
+    style, size = load_theme("default", tmp_path).fonts.heading, 56
+    lines = ["Ürünlere göre", "Northwind geliri", "gy"]
+    with tempconfig({"media_dir": str(tmp_path), "verbosity": "ERROR"}):
+        block = elements.paragraph_block(lines, style, size, "#ffffff", align)  # type: ignore[arg-type]
+        baselines = [
+            elements.baseline(block.mobject[index], line, style, size)
+            for index, line in enumerate(lines)
+        ]
+        edges = [line.get_left()[0] if align == "left" else line.get_x() for line in block.mobject]
+
+    steps = [above - below for above, below in zip(baselines, baselines[1:], strict=False)]
+    assert steps == pytest.approx([px(size) * LINE_STEP] * 2)
+    assert edges == pytest.approx([edges[0]] * 3)
+
+
 def test_a_title_too_long_for_two_lines_is_an_error(tmp_path: Path) -> None:
     spec = tmp_path / "spec.yaml"
     spec.write_text(
