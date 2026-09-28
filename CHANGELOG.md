@@ -4,6 +4,22 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] - 2026-09-28
+
+### Added
+
+- Every common frame rate: `meta.fps` and the new `--fps` option take 23.976, 24, 25, 29.97, 30, 50, 59.94 or 60, so a clip matches the editor's timeline instead of being blended. NTSC rates are stored exactly (29.97 is 30000/1001), and a clip has exactly `round(duration × fps)` frames at every rate.
+- Square 1:1 clips for feeds: `aspect: "1:1"` or `--aspect 1:1`, named `ID.square.mov`. Each chart takes its landscape arrangement when it fits the square and its vertical one when it does not.
+- `--format prores` writes ProRes 4444 with alpha (`ID.prores.mov`), the format professional editors expect for transparent clips, and `--format png` a folder of PNG frames with alpha that any editor imports as an image sequence.
+
+### Changed
+
+- The percent in the middle of a share chart shrinks to fit a ring that has little room, as other big numbers do, instead of making the chart an error.
+
+### Fixed
+
+- When a line chart's first-value label had to stack above the lines, a line climbing steeply just past the label's corner could touch it.
+
 ## [0.8.0] - 2026-09-28
 
 ### Added
@@ -128,6 +144,7 @@ The first release.
 - `vizreel new TYPE` prints a commented template for each chart type.
 - The Inter typeface, bundled so that output looks the same on every machine.
 
+[0.9.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.9.0
 [0.8.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.8.0
 [0.7.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.7.0
 [0.6.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.6.0
