@@ -106,6 +106,41 @@ From here on, each milestone ends with a minor release (M7 → 0.2.0, M8 → 0.3
 
 **Done when:** an example plugin package installs next to vizreel and its chart type validates, renders and appears in `vizreel new`.
 
+## M13 — Output for every editor
+
+- Every common frame rate: 23.976, 24, 25, 29.97, 30, 50, 59.94 and 60, in `meta.fps` and with `--fps`. A clip whose rate differs from the timeline's is blended or dropped by the editor.
+- A square 1:1 frame for feeds (`aspect: "1:1"`), named `ID.square.mov`.
+- ProRes 4444 with alpha (`--format prores`), the professional editors' standard, and a PNG sequence with alpha (`--format png`), which every editor reads.
+
+**Done when:** every showcase chart renders at every rate with the exact frame count, passes the design checklist at 1:1, and the ProRes and PNG outputs keep their transparency.
+
+## M14 — Data from files
+
+- A chart's data read from a CSV file next to the spec instead of written in the YAML, for every chart type whose data is a list or a table. Standard library only.
+
+**Done when:** every such chart type in the showcase can take its data from a CSV file, errors name the file, row and column, and `--watch` renders again when the CSV file is saved.
+
+## M15 — More chart types
+
+- `grouped`: bars in groups of two or three, one group per category.
+- `area`: one to three series as filled areas, optionally stacked.
+- `progress`: how far a value has come toward a goal, as a bar or a gauge ring. The example plugin gets a chart type of its own.
+
+**Done when:** each new type is in `examples/showcase.yaml`, passes the design checklist in 16:9, 9:16 and 1:1, and is documented in `docs/SPEC.md`.
+
+## M16 — Motion options
+
+- An optional exit at the end of a clip, so a chart can leave the screen by itself.
+- A choice of entrance for the elements that appear, and of easing, within what the design rules allow.
+
+**Done when:** every chart type honors the exit and entrance options, clips keep their exact length, and sequences still cut seamlessly.
+
+## M17 — Races
+
+- A bar chart race: categories whose values change over periods, the bars growing and changing places, the period counting on. A line race draws series over periods with their labels following the lines.
+
+**Done when:** a race from a CSV file with at least 20 periods renders smoothly in 16:9, 9:16 and 1:1, with bars that change places without overlapping.
+
 ## Later (not scheduled)
 
 - macOS testing (needs a contributor with a Mac).
