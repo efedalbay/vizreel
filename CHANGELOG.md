@@ -9,6 +9,7 @@ All notable changes to vizreel are documented here. The format follows
 ### Added
 
 - Data from CSV files: `data: data/regions.csv` gives a chart its bars, series, events, parts or rows from a file exported from a spreadsheet, and `data: { file, columns }` picks the columns to read. Every chart type but `stat` reads one. Cells may be separated by commas, semicolons or tabs, numbers may be written as the spec's locale writes them (`1.234,5` in `tr-TR`), the data passes the same checks as data written in the spec, and an error names the file, row and column. `examples/data.yaml` has a chart of each type.
+- `render --watch` renders again when a data file is saved, including one that made the spec invalid.
 - Chart types from other packages can read data files too, by implementing `ChartType.from_table`; `Table` and `TableError` are part of `vizreel.plugin`.
 
 ### Changed

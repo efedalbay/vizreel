@@ -127,7 +127,9 @@ def test_a_meta_or_theme_change_renders_every_chart(meta: str, theme_changed: bo
     assert charts_to_render(before, spec(STAT_A + STAT_B, meta), theme_changed) == ["a", "b"]
 
 
-def watch_errors(spec_path: Path, options: RenderOptions | None = None) -> list[VizreelError]:
+def watch_errors(
+    spec_path: Path, options: RenderOptions | None = None, watcher: FileWatcher | None = None
+) -> list[VizreelError]:
     """Run watch_spec for one poll on a spec that fails before rendering."""
     errors: list[VizreelError] = []
     polls = iter([False, True])
@@ -140,8 +142,23 @@ def watch_errors(spec_path: Path, options: RenderOptions | None = None) -> list[
         on_wait=lambda: None,
         stop=lambda: next(polls),
         poll_seconds=0,
+        watcher=watcher,
     )
     return errors
+
+
+def test_a_data_file_that_makes_the_spec_invalid_is_watched(tmp_path: Path) -> None:
+    spec_path = tmp_path / "spec.yaml"
+    spec_path.write_text(
+        "version: 1\ncharts: [{ id: a, type: bar, data: sales.csv }]\n", encoding="utf-8"
+    )
+    (tmp_path / "sales.csv").write_text("Region,Revenue\nNorth,12k\n", encoding="utf-8")
+    watcher = FileWatcher([spec_path, tmp_path / "gone.yaml"])
+
+    [error] = watch_errors(spec_path, watcher=watcher)
+
+    assert isinstance(error, SpecError)
+    assert watcher.paths == [spec_path, tmp_path / "sales.csv"]
 
 
 def test_an_invalid_spec_is_reported_and_watching_goes_on(tmp_path: Path) -> None:
@@ -175,3 +192,20 @@ def test_an_unknown_only_id_is_reported(tmp_path: Path) -> None:
     [error] = watch_errors(spec_path, RenderOptions(only=("nope",)))
 
     assert isinstance(error, RenderError)
+
+
+def test_a_changed_data_file_renders_the_chart_that_reads_it(tmp_path: Path) -> None:
+    from vizreel.spec.loader import load_spec
+
+    spec_path = tmp_path / "spec.yaml"
+    spec_path.write_text(
+        "version: 1\ncharts:\n  - { id: a, type: bar, data: sales.csv }\n"
+        "  - { id: b, type: stat, value: 1 }\n",
+        encoding="utf-8",
+    )
+    sales = tmp_path / "sales.csv"
+    sales.write_text("Region,Revenue\nNorth,12\nSouth,9\n", encoding="utf-8")
+    before = load_spec(spec_path)
+    sales.write_text("Region,Revenue\nNorth,12\nSouth,10\n", encoding="utf-8")
+
+    assert charts_to_render(before, load_spec(spec_path), theme_changed=False) == ["a"]

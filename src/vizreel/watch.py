@@ -7,7 +7,7 @@ from pathlib import Path
 
 from vizreel.errors import VizreelError
 from vizreel.render.engine import ChartResult, RenderOptions, render_spec, select_charts
-from vizreel.spec.loader import load_spec
+from vizreel.spec.loader import load_spec, spec_data_files
 from vizreel.spec.models import Spec
 from vizreel.themes.loader import load_theme, resolve_theme_path
 from vizreel.themes.models import Theme
@@ -106,7 +106,7 @@ def watch_spec(
     poll_seconds: float = POLL_SECONDS,
     watcher: FileWatcher | None = None,
 ) -> None:
-    """Render a spec, then render it again whenever it or its theme file changes.
+    """Render a spec, then render it again whenever it, its theme file or a data file changes.
 
     Runs until `stop` returns True or the user presses Ctrl+C (KeyboardInterrupt). A spec or
     theme that cannot be loaded is reported and watching goes on; the next render compares
@@ -152,13 +152,18 @@ class _Session:
         on_result: Callable[[ChartResult], None],
         on_error: Callable[[VizreelError], None],
     ) -> None:
+        data_files = spec_data_files(self.spec_path)
         try:
             spec = load_spec(self.spec_path)
             theme_path = resolve_theme_path(spec.meta.theme, self.spec_path.parent)
-            self.watcher.watch([self.spec_path, theme_path])
+            self.watcher.watch([self.spec_path, theme_path, *data_files])
             theme = load_theme(spec.meta.theme, self.spec_path.parent)
             select_charts(spec, self.options.only)
         except VizreelError as exc:
+            # A file that is gone would keep the watcher waiting; the spec itself may be
+            # in the middle of being saved.
+            kept = [path for path in self.watcher.paths if path == self.spec_path or path.exists()]
+            self.watcher.watch(dict.fromkeys([*kept, *data_files]))
             on_error(exc)
             return
         wanted = charts_to_render(self.spec, spec, theme != self.theme)

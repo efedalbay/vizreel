@@ -490,6 +490,8 @@ The file gives the chart's data fields, listed below; every other field, such as
 - A number is written plainly, `1234.5`, or the way `meta.locale` writes numbers: `1.234,5` in `tr-TR`, with or without its group separators. Where the two read the same text differently, the locale's way wins: in `tr-TR`, `1.234` is one thousand two hundred and thirty-four. Leave out units, currencies and percent signs (`$12M` is an error) and format the numbers with `number`.
 - An error in the file names the file, the row, counted as lines of the file, and the column: `charts[0].data: data/regions.csv, row 4, column "Revenue" is not a number: "187,5M"`.
 
+`vizreel render --watch` renders again when a data file is saved.
+
 ### Choosing columns
 
 With more columns than the chart reads, name the ones to read, in order:

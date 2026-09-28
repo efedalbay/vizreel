@@ -161,7 +161,7 @@ A chart can read its data from a CSV file, such as one exported from a spreadshe
   number: { prefix: "$", compact: true }
 ```
 
-The first row of the file names the columns, and a bar chart reads a label and a value from each row after it. Commas, semicolons and tabs all work, and numbers may be written the way your locale writes them (`1.234,5` with `locale: tr-TR`). An error names the file, row and column. Every chart type but `stat` can read one; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#data-from-files) for what each reads, and [`examples/data.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/data.yaml).
+The first row of the file names the columns, and a bar chart reads a label and a value from each row after it. Commas, semicolons and tabs all work, and numbers may be written the way your locale writes them (`1.234,5` with `locale: tr-TR`). An error names the file, row and column, and `--watch` renders again when the file is saved. Every chart type but `stat` can read one; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#data-from-files) for what each reads, and [`examples/data.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/data.yaml).
 
 ## Number locales
 
@@ -200,7 +200,7 @@ vizreel theme check my-brand.yaml       # contrast and color vision checks for a
 | `--still` | Also save the final frame as a PNG |
 | `--fps RATE` | Frames per second of a final render: `23.976`, `24`, `25`, `29.97`, `30`, `50`, `59.94` or `60`. Match your editor's timeline. Default `meta.fps`, or 60 |
 | `--aspect 16:9\|9:16\|1:1` | `9:16` renders vertical clips for Shorts, Reels and TikTok, named `ID.vertical.mov`; `1:1` renders square clips for feeds, named `ID.square.mov` |
-| `--watch` | Keep running and render again whenever the spec or its theme file is saved. Only the charts that changed are rendered; an invalid spec prints its errors and watching goes on. Ctrl+C stops |
+| `--watch` | Keep running and render again whenever the spec, its theme file or a data file is saved. Only the charts that changed are rendered; an invalid spec prints its errors and watching goes on. Ctrl+C stops |
 
 ## Using the clips in a video editor
 
