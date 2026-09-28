@@ -1,25 +1,24 @@
 """Chart types from other packages, found through entry points.
 
-Each test lays out a fake installed package on `sys.path`: a module and a `.dist-info` folder
-with its entry points. `importlib.metadata` finds it exactly as it finds a package installed
-with pip or uv, so these tests go through the real discovery.
+Each test installs a fake package with the `install` fixture of `tests/conftest.py`, which goes
+through the same discovery as a package installed with pip or uv.
 """
 
 import importlib
 import subprocess
 import sys
 import textwrap
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
 
-from vizreel.charts.registry import ENTRY_POINT_GROUP, chart_registry
+from vizreel.charts.registry import chart_registry
 from vizreel.cli import app
 from vizreel.errors import SpecError, UsageError
 from vizreel.render import engine
-from vizreel.spec.loader import parse_spec, spec_json_schema, spec_model
+from vizreel.spec.loader import parse_spec, spec_json_schema
 from vizreel.spec.templates import spec_template
 from vizreel.themes.loader import load_theme
 
@@ -54,32 +53,6 @@ def chart_module(name: str, *, api_version: str = "CHART_API_VERSION", extra: st
             def build(self, scene):
                 pass
         {extra}""")
-
-
-@pytest.fixture
-def install(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Install]:
-    """Install fake packages; the registry and spec model see them from then on."""
-
-    def install_package(
-        package: str, entry_points: dict[str, str], modules: dict[str, str], version: str = "1.0"
-    ) -> None:
-        site = tmp_path / package
-        dist_info = site / f"{package.replace('-', '_')}-{version}.dist-info"
-        dist_info.mkdir(parents=True)
-        (dist_info / "METADATA").write_text(
-            f"Metadata-Version: 2.1\nName: {package}\nVersion: {version}\n", encoding="utf-8"
-        )
-        lines = [f"[{ENTRY_POINT_GROUP}]"] + [f"{k} = {v}" for k, v in entry_points.items()]
-        (dist_info / "entry_points.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
-        for module, source in modules.items():
-            (site / f"{module}.py").write_text(source, encoding="utf-8")
-        monkeypatch.syspath_prepend(str(site))
-        chart_registry.cache_clear()
-        spec_model.cache_clear()
-
-    yield install_package
-    chart_registry.cache_clear()
-    spec_model.cache_clear()
 
 
 def test_a_chart_type_from_a_package_is_registered(install: Install) -> None:

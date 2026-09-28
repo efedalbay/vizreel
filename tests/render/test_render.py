@@ -635,6 +635,26 @@ def test_long_numbers_shrink_to_fit_a_vertical_frame_in_every_locale(
             assert columns.max() <= width * 0.95 + 1
 
 
+@pytest.mark.usefixtures("example_plugin")
+@pytest.mark.parametrize("aspect", ["16:9", "9:16"])
+def test_the_example_plugin_renders(tmp_path: Path, aspect: str) -> None:
+    from vizreel.themes.loader import load_theme
+
+    spec = Path(__file__).parents[2] / "examples" / "plugin" / "progress.yaml"
+    options = RenderOptions(out_dir=tmp_path, quality="preview", aspect=aspect, still=True)  # type: ignore[arg-type]
+
+    [result] = render_spec(spec, options, reraise=True)
+
+    assert result.video is not None
+    frames = frames_rgba(result.video)
+    assert len(frames) == 4 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    highlight = hex_rgb(load_theme("default", tmp_path).colors.highlight)
+    near = np.abs(frames[-1][:, :, :3].astype(int) - highlight).max(axis=2) <= 4
+    assert near.sum() > 100
+
+
 def test_a_failing_chart_does_not_stop_the_others(tmp_path: Path) -> None:
     too_wide = "Northwind " * 20
     spec = tmp_path / "spec.yaml"

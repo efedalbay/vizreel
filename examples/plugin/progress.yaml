@@ -1,0 +1,11 @@
+# A chart from the vizreel-progress plugin. All data is fictional.
+version: 1
+charts:
+  - id: fundraiser
+    type: progress
+    title: Northwind's fundraiser
+    value: 68000
+    goal: 100000
+    label: raised for the new library
+    number: { prefix: "$", compact: true }
+    source: "Source: example data"
