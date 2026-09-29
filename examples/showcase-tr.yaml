@@ -146,3 +146,20 @@ charts:
       - { name: Masaüstü, values: [1.1, 1.2, 1.2, 1.3, 1.3, 1.2, 1.2, 1.1] }
     number: { suffix: " milyon" }
     duration: 10
+
+  - id: scale-race
+    type: scatter-race
+    title: Gelir ve çalışan sayısı, 2019-2024
+    periods: ["2019", "2020", "2021", "2022", "2023", "2024"]
+    x_title: Gelir
+    y_title: Çalışan
+    series:
+      - { name: Northwind, x: [27, 40, 58, 80, 104, 131], y: [120, 150, 190, 230, 280, 320], size: [3, 5, 7, 10, 13, 16] }
+      - { name: Contoso, x: [66, 70, 71, 74, 76, 79], y: [300, 320, 330, 340, 345, 350], size: [9, 9, 10, 10, 10, 11] }
+      - { name: Fabrikam, x: [56, 61, 66, 70, 73, 77], y: [260, 270, 290, 300, 310, 320], size: [7, 8, 8, 9, 9, 10] }
+      - { name: Tailspin, x: [43, 49, 55, 62, 70, 76], y: [150, 170, 190, 220, 250, 270], size: [5, 6, 6, 7, 8, 9] }
+      - { name: Wingtip, x: [24, 30, 37, 45, 52, 60], y: [90, 110, 130, 160, 180, 200], size: [3, 3, 4, 5, 6, 7] }
+    x_number: { suffix: " milyon TL" }
+    highlight: { series: Northwind }
+    trail: true
+    duration: 10

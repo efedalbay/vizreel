@@ -197,3 +197,42 @@ def check_caption_times(
                 f"{reading_time(text):.1f}s to be read; shorten it, move the next caption later "
                 "or make the clip longer"
             )
+
+
+def race_colors(
+    names: Sequence[str],
+    followed: str | None,
+    brands: dict[str, str],
+    theme_brand: dict[str, str],
+    accent: str,
+    highlight: str,
+) -> list[str]:
+    """The color of each series of a race: the highlight, its brand color, or the accent.
+
+    Args:
+        names: The series names, in order.
+        followed: The name of the followed series, or None.
+        brands: The brand color name the spec gives some series, by series name.
+        theme_brand: The theme's brand colors, by name.
+        accent: The theme's accent color.
+        highlight: The theme's highlight color.
+
+    Raises:
+        RenderError: A brand color is not in the theme.
+    """
+    result = []
+    for name in names:
+        brand = brands.get(name)
+        if brand is not None and brand not in theme_brand:
+            known = ", ".join(f'"{known}"' for known in theme_brand) or "none"
+            raise RenderError(
+                f'the color "{brand}" of "{name}" is not a brand color of the theme ({known}); '
+                "add it to colors.brand in the theme"
+            )
+        if name == followed:
+            result.append(highlight)
+        elif brand is not None:
+            result.append(theme_brand[brand])
+        else:
+            result.append(accent)
+    return result

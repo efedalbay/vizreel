@@ -11,7 +11,7 @@ All examples in this document use a fictional company, Northwind, and made-up nu
   - Single figures: [`stat`](#stat--big-number-card), [`progress`](#progress--toward-a-goal), [`compare`](#compare--before-and-after)
   - Over time: [`line`](#line--values-over-time), [`area`](#area--amounts-over-time), [`timeline`](#timeline--sequence-of-events)
   - Categories: [`bar`](#bar--compare-categories), [`grouped`](#grouped--bars-side-by-side), [`stacked`](#stacked--bars-made-of-parts), [`waterfall`](#waterfall--from-a-start-to-a-total), [`share`](#share--parts-of-a-whole), [`table`](#table--rows-and-columns)
-  - Races: [`bar-race`](#bar-race--bars-racing-through-periods), [`line-race`](#line-race--lines-racing-through-periods)
+  - Races: [`bar-race`](#bar-race--bars-racing-through-periods), [`line-race`](#line-race--lines-racing-through-periods), [`scatter-race`](#scatter-race--points-racing-on-two-axes)
 - **Across chart types:** [sequences](#sequences), [motion](#motion), [data from files](#data-from-files)
 - **Tools:** [validation](#validation), [JSON Schema](#json-schema), [versioning](#versioning)
 
@@ -71,7 +71,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `progress`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, `bar-race`, `line-race`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
+| `type` | string | yes | — | Chart type: `stat`, `progress`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, `bar-race`, `line-race`, `scatter-race`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Northwind annual report"`. Keep it short; it is on screen. |
@@ -164,6 +164,7 @@ This renders `740 milyon TL`.
 | [`table`](#table--rows-and-columns) | 2–8 rows of 2–4 columns | `highlight.row` | ✓ | ✓ | 6 |
 | [`bar-race`](#bar-race--bars-racing-through-periods) | 2–30 series racing through up to 200 periods | `highlight.series`, followed | | ✓ | 15 |
 | [`line-race`](#line-race--lines-racing-through-periods) | 1–6 lines racing through up to 200 periods | `highlight.series`, followed | | ✓ | 15 |
+| [`scatter-race`](#scatter-race--points-racing-on-two-axes) | 2–30 points moving on two axes through up to 200 periods | `highlight.series`, followed | | ✓ | 15 |
 
 Every chart type also takes the [fields shared by every chart](#fields-shared-by-every-chart). `vizreel new TYPE` prints a commented template of any type.
 
@@ -619,6 +620,51 @@ Default `duration`: 15. Each period needs at least 0.2 seconds of the race, as f
   duration: 10
 ```
 
+## `scatter-race` — points racing on two axes
+
+Points that move over many periods on two value axes, sized by a third value, e.g. the revenue and staff of ten companies over 24 years. The axes and their titles appear first; then the race runs through the periods at one pace and slows to a stop on the last one, each point moving in a straight line from one period's place to the next. Both axes grow with the largest values seen so far, and start at zero unless a value is negative. A point's area grows with its `size`. The period, as written, is large above the plot, with the captions left of it.
+
+Names sit beside their points, to the right, left, above or below, wherever they are clear of every point and of the other names; a name with no clear place is left out until it has one, and fades back in. With eight series or fewer every point is named; with more, only the followed series and those in `labels`. Points are in the theme's `accent` color, or a brand color (`colors`), and the followed series in its `highlight` color, with its path behind it if `trail` is set.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `periods` | list of strings | yes | — | 2–200 periods, in order, e.g. years. Shown as written. Unique. |
+| `series` | list | yes | — | 2–30 points. |
+| `series[].name` | string | yes | — | Shown beside the point. Unique. |
+| `series[].x` | list of numbers | yes | — | Its place on the horizontal axis, one value per period; `null` for a gap. |
+| `series[].y` | list of numbers | yes | — | Its place on the vertical axis, one value per period; `null` for a gap. |
+| `series[].size` | list of numbers | no | — | Its size, one value per period, zero or more. Without it, every point is small and the same. |
+| `x_title` | string | yes | — | What the horizontal axis measures, shown under it. |
+| `y_title` | string | yes | — | What the vertical axis measures, shown above it. |
+| `x_number` | number format | no | — | Formatting of the horizontal axis. |
+| `y_number` | number format | no | — | Formatting of the vertical axis. |
+| `highlight.series` | string | no | — | The series to follow, in the highlight color. |
+| `trail` | boolean | no | `false` | Draw the path the followed series has taken, faintly, behind the points. |
+| `labels` | list of strings | no | — | With more than eight series, the series whose names are shown besides the followed one. |
+| `captions` | list | no | — | Captions over the race, as for `bar-race`. |
+| `colors` | object | no | — | Brand colors for some series, as for `bar-race`. |
+
+A series is on the plot from its first period with both an `x` and a `y` to its last; a gap between them is filled in a straight line. Default `duration`: 15. Each period needs at least 0.2 seconds of the race, as for `bar-race`.
+
+```yaml
+- id: scale-race
+  type: scatter-race
+  title: Revenue and staff, 2022 to 2024
+  periods: ["2022", "2023", "2024"]
+  x_title: Revenue
+  y_title: Employees
+  series:
+    - { name: Northwind, x: [80, 104, 131], y: [230, 280, 320], size: [10, 13, 16] }
+    - { name: Contoso, x: [74, 76, 79], y: [340, 345, 350], size: [10, 10, 11] }
+    - { name: Fabrikam, x: [70, 73, 77], y: [300, 310, 320], size: [9, 9, 10] }
+  x_number: { prefix: "$", suffix: "M" }
+  highlight: { series: Northwind }
+  trail: true
+  duration: 8
+```
+
+A scatter race's CSV file has a row per period and series: the period, the name, x, y and an optional size, in that order (see [Data from files](#data-from-files)).
+
 ---
 
 ## Sequences
@@ -654,7 +700,7 @@ The first clip is the chart as usual, emphasizing the first item. Each later cli
 | `table` | A row name. |
 | `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
 
-A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat`, `progress` and `compare` charts have no elements to emphasize, and races already move through their periods; they have no sequence.
+A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat`, `progress` and `compare` charts have no elements to emphasize, and races (`bar-race`, `line-race`, `scatter-race`) already move through their periods; they have no sequence.
 
 ---
 
@@ -751,6 +797,7 @@ With more columns than the chart reads, name the ones to read, in order:
 | `grouped` | The categories, then one column per series, named by its first row. | One group each. | `categories`, `series` |
 | `area` | The x labels, then one column per series, named by its first row. | One x label each; every cell needs a value. | `x`, `series` |
 | `bar-race`, `line-race` | The periods, then one column per series, named by its first row. | One period each; an empty cell leaves a gap. | `periods`, `series` |
+| `scatter-race` | The period, the series name, x, y, and an optional size. | One per period and series, in any order; periods and series in the order they first appear. A pair that comes twice is an error. A missing pair or an empty cell leaves a gap. | `periods`, `series` |
 | `waterfall` | A label and a value. | The first row is the start and the others are steps; a last row with a label and no value names the total. | `start`, `steps`, and `end` if the last row names it |
 | `compare` | A label and a value. | Two: the earlier value, then the later one. | `before`, `after` |
 | `table` | Two to four. A column holds numbers if its first row does; the first holds the row names. | One row each. | `rows`, and `columns` named by the first row, unless the spec writes `columns` to name them and set their number formats |

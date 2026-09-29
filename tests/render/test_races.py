@@ -20,7 +20,7 @@ def frames_rgba(path: Path) -> list[np.ndarray]:
 
 
 @pytest.mark.parametrize("aspect", ["16:9", "9:16", "1:1"])
-@pytest.mark.parametrize("chart_id", ["market-race", "catching-up"])
+@pytest.mark.parametrize("chart_id", ["market-race", "catching-up", "growth-race"])
 def test_a_race_of_24_periods_renders_in_every_shape(
     tmp_path: Path, chart_id: str, aspect: str
 ) -> None:

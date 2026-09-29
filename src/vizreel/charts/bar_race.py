@@ -8,6 +8,7 @@ from vizreel.charts._race import (
     check_caption_times,
     check_race_time,
     fill_gaps,
+    race_colors,
     race_position,
     slot_positions,
     value_at,
@@ -195,23 +196,14 @@ class BarRaceChartType(ChartType):
         """
         assert isinstance(self.chart, BarRaceChart)
         colors = self.theme.colors
-        followed = self.chart.highlight.series if self.chart.highlight else None
-        result = []
-        for series in self.chart.series:
-            brand = self.chart.colors.get(series.name)
-            if brand is not None and brand not in colors.brand:
-                known = ", ".join(f'"{name}"' for name in colors.brand) or "none"
-                raise RenderError(
-                    f'the color "{brand}" of "{series.name}" is not a brand color of the theme '
-                    f"({known}); add it to colors.brand in the theme"
-                )
-            if series.name == followed:
-                result.append(colors.highlight)
-            elif brand is not None:
-                result.append(colors.brand[brand])
-            else:
-                result.append(colors.accent)
-        return result
+        return race_colors(
+            [series.name for series in self.chart.series],
+            self.chart.highlight.series if self.chart.highlight else None,
+            self.chart.colors,
+            colors.brand,
+            colors.accent,
+            colors.highlight,
+        )
 
     def _images(self, height: float) -> dict[int, "Mobject"]:
         """Load each series' image, `height` tall, by the index of its series.

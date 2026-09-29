@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The `scatter-race` chart type: two to thirty points moving over up to 200 periods on two value axes, sized by a third value, the axes growing with the largest values seen so far. Names sit beside their points only where they are clear of every point and other name. `trail: true` draws the path of the followed series. Its CSV file has a row per period and series; `examples/data.yaml` races ten companies' revenue and staff through 24 years.
+
 ## [0.14.1] - 2026-09-29
 
 ### Fixed

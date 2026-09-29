@@ -272,6 +272,7 @@ def test_json_schema_lists_every_chart_type() -> None:
         "line",
         "line-race",
         "progress",
+        "scatter-race",
         "share",
         "stacked",
         "stat",

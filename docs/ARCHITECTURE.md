@@ -78,6 +78,7 @@ vizreel/
 │   │   ├── table.py
 │   │   ├── bar_race.py
 │   │   ├── line_race.py
+│   │   ├── scatter_race.py
 │   │   ├── _bars.py         ← parts the bar-like types share; not a chart type
 │   │   └── _race.py         ← timing and ordering the races share; not a chart type
 │   ├── render/

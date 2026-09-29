@@ -101,3 +101,14 @@ charts:
     type: compare
     title: Northwind's employees
     data: data/headcount.csv
+
+  - id: growth-race
+    type: scatter-race
+    title: Northwind grows without growing its staff as fast
+    data: data/scatter-race.csv
+    x_title: Revenue
+    y_title: Employees
+    x_number: { prefix: "$", suffix: "M" }
+    highlight: { series: Northwind }
+    trail: true
+    labels: [Contoso, Alpine]

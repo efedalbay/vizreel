@@ -15,6 +15,7 @@ vizreel turns a short YAML file, with the data written in it or read from a CSV 
 | ![A compare chart counting from 1,200 down to 340, a change of −72%](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/compare.gif) | ![A waterfall chart from revenue to profit](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/waterfall.gif) |
 | ![A stacked bar chart of revenue by product](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/stacked.gif) | ![A share ring with 47% in the middle](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/share.gif) |
 | ![A timeline with an emphasized event](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/timeline.gif) | ![A table with a highlighted row](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/table.gif) |
+| ![A scatter race of revenue and staff with Northwind's path](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/scatter-race.gif) | |
 
 ## Why vizreel
 
@@ -129,6 +130,7 @@ The same bars could come from a spreadsheet instead: `data: data/offers.csv` in 
 | `table` | A few rows and columns of numbers or text | ✓ | ✓ |
 | `bar-race` | Bars racing through up to 200 periods, changing places as they pass each other | | ✓ |
 | `line-race` | Lines racing through up to 200 periods, the axis growing with them | | ✓ |
+| `scatter-race` | Points moving on two axes through up to 200 periods, sized by a third value | | ✓ |
 
 **Sequence**: the chart can be told in several clips that cut together ([below](#sequences)). **CSV**: it can read its data from a CSV file ([below](#data-from-csv-files)). Other packages can add chart types too ([Extending vizreel](#extending-vizreel)).
 

@@ -35,6 +35,7 @@ CHARTS = {
     "top-markets": "table",
     "market-race": "bar-race",
     "users-race": "line-race",
+    "scale-race": "scatter-race",
 }
 
 

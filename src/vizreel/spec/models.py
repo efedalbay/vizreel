@@ -456,10 +456,7 @@ def _race_issues(periods: list[str], series: list[RaceSeries]) -> list[RuleViola
     return issues
 
 
-def _highlight_issues(
-    highlight: RaceHighlight | None, series: list[RaceSeries]
-) -> list[RuleViolation]:
-    names = [item.name for item in series]
+def _highlight_issues(highlight: RaceHighlight | None, names: list[str]) -> list[RuleViolation]:
     if highlight is None or highlight.series in names:
         return []
     return [
@@ -471,10 +468,9 @@ def _highlight_issues(
 
 
 def _named_series_issues(
-    by_series: dict[str, Any], series: list[RaceSeries], field: str
+    by_series: dict[str, Any], names: list[str], field: str
 ) -> list[RuleViolation]:
     """What is wrong with a field that gives something to series by name."""
-    names = [item.name for item in series]
     return [
         (
             (field, name),
@@ -515,12 +511,101 @@ class BarRaceChart(BaseChart):
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         issues = _race_issues(self.periods, self.series)
-        issues += _highlight_issues(self.highlight, self.series)
-        issues += _named_series_issues(self.colors, self.series, "colors")
-        issues += _named_series_issues(self.images, self.series, "images")
+        issues += _highlight_issues(self.highlight, [item.name for item in self.series])
+        issues += _named_series_issues(self.colors, [item.name for item in self.series], "colors")
+        issues += _named_series_issues(self.images, [item.name for item in self.series], "images")
         issues += _caption_issues(self.captions, self.periods)
         raise_rule_violations(type(self).__name__, issues)
         return self
+
+
+class ScatterSeries(SpecModel):
+    """One point of a scatter race: where it is on both axes, and how big, at every period."""
+
+    name: Text
+    """Shown next to the point. Unique."""
+    x: list[float | None]
+    """Its position on the horizontal axis, one value per period. null leaves a gap."""
+    y: list[float | None]
+    """Its position on the vertical axis, one value per period. null leaves a gap."""
+    size: list[Annotated[float, Field(ge=0)] | None] | None = None
+    """Its size, one value per period, zero or more: the area of the point grows with it."""
+
+
+MAX_SCATTER_LABELS = 8
+"""A scatter race of at most this many series names every point; beyond, only those listed."""
+
+
+class ScatterRaceChart(BaseChart):
+    """Points moving over many periods on two value axes, sized by a third value."""
+
+    type: Literal["scatter-race"]
+    duration: Duration = 15
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    periods: list[Text] = Field(min_length=2, max_length=200)
+    """The periods, in order, e.g. years. Shown as written. Unique."""
+    series: list[ScatterSeries] = Field(min_length=2, max_length=30)
+    """Two to thirty points."""
+    x_title: Text
+    """What the horizontal axis measures, e.g. "Revenue"."""
+    y_title: Text
+    """What the vertical axis measures, e.g. "Employees"."""
+    x_number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of the horizontal axis."""
+    y_number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of the vertical axis."""
+    highlight: RaceHighlight | None = None
+    """The series to follow, drawn in the highlight color."""
+    trail: bool = False
+    """Draw the path the followed series has taken, faintly, behind the points."""
+    labels: list[Text] = Field(default_factory=list)
+    """With more than eight series, the series whose names are shown besides the followed one.
+    With eight or fewer, every point is named."""
+    captions: list[RaceCaption] = Field(default_factory=list, max_length=MAX_CAPTIONS)
+    """Up to ten captions that appear over the race at the periods they name, in order."""
+    colors: dict[Text, Text] = Field(default_factory=dict)
+    """Brand colors for some series, by series name: the name of a color in the theme's
+    `colors.brand`. The other points keep the accent color."""
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues = _duplicate_issues(self.periods, "periods", None, "periods")
+        names = [item.name for item in self.series]
+        issues += _duplicate_issues(names, "series", "name", "series names")
+        for index, item in enumerate(self.series):
+            for field in ("x", "y", "size"):
+                values = getattr(item, field)
+                if values is not None and len(values) != len(self.periods):
+                    issues.append(
+                        (
+                            ("series", index, field),
+                            f"expected {len(self.periods)} values (same as periods), "
+                            f"got {len(values)}",
+                        )
+                    )
+            if all(x is None or y is None for x, y in zip(item.x, item.y, strict=False)):
+                issues.append((("series", index), "needs a period with both an x and a y value"))
+        issues += _highlight_issues(self.highlight, names)
+        issues += _named_series_issues(self.colors, names, "colors")
+        issues += _caption_issues(self.captions, self.periods)
+        for index, name in enumerate(self.labels):
+            if name not in names:
+                issues.append(
+                    (
+                        ("labels", index),
+                        f'"{name}" does not match any series. Series: {_quoted_list(names)}',
+                    )
+                )
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+    def labeled(self) -> list[str]:
+        """The names of the series whose points are named."""
+        names = [item.name for item in self.series]
+        if len(names) <= MAX_SCATTER_LABELS:
+            return names
+        followed = [self.highlight.series] if self.highlight else []
+        return [name for name in names if name in followed or name in self.labels]
 
 
 class LineRaceChart(BaseChart):
@@ -544,7 +629,7 @@ class LineRaceChart(BaseChart):
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         issues = _race_issues(self.periods, self.series)
-        issues += _highlight_issues(self.highlight, self.series)
+        issues += _highlight_issues(self.highlight, [item.name for item in self.series])
         issues += _caption_issues(self.captions, self.periods)
         raise_rule_violations(type(self).__name__, issues)
         return self
