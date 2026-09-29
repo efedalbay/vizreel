@@ -22,7 +22,55 @@ meta:
   theme: themes/example-brand.yaml
 ```
 
-`examples/themes/example-brand.yaml` is a complete custom theme to start from, and `examples/brand.yaml` uses it.
+`examples/themes/example-brand.yaml` is a complete custom theme to start from, and `examples/brand.yaml` uses it:
+
+```yaml
+description: Northwind brand colors on a navy panel.
+
+colors:
+  background: "#081A2B"   # frame of opaque (mp4) output
+  surface: "#0B2239"      # panel behind the chart
+  text: "#F2F6FA"
+  muted: "#A9B8C8"
+  grid: "#24425F"
+  accent: "#4FC3F7"
+  positive: "#4CC38A"
+  negative: "#FF6B6B"
+  highlight: "#FFC857"
+  series: ["#4FC3F7", "#F78FB3", "#9575CD"]
+  dim_opacity: 0.5
+
+fonts:
+  heading: { family: Inter, weight: bold }
+  body: { family: Inter, weight: regular }
+  numbers: { family: Inter, weight: bold }
+
+sizes:                    # pixels at 1080p
+  title: 66
+  subtitle: 40
+  big_number: 200
+  affix_scale: 0.6
+  label: 40
+  value: 38
+  caption: 28
+  panel_radius: 16
+  panel_padding: 72
+  line: 7
+  grid_line: 2
+  dot: 18
+
+motion:                   # seconds
+  easing: ease_out_quart
+  title_fade: 0.4
+  structure: 0.5
+  stagger: 0.1
+  highlight: 0.7
+  hold: 2
+
+background_panel: true
+```
+
+A theme is loaded, and checked against the minimum sizes, when a spec that uses it is validated or rendered; an error names the theme file and the field.
 
 ## Checking a theme
 
@@ -59,11 +107,11 @@ Colors are `#RRGGBB`.
 | `text` | Titles, values and labels. |
 | `muted` | Secondary text and de-emphasized data. |
 | `grid` | Axes, grid lines and baselines. |
-| `accent` | Data without a highlight: bars, timeline dots. |
-| `positive` | A `stat` with `trend: up`. |
-| `negative` | A `stat` with `trend: down`. |
-| `highlight` | The one element that carries the message. |
-| `series` | Line chart series, in this order. At least three. |
+| `accent` | Data without an emphasis of its own: bars, race bars, timeline dots, the start and total of a `waterfall`. |
+| `positive` | Up: a `stat` with `trend: up`, a rising `compare`, an increase in a `waterfall`. |
+| `negative` | Down: a `stat` with `trend: down`, a falling `compare`, a decrease in a `waterfall`. |
+| `highlight` | The one element that carries the message: a highlighted bar or point, the followed series of a race, the fill of a `progress`. |
+| `series` | The series of `line`, `area`, `stacked`, `grouped` and `line-race` charts, in this order. At least three; a chart never reuses one for a second series. |
 | `dim_opacity` | How much of their color other elements keep during the highlight beat, from 0 (exclusive) to 1. |
 
 ### `fonts`
@@ -85,7 +133,7 @@ Pixels at 1080p; they scale with the output resolution. Text sizes are font size
 |---|---|---|
 | `title` | Chart title | 56 |
 | `subtitle` | Line under the title | 32 |
-| `big_number` | The number of a `stat` | 160 |
+| `big_number` | The number of a `stat` and the percent of a `progress` bar; at 2/3 of it the `compare` values and the percent in a `share` or `progress` ring, and at 1/2 the period of a `bar-race` | 160 |
 | `affix_scale` | Optional, 0.6 by default. Size of what surrounds the digits of a big number (the `stat` number, the `compare` values, the `share` percent), relative to the digits: 0.6 sets `milyar` in `1,85 milyar` and `$` in `$740M` at 60% of the digits, on their baseline; 1 sets them at the size of the digits. Not a pixel size. | 0.5, at most 1 |
 | `label` | Axis labels, category labels, event labels, the `stat` label | 32 |
 | `value` | Value labels on charts | 32 |

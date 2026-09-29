@@ -9,7 +9,7 @@ vizreel output is watched, not studied. A viewer sees each chart for a few secon
 - Change over time → `line`; amounts over time, or how a total over time divides → `area`. Comparing a few categories → `bar`. Order of events → `timeline`. One measure before and after → `compare`. How a value adds up from its parts → `waterfall`. Categories split into a few parts → `stacked`. The same few measures compared in each category → `grouped`. One whole split into parts → `share`. A few exact figures to read side by side → `table`. How a ranking or a trend unfolds over many periods → `bar-race` or `line-race`. How far a value has come toward a goal → `progress`.
 - **Emphasize one thing.** The element that carries the message gets the `highlight` color; everything else uses `muted`. Do not give every bar its own color.
 - **Never two y-axes.** Two measures on different scales become two charts.
-- Maximum 3 series on a line chart, 8 bars, 7 timeline events. The spec validator enforces these limits.
+- Maximum 3 series on a line or area chart, 8 bars, 7 timeline events, 6 parts of a share. The spec validator enforces these limits. A race may have more contestants, because only the leaders are on screen at once.
 
 ## 2. Legibility on a phone
 
@@ -26,7 +26,7 @@ Sizes are defined relative to a 1080p frame and scale with resolution. They refe
 - **Narrow frames change the form, not the size.** Text is never shrunk to fit a vertical frame. Charts rearrange instead: bars become rows, a timeline runs down the frame, and titles wrap onto a second line. Wrapped lines have their baselines 1.2 times the font size apart, so a descender never touches the line below.
 - **A square frame takes what fits.** At 1:1 the frame is as narrow as a vertical one but not as tall. Each chart uses its landscape arrangement (columns, a horizontal timeline, the legend beside the ring) when it fits, and its vertical one when it does not. A ring takes whichever arrangement leaves it larger. The safe margin is 5% on every side.
 - **A vertical card fits its content.** A 9:16 chart with little content, such as three bars or a short timeline, does not float in the middle of an empty panel: the title, the source line and the panel close in around the content, and the card is centered in the safe area, with the footage visible around it. A chart whose content fills the frame, such as a line chart or a share ring, keeps the full panel.
-- **The one exception is a big number.** A number cannot wrap, and a compact number with a long unit name (`1,85 milyar`) can be wider than a vertical frame. The big number of a `stat` and the values of a `compare` then shrink until they fit, down to half their size. The size is chosen for the widest text the count shows, not only the final value, and stays the same while it counts; a number that jumps in size draws the eye away from its value. A number too wide even at half size is an error that suggests `compact: short`.
+- **The one exception is a big number.** A number cannot wrap, and a compact number with a long unit name (`1,85 milyar`) can be wider than a vertical frame. The big number of a `stat`, the values of a `compare` and the percents of a `share` and a `progress` then shrink until they fit, down to half their size. The size is chosen for the widest text the count shows, not only the final value, and stays the same while it counts; a number that jumps in size draws the eye away from its value. A number too wide even at half size is an error that suggests `compact: short`.
 - **Contrast:** text against its background must reach at least 4.5:1; large text (title, big numbers) at least 3:1. With transparent output, the chart draws its own background panel when the theme sets `background_panel: true`, because the footage underneath is unknown.
 - **Text wears text colors.** Labels and values use `text` or `muted` from the theme, never a series color. A colored mark next to the label carries identity.
 - **Direct labels over legends** for 1–3 series. A legend appears only when two or more series exist and direct labels would collide.
@@ -63,7 +63,7 @@ Motion guides the eye to the message. It is never decoration.
 - Colors come only from the theme's named roles. A chart module never contains a color value.
 - Series colors are used in fixed order from `colors.series`. They are never generated, cycled or reassigned by rank.
 - `positive` and `negative` mean up and down. They are not used as series colors.
-- Themes are validated for contrast and color-vision-deficiency separation (`vizreel theme check`, see roadmap). A theme that fails is not shipped as built-in.
+- Themes are checked for contrast and color-vision-deficiency separation (`vizreel theme check`, see `docs/THEMES.md`). A theme that fails is not shipped as built-in.
 
 ## 5. Typography
 

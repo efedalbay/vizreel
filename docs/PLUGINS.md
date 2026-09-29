@@ -136,7 +136,7 @@ uv run vizreel render chart.yaml --quality preview --still
 
 `vizreel types` lists every chart type with the package it comes from. A chart type that could not be loaded is not listed; vizreel prints a warning saying why, and so does every other command that reads specs. A spec that uses it gets an "unknown type" error with the same reason.
 
-For tests, `render_spec` from `vizreel.plugin` renders a spec file and returns each clip's result, with its video file, its duration and any error; see the example plugin's tests in [`tests/render/test_render.py`](https://github.com/efedalbay/vizreel/blob/main/tests/render/test_render.py). Check the rendered stills against the design rules in both 16:9 and 9:16.
+For tests, `render_spec` from `vizreel.plugin` renders a spec file and returns each clip's result, with its video file, its duration and any error; see the example plugin's tests in [`tests/render/test_render.py`](https://github.com/efedalbay/vizreel/blob/main/tests/render/test_render.py). Check the rendered stills against the design rules in 16:9, 9:16 and 1:1.
 
 ## Using a plugin
 

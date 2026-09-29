@@ -8,14 +8,14 @@ vizreel turns a declarative YAML spec into short, animated chart clips for video
 2. **Editor-ready output.** Each chart renders to its own clip, with a transparent background by default, so it can be layered over footage in any video editor.
 3. **Consistent look.** All visual decisions (colors, fonts, timing) come from a theme. Charts never hard-code styling.
 4. **Easy to extend.** A new chart type is one new module. Nothing else in the codebase has to change.
-5. **Easy to install.** `pip install vizreel` on Windows, Linux and macOS. No LaTeX, no separate FFmpeg install.
+5. **Easy to install.** `pip install vizreel` on Windows and Linux, and expected to work on macOS, which is untested. No LaTeX, no separate FFmpeg install.
 
 ## Non-goals (v1)
 
 - A graphical user interface.
 - Editing or cutting video. vizreel produces clips; the editor assembles them.
 - Mathematical typesetting (LaTeX). All text is rendered with Manim's `Text` (Pango).
-- Live data fetching. The spec contains the data.
+- Live data fetching. The data is in the spec or in CSV files next to it.
 
 ## Stack
 
@@ -193,8 +193,8 @@ A theme is a YAML file validated by `themes/models.py`. It contains:
 
 - `colors`: named roles (`background`, `surface`, `text`, `muted`, `grid`, `accent`, `positive`, `negative`, `highlight`, `series` list of at least 3), and `dim_opacity` for everything except the highlighted element during the highlight beat.
 - `fonts`: `heading`, `body`, `numbers`, each a `family` and a `weight` (`regular`, `semibold`, `bold`). At most two families. Bundled fonts are registered with ManimPango at startup.
-- `sizes`: `title`, `subtitle`, `big_number`, `label`, `value`, `caption`, `panel_radius`, `panel_padding`, and the stroke widths `line`, `grid_line` and the marker diameter `dot`.
-- `motion`: `easing` (ease-out curves only), `title_fade`, `structure`, `stagger`, `highlight`, `hold`, in seconds.
+- `sizes`: `title`, `subtitle`, `big_number`, `affix_scale` (the size of a big number's unit and currency relative to its digits), `label`, `value`, `caption`, `panel_radius`, `panel_padding`, and the stroke widths `line`, `grid_line` and the marker diameter `dot`.
+- `motion`: `easing` (ease-out curves only), `title_fade`, `structure`, `stagger`, `highlight`, `hold`, in seconds, and the optional `entrance`, `exit` and `exit_time` (see [Motion](#motion)).
 - `background_panel`: whether to draw a rounded panel behind the chart when rendering with transparency.
 - `description`: optional one line shown by `vizreel themes list`.
 
@@ -206,25 +206,37 @@ Resolution order for `meta.theme`: built-in name → path relative to the spec f
 
 ## Rendering
 
-- Resolution presets: `720p`, `1080p` (default), `1440p`, `4k`, named by the short side of the frame. Aspect `16:9` (default) or `9:16` (`meta.aspect`, `--aspect`). The short side of Manim's frame is 8 scene units in both aspects, so one scene unit is 135 pixels at 1080p either way and theme sizes need no conversion per aspect; `layout.py` gives each aspect its frame size and safe margins. Vertical files are named `<id>.vertical.<format>`.
-- Chart types adapt to a vertical frame through `Layout.vertical`: bar charts use rows (`layout: auto`) and timelines run down the frame. Titles and subtitles wrap onto a second line when they do not fit; the engine measures them before it builds the layout, so the title band is as tall as the wrapped lines.
+- Resolution presets: `720p`, `1080p` (default), `1440p`, `4k`, named by the short side of the frame. Aspect `16:9` (default), `9:16` or `1:1` (`meta.aspect`, `--aspect`). The short side of Manim's frame is 8 scene units in every aspect, so one scene unit is 135 pixels at 1080p and theme sizes need no conversion per aspect; `layout.py` gives each aspect its frame size and safe margins. Vertical files are named `<id>.vertical.<format>` and square ones `<id>.square.<format>`.
+- Chart types adapt to a vertical frame through `Layout.vertical`: bar charts use rows (`layout: auto`) and timelines run down the frame. A square frame (`Layout.square`) tries the landscape arrangement first (see `arranged` above). Titles and subtitles wrap onto a second line when they do not fit; the engine measures them before it builds the layout, so the title band is as tall as the wrapped lines.
 - Text is laid out by Pango on a fixed 4096-pixel surface, not one the size of the video, so it wraps and positions the same way in every output size (`elements.TEXT_SURFACE_PX`).
 - Quality flag: `--quality preview` (low resolution, 15 fps, fast) or `final` (spec resolution and fps). A chart renders to `<id>.<format>`; preview files are named `<id>.preview.<format>` so that a preview never replaces a final clip that may already be in an editor project.
-- Formats: `mov` with alpha (default), `webm` with alpha, `mp4` opaque (uses theme background). Alpha compatibility with common editors is verified in milestone M2 and documented in the README.
+- Formats: `mov` (QuickTime Animation) with alpha (default), `webm` with alpha, `mp4` opaque (uses the theme background), and two that `render/transcode.py` makes from Manim's `mov` with PyAV: `prores` (ProRes 4444 with alpha, through 8-bit `yuva444p`, because FFmpeg's direct conversion corrupts alpha at widths that are not a multiple of 16) and `png` (a folder of numbered frames). Which editors keep the alpha is listed in the README; what is untested is asked of the community there.
+- Frame rates: 23.976, 24, 25, 29.97, 30, 50, 59.94 and 60 (`meta.fps`, `--fps`); NTSC rates are exact fractions (`exact_frame_rate`, 29.97 is 30000/1001).
 - A clip has exactly `round(duration × fps)` frames. Manim rounds every animation up to whole frames, so `ChartScene` rounds each animation through a frame clock that keeps the running total on the wanted time. Every `scene.play` in a chart passes an explicit `run_time`; the final hold is a frozen frame, so nothing can move during it.
 - `--still` also writes the final frame as PNG. This is how both humans and Claude Code check a chart visually without playing video.
 - Output is deterministic: same spec + theme → same frames. No randomness.
 - Manim's own cache and partial-movie files go to a temporary directory, not to the user's output folder.
 
+### Motion
+
+A spec's `meta.motion` and a chart's `motion` override the theme's `motion` field by field. `render/engine.py` layers them with `clip_theme` into a theme for each clip, so everything that reads the theme, plugins included, follows them without knowing where they came from.
+
+- **Entrances.** Chart types make the panel, titles, labels and legends appear with `elements.appear`, which fades them in and, for `rise` or `zoom`, moves or scales them a little into place. The end state is the same for every entrance, so sequences still cut seamlessly.
+- **Exits** need nothing from chart types. `clip_theme` lengthens the hold by `exit_time` for the clip that leaves (only the last clip of a sequence), so charts keep their full hold and their "duration too short" messages stay right. `ChartScene` holds back each `wait` until the next animation or the end of the clip; at the end it renders the last wait shortened by the exit, keeps that frame as the still, and plays `elements.leave`, which fades every part from its own opacity and sinks or shrinks everything.
+
+### Frames of many parts
+
+A chart whose every frame is built from many parts, such as a race, uses `elements.redrawn` instead of Manim's `always_redraw`: the group takes each frame's new parts as they are instead of copying them into the old ones, and reuses text mobjects instead of copying them, since Manim's copies deep-copy every attribute. Counting numbers (`NumberGlyphs`) copy only the shapes and style of their cached glyphs for the same reason.
+
 ### Watch mode
 
-`vizreel render --watch` runs `watch.py`. It renders once, then polls the spec file and the theme file it resolves to (standard library only, no file-system event dependency: at most two files are watched). A change is read only after the files have stayed unchanged for a moment, because some editors save in several steps. Each render compares the new spec with the last one that loaded: if `meta` or the theme changed every chart renders, otherwise only charts that are new or whose model differs. Charts that failed are rendered again on the next change. A spec or theme that fails to load is reported and watching goes on. The pure parts (`FileWatcher` with an injectable clock, `charts_to_render`) are unit-tested.
+`vizreel render --watch` runs `watch.py`. It renders once, then polls the spec file, the theme file it resolves to and the CSV files its charts read (standard library only, no file-system event dependency: only a few files are watched). Data files are found by reading the spec loosely (`spec_data_files`), so a CSV file that makes the spec invalid is watched too. A change is read only after the files have stayed unchanged for a moment, because some editors save in several steps. Each render compares the new spec with the last one that loaded: if `meta` or the theme changed every chart renders, otherwise only charts that are new or whose model differs. Charts that failed are rendered again on the next change. A spec or theme that fails to load is reported and watching goes on. The pure parts (`FileWatcher` with an injectable clock, `charts_to_render`) are unit-tested.
 
 ## Errors
 
 - All expected failures raise a subclass of `VizreelError` with a user-facing message.
 - The CLI catches `VizreelError`, prints it with Rich, and exits with code 1. Unexpected exceptions show a traceback only with `--debug`.
-- Spec errors point to the exact location: `charts[2].data[4].y: value must be a number`.
+- Spec errors point to the exact location: `charts[1].series[0].values[4]: expected a number, got text "12k"`. Errors in a CSV file name the file, the row and the column.
 
 ## Cross-platform notes
 

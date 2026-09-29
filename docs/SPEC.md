@@ -4,6 +4,17 @@ A spec is a YAML file that describes one or more charts. This document is the so
 
 All examples in this document use a fictional company, Northwind, and made-up numbers.
 
+## Contents
+
+- **The spec:** [minimal example](#minimal-example), [top level](#top-level), [`meta`](#meta), [fields shared by every chart](#fields-shared-by-every-chart), [number format](#number-format-number), [locales](#locales)
+- **Chart types:** [at a glance](#chart-types-at-a-glance)
+  - Single figures: [`stat`](#stat--big-number-card), [`progress`](#progress--toward-a-goal), [`compare`](#compare--before-and-after)
+  - Over time: [`line`](#line--values-over-time), [`area`](#area--amounts-over-time), [`timeline`](#timeline--sequence-of-events)
+  - Categories: [`bar`](#bar--compare-categories), [`grouped`](#grouped--bars-side-by-side), [`stacked`](#stacked--bars-made-of-parts), [`waterfall`](#waterfall--from-a-start-to-a-total), [`share`](#share--parts-of-a-whole), [`table`](#table--rows-and-columns)
+  - Races: [`bar-race`](#bar-race--bars-racing-through-periods), [`line-race`](#line-race--lines-racing-through-periods)
+- **Across chart types:** [sequences](#sequences), [motion](#motion), [data from files](#data-from-files)
+- **Tools:** [validation](#validation), [JSON Schema](#json-schema), [versioning](#versioning)
+
 ## Minimal example
 
 ```yaml
@@ -63,9 +74,9 @@ CLI flags override `meta` values.
 | `type` | string | yes | — | Chart type: `stat`, `progress`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, `bar-race`, `line-race`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
-| `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
+| `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Northwind annual report"`. Keep it short; it is on screen. |
 | `duration` | number (seconds) | no | depends on type | Total clip length, including the final hold. Minimum 2. |
-| `highlight` | object | no | — | Type-specific emphasis. See each type. `stat` has no `highlight`. |
+| `highlight` | object | no | — | The element to emphasize; its fields depend on the type (see [at a glance](#chart-types-at-a-glance)). `stat`, `progress`, `compare` and `timeline` have none; a timeline marks an event with `emphasis`. |
 | `motion` | object | no | — | Motion settings for this chart, over those of `meta.motion`. See [Motion](#motion). |
 | `data` | string or object | no | — | A CSV file that gives the chart's data, such as its bars, in place of writing them in the spec. See [Data from files](#data-from-files). |
 
@@ -135,6 +146,29 @@ This renders `740 milyon TL`.
 
 ---
 
+## Chart types at a glance
+
+| Type | Shows | Emphasis | [Sequence](#sequences) | [CSV](#data-from-files) | Default `duration` |
+|---|---|---|---|---|---|
+| [`stat`](#stat--big-number-card) | One number, counting up | `trend` colors it | | | 3 |
+| [`progress`](#progress--toward-a-goal) | A value toward a goal, as a bar or a ring | | | | 4 |
+| [`compare`](#compare--before-and-after) | One measure before and after, and the change | `trend` colors the change | | ✓ | 5 |
+| [`line`](#line--values-over-time) | 1–3 series over time | `highlight.x`, a point | ✓ | ✓ | 6 |
+| [`area`](#area--amounts-over-time) | 1–3 series as filled areas, overlapping or stacked | `highlight.series` | ✓ | ✓ | 6 |
+| [`timeline`](#timeline--sequence-of-events) | 2–7 events in order | `emphasis` on an event | ✓ | ✓ | 7 |
+| [`bar`](#bar--compare-categories) | 2–8 categories | `highlight.label`, a bar | ✓ | ✓ | 5 |
+| [`grouped`](#grouped--bars-side-by-side) | 2–6 categories of 2–3 bars side by side | `highlight.series` | ✓ | ✓ | 6 |
+| [`stacked`](#stacked--bars-made-of-parts) | 2–8 bars of 2–3 parts | `highlight.series` | ✓ | ✓ | 6 |
+| [`waterfall`](#waterfall--from-a-start-to-a-total) | A start, 1–6 changes and the total | `highlight.label`, a bar | ✓ | ✓ | 6 |
+| [`share`](#share--parts-of-a-whole) | 2–6 parts of a whole, as a ring | `highlight.label`, a part | ✓ | ✓ | 6 |
+| [`table`](#table--rows-and-columns) | 2–8 rows of 2–4 columns | `highlight.row` | ✓ | ✓ | 6 |
+| [`bar-race`](#bar-race--bars-racing-through-periods) | 2–30 series racing through up to 200 periods | `highlight.series`, followed | | ✓ | 15 |
+| [`line-race`](#line-race--lines-racing-through-periods) | 1–6 lines racing through up to 200 periods | `highlight.series`, followed | | ✓ | 15 |
+
+Every chart type also takes the [fields shared by every chart](#fields-shared-by-every-chart). `vizreel new TYPE` prints a commented template of any type.
+
+---
+
 ## `stat` — big number card
 
 A single number that counts up (or down) to its value. Use it for the one figure the viewer must remember. A number too wide for the frame, such as a long compact number in a vertical clip, shrinks until it fits, down to half the theme's size; one wider still is an error asking you to use `compact: short`.
@@ -183,107 +217,6 @@ Default `duration`: 4.
   number: { prefix: "$", compact: true }
 ```
 
-## `line` — values over time
-
-One or more series drawn from left to right.
-
-Each line draws with a label at its tip that counts along. The first value of each series is labeled once the tip has moved on, and the last value stays labeled at the end of the line; with more than one series, the end label also shows the series name next to a mark in the series color. End labels that would overlap are moved apart. Axis labels on the horizontal axis are thinned when they do not all fit, always keeping the first and the last.
-
-At the highlight beat the lines dim, the highlighted point gets a guide line and a dot, and `highlight.label` appears above the plot. With a single series the callout also shows the value.
-
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `x` | list of strings | yes | — | Labels on the horizontal axis, in order (e.g. years). At least 2, each unique. |
-| `series` | list | yes | — | 1–3 series. |
-| `series[].name` | string | if more than one series | — | Shown in the legend. |
-| `series[].values` | list of numbers or `null` | yes | — | Same length as `x`. `null` leaves a gap. At least one value must be a number. |
-| `number` | number format | no | — | Formatting of axis and value labels. |
-| `y_min` / `y_max` | number | no | auto | Axis range. Auto range starts at 0 when all values are positive. `y_min` must be less than `y_max`, and every value must lie inside the range. |
-| `highlight.x` | string | if `highlight` is given | — | An `x` label to mark with a vertical line and dot. At least one series must have a value there. |
-| `highlight.label` | string | no | — | Callout text at the highlighted point. |
-| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
-| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
-
-Default `duration`: 6.
-
-```yaml
-- id: valuation
-  type: line
-  title: Northwind's valuation
-  x: ["2016", "2017", "2018", "2019", "2020"]
-  series:
-    - values: [0.05, 0.2, 2.25, 2.25, null]
-  number: { prefix: "$", suffix: "B", decimals: 2 }
-  highlight: { x: "2018", label: "Series C closes" }
-  source: "Source: example data"
-```
-
-## `bar` — compare categories
-
-One bar per category, with its value at the end of the bar, so there is no value axis. The bars grow one after another; at the highlight beat the highlighted bar turns to the `highlight` color and the others to `muted`.
-
-Bars are drawn as **columns** or as **rows**:
-
-- Columns grow up from a baseline, with the labels under it. A label that does not fit under its column is split into two lines. With many bars each label has little room (about 10 characters per line with 8 bars at the default theme); a label that does not fit on two lines is an error.
-- Rows grow to the right, each bar under its label, with the value after the bar. A label has the whole width, so rows suit long labels; a label wider than the chart is split into two lines.
-
-`layout: auto` uses columns in a 16:9 frame and rows in a 9:16 frame, where columns would be too narrow.
-
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `bars` | list | yes | — | 2–8 bars. |
-| `bars[].label` | string | yes | — | Category label. Each label is unique. |
-| `bars[].value` | number | yes | — | Bar length. Zero or more; negative values are not supported in version 1. |
-| `number` | number format | no | — | Formatting of value labels. |
-| `sort` | `none` \| `asc` \| `desc` | no | `none` | Order of bars: left to right as columns, top to bottom as rows. |
-| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | Columns or rows, see above. `auto` picks by the frame's aspect. |
-| `highlight.label` | string | if `highlight` is given | — | Bar to draw in the `highlight` color. Others use `muted`. Must match a bar label. |
-| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
-| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
-
-Default `duration`: 5.
-
-```yaml
-- id: offers
-  type: bar
-  title: Offers Northwind received
-  bars:
-    - { label: "Buyer A (2015)", value: 740000000 }
-    - { label: "Buyer B (2016)", value: 70000000 }
-    - { label: "Buyer C (2016)", value: 40000000 }
-  number: { prefix: "$", compact: true }
-  highlight: { label: "Buyer C (2016)" }
-```
-
-## `timeline` — sequence of events
-
-Events placed in order along a line: horizontal in a 16:9 frame, vertical in a 9:16 frame.
-
-The line draws from its start to its end, and each event appears as the line reaches it. Events are evenly spaced. On a horizontal line, labels sit below the line when each fits its own space in at most two lines; otherwise they alternate below and above the line, with more room and up to three lines each. On a vertical line, events run from top to bottom and each label sits to the right of its event, with the whole width for up to three lines. A date always stays on one line. A date or label that still does not fit is an error asking you to shorten it.
-
-At the highlight beat the emphasized event's dot grows and turns to the `highlight` color, its date turns to the `highlight` color, and the other events' marks dim.
-
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `events` | list | yes | — | 2–7 events, in chronological order. |
-| `events[].date` | string | yes | — | Displayed as written, e.g. `"Mar 2016"`. |
-| `events[].label` | string | yes | — | Short description, max ~40 characters for readability. |
-| `events[].emphasis` | boolean | no | `false` | Draws this event in the `highlight` color, larger. At most one event per timeline. |
-| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
-| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
-
-Default `duration`: 7.
-
-```yaml
-- id: final-years
-  type: timeline
-  title: Northwind's last three years
-  events:
-    - { date: "2018", label: "Raises $865M" }
-    - { date: "2020", label: "Revenue reaches $1.75B" }
-    - { date: "Jun 2021", label: "Files for bankruptcy", emphasis: true }
-```
-
 ## `compare` — before and after
 
 One measure at two moments: the earlier value, an arrow, the later value, and the change between them.
@@ -312,57 +245,55 @@ Default `duration`: 5.
   after: { label: "2022", value: 340 }
 ```
 
-## `waterfall` — from a start to a total
+## `line` — values over time
 
-How a starting value becomes a total through increases and decreases, e.g. revenue becoming profit.
+One or more series drawn from left to right.
 
-The start grows from zero. Each step then grows from where the previous one ended: up in the theme's `positive` color for an increase, down in its `negative` color for a decrease, with a thin line joining each bar to the next. The total, the start plus every step, grows last. At the highlight beat the highlighted bar turns to the `highlight` color and the others dim, keeping their colors. The start and the total show their value; each step shows its change with a sign (`−$5.0M`, `+$500K`).
+Each line draws with a label at its tip that counts along. The first value of each series is labeled once the tip has moved on, and the last value stays labeled at the end of the line; with more than one series, the end label also shows the series name next to a mark in the series color. End labels that would overlap are moved apart. Axis labels on the horizontal axis are thinned when they do not all fit, always keeping the first and the last.
 
-Bars are drawn as columns or rows, as for bar charts (`layout`); rows have no joining lines. The running total must stay at zero or above in version 1.
+At the highlight beat the lines dim, the highlighted point gets a guide line and a dot, and `highlight.label` appears above the plot. With a single series the callout also shows the value.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `start.label` | string | yes | — | What the starting value is, e.g. `Revenue`. |
-| `start.value` | number | yes | — | The starting value. Zero or more. |
-| `steps` | list | yes | — | 1–6 changes, in order. |
-| `steps[].label` | string | yes | — | What the change is, e.g. `Salaries`. |
-| `steps[].value` | number | yes | — | The change: positive adds, negative takes away. |
-| `end.label` | string | no | `Total` | What the total is, e.g. `Profit`. Its value is computed. |
-| `number` | number format | no | — | Formatting of the values. |
-| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | As for bar charts: `auto` uses columns at 16:9 and rows at 9:16. |
-| `highlight.label` | string | no | the total | The bar to draw in the `highlight` color: the start, a step or the end. |
+| `x` | list of strings | yes | — | Labels on the horizontal axis, in order (e.g. years). At least 2, each unique. |
+| `series` | list | yes | — | 1–3 series. |
+| `series[].name` | string | if more than one series | — | Shown next to the line's end, with its value. |
+| `series[].values` | list of numbers or `null` | yes | — | Same length as `x`. `null` leaves a gap. At least one value must be a number. |
+| `number` | number format | no | — | Formatting of axis and value labels. |
+| `y_min` / `y_max` | number | no | auto | Axis range. Auto range starts at 0 when all values are positive. `y_min` must be less than `y_max`, and every value must lie inside the range. |
+| `highlight.x` | string | if `highlight` is given | — | An `x` label to mark with a vertical line and dot. At least one series must have a value there. |
+| `highlight.label` | string | no | — | Callout text at the highlighted point. |
 | `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
 | `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
 
-Labels are unique across the start, the steps and the end. Default `duration`: 6.
+Default `duration`: 6.
 
 ```yaml
-- id: profit
-  type: waterfall
-  title: How Northwind's revenue became profit
-  start: { label: Revenue, value: 12000000 }
-  steps:
-    - { label: Salaries, value: -5000000 }
-    - { label: Marketing, value: -2000000 }
-    - { label: Other income, value: 500000 }
-  end: { label: Profit }
-  number: { prefix: "$", compact: true }
+- id: valuation
+  type: line
+  title: Northwind's valuation
+  x: ["2016", "2017", "2018", "2019", "2020"]
+  series:
+    - values: [0.05, 0.2, 2.25, 2.25, null]
+  number: { prefix: "$", suffix: "B", decimals: 2 }
+  highlight: { x: "2018", label: "Series C closes" }
+  source: "Source: example data"
 ```
 
-## `stacked` — bars made of parts
+## `area` — amounts over time
 
-One bar per category, each made of two or three parts stacked on each other, e.g. revenue per year split by product.
+One to three series drawn from left to right as filled areas, e.g. users per platform over five years. With `stack: true` the areas sit on each other, so the top edge shows their total; otherwise each area fills from zero and they overlap, translucent.
 
-A legend under the title names the parts by color, in the theme's `series` colors, in order. Each bar shows its total; the parts do not show their own values. The parts grow one series at a time: the first part in every bar, then the next part on top of it, while each total counts up. At the highlight beat the highlighted series keeps its color and the others dim. Bars are drawn as columns or rows, as for bar charts (`layout`).
+Grid lines and axis labels appear first. Then the areas fill from left to right behind a line along their top, with a label at the tip that counts along: the series name (when there is more than one series) and its own value, not the running total. A stacked area's label points at the middle of its band. At the highlight beat the highlighted series keeps its color and the others dim. The vertical axis always starts at zero, since an area's height is its amount.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `categories` | list of strings | yes | — | 2–8 categories, one bar each, in order. Unique. |
-| `series` | list | yes | — | 2–3 parts of each bar, from the bottom (or the left) up. |
-| `series[].name` | string | yes | — | Shown in the legend. Unique. |
-| `series[].values` | list of numbers | yes | — | One value per category, zero or more. |
-| `number` | number format | no | — | Formatting of the totals. |
-| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | As for bar charts: `auto` uses columns at 16:9 and rows at 9:16. |
+| `x` | list of strings | yes | — | Labels on the horizontal axis, in order. At least 2. Unique. |
+| `series` | list | yes | — | 1–3 series, drawn in order; stacked, the first is at the bottom. |
+| `series[].name` | string | if more than one series | — | Shown next to the area's end. Unique. |
+| `series[].values` | list of numbers | yes | — | One value per x label, zero or more. No gaps: an area needs every value. |
+| `stack` | boolean | no | `false` | Stack the areas on each other instead of overlapping them from zero. |
+| `number` | number format | no | — | Formatting of axis and value labels. |
 | `highlight.series` | string | no | — | The series that keeps its color while the others dim. |
 | `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
 | `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
@@ -370,15 +301,83 @@ A legend under the title names the parts by color, in the theme's `series` color
 Default `duration`: 6.
 
 ```yaml
-- id: revenue-mix
-  type: stacked
-  title: Northwind revenue by product
-  categories: ["2021", "2022", "2023"]
+- id: users
+  type: area
+  title: Northwind users by platform
+  subtitle: Monthly active users
+  x: ["2020", "2021", "2022", "2023", "2024"]
   series:
-    - { name: Cloud, values: [1.2, 2.4, 3.9] }
-    - { name: Devices, values: [3.1, 2.9, 3.2] }
-  number: { prefix: "$", suffix: "B" }
-  highlight: { series: Cloud }
+    - { name: Web, values: [1.2, 1.9, 2.4, 2.8, 3.0] }
+    - { name: Mobile, values: [0.4, 1.1, 2.2, 3.6, 4.9] }
+  stack: true
+  number: { suffix: "M" }
+  highlight: { series: Mobile }
+```
+
+## `timeline` — sequence of events
+
+Events placed in order along a line: horizontal in a 16:9 frame, vertical in a 9:16 frame, and in a 1:1 frame horizontal when the labels fit and vertical when they do not.
+
+The line draws from its start to its end, and each event appears as the line reaches it. Events are evenly spaced. On a horizontal line, labels sit below the line when each fits its own space in at most two lines; otherwise they alternate below and above the line, with more room and up to three lines each. On a vertical line, events run from top to bottom and each label sits to the right of its event, with the whole width for up to three lines. A date always stays on one line. A date or label that still does not fit is an error asking you to shorten it.
+
+At the highlight beat the emphasized event's dot grows and turns to the `highlight` color, its date turns to the `highlight` color, and the other events' marks dim.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `events` | list | yes | — | 2–7 events, in chronological order. |
+| `events[].date` | string | yes | — | Displayed as written, e.g. `"Mar 2016"`. |
+| `events[].label` | string | yes | — | Short description, max ~40 characters for readability. |
+| `events[].emphasis` | boolean | no | `false` | Draws this event in the `highlight` color, larger. At most one event per timeline. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
+
+Default `duration`: 7.
+
+```yaml
+- id: final-years
+  type: timeline
+  title: Northwind's last three years
+  events:
+    - { date: "2018", label: "Raises $865M" }
+    - { date: "2020", label: "Revenue reaches $1.75B" }
+    - { date: "Jun 2021", label: "Files for bankruptcy", emphasis: true }
+```
+
+## `bar` — compare categories
+
+One bar per category, with its value at the end of the bar, so there is no value axis. The bars grow one after another; at the highlight beat the highlighted bar turns to the `highlight` color and the others to `muted`.
+
+Bars are drawn as **columns** or as **rows**:
+
+- Columns grow up from a baseline, with the labels under it. A label that does not fit under its column is split into two lines. With many bars each label has little room (about 10 characters per line with 8 bars at the default theme); a label that does not fit on two lines is an error.
+- Rows grow to the right, each bar under its label, with the value after the bar. A label has the whole width, so rows suit long labels; a label wider than the chart is split into two lines.
+
+`layout: auto` uses columns in a 16:9 frame and rows in a 9:16 frame, where columns would be too narrow; a 1:1 frame uses columns when they fit and rows when they do not.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `bars` | list | yes | — | 2–8 bars. |
+| `bars[].label` | string | yes | — | Category label. Each label is unique. |
+| `bars[].value` | number | yes | — | Bar length. Zero or more; negative values are not supported in version 1. |
+| `number` | number format | no | — | Formatting of value labels. |
+| `sort` | `none` \| `asc` \| `desc` | no | `none` | Order of bars: left to right as columns, top to bottom as rows. |
+| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | Columns or rows, see above. `auto` picks by the frame's aspect. |
+| `highlight.label` | string | if `highlight` is given | — | Bar to draw in the `highlight` color. Others use `muted`. Must match a bar label. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
+
+Default `duration`: 5.
+
+```yaml
+- id: offers
+  type: bar
+  title: Offers Northwind received
+  bars:
+    - { label: "Buyer A (2015)", value: 740000000 }
+    - { label: "Buyer B (2016)", value: 70000000 }
+    - { label: "Buyer C (2016)", value: 40000000 }
+  number: { prefix: "$", compact: true }
+  highlight: { label: "Buyer C (2016)" }
 ```
 
 ## `grouped` — bars side by side
@@ -414,20 +413,20 @@ Default `duration`: 6.
   highlight: { series: "2023" }
 ```
 
-## `area` — amounts over time
+## `stacked` — bars made of parts
 
-One to three series drawn from left to right as filled areas, e.g. users per platform over five years. With `stack: true` the areas sit on each other, so the top edge shows their total; otherwise each area fills from zero and they overlap, translucent.
+One bar per category, each made of two or three parts stacked on each other, e.g. revenue per year split by product.
 
-Grid lines and axis labels appear first. Then the areas fill from left to right behind a line along their top, with a label at the tip that counts along: the series name (when there is more than one series) and its own value, not the running total. A stacked area's label points at the middle of its band. At the highlight beat the highlighted series keeps its color and the others dim. The vertical axis always starts at zero, since an area's height is its amount.
+A legend under the title names the parts by color, in the theme's `series` colors, in order. Each bar shows its total; the parts do not show their own values. The parts grow one series at a time: the first part in every bar, then the next part on top of it, while each total counts up. At the highlight beat the highlighted series keeps its color and the others dim. Bars are drawn as columns or rows, as for bar charts (`layout`).
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `x` | list of strings | yes | — | Labels on the horizontal axis, in order. At least 2. Unique. |
-| `series` | list | yes | — | 1–3 series, drawn in order; stacked, the first is at the bottom. |
-| `series[].name` | string | if more than one series | — | Shown next to the area's end. Unique. |
-| `series[].values` | list of numbers | yes | — | One value per x label, zero or more. No gaps: an area needs every value. |
-| `stack` | boolean | no | `false` | Stack the areas on each other instead of overlapping them from zero. |
-| `number` | number format | no | — | Formatting of axis and value labels. |
+| `categories` | list of strings | yes | — | 2–8 categories, one bar each, in order. Unique. |
+| `series` | list | yes | — | 2–3 parts of each bar, from the bottom (or the left) up. |
+| `series[].name` | string | yes | — | Shown in the legend. Unique. |
+| `series[].values` | list of numbers | yes | — | One value per category, zero or more. |
+| `number` | number format | no | — | Formatting of the totals. |
+| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | As for bar charts: `auto` uses columns at 16:9, rows at 9:16, and at 1:1 columns when they fit. |
 | `highlight.series` | string | no | — | The series that keeps its color while the others dim. |
 | `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
 | `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
@@ -435,17 +434,52 @@ Grid lines and axis labels appear first. Then the areas fill from left to right 
 Default `duration`: 6.
 
 ```yaml
-- id: users
-  type: area
-  title: Northwind users by platform
-  subtitle: Monthly active users
-  x: ["2020", "2021", "2022", "2023", "2024"]
+- id: revenue-mix
+  type: stacked
+  title: Northwind revenue by product
+  categories: ["2021", "2022", "2023"]
   series:
-    - { name: Web, values: [1.2, 1.9, 2.4, 2.8, 3.0] }
-    - { name: Mobile, values: [0.4, 1.1, 2.2, 3.6, 4.9] }
-  stack: true
-  number: { suffix: "M" }
-  highlight: { series: Mobile }
+    - { name: Cloud, values: [1.2, 2.4, 3.9] }
+    - { name: Devices, values: [3.1, 2.9, 3.2] }
+  number: { prefix: "$", suffix: "B" }
+  highlight: { series: Cloud }
+```
+
+## `waterfall` — from a start to a total
+
+How a starting value becomes a total through increases and decreases, e.g. revenue becoming profit.
+
+The start grows from zero. Each step then grows from where the previous one ended: up in the theme's `positive` color for an increase, down in its `negative` color for a decrease, with a thin line joining each bar to the next. The total, the start plus every step, grows last. At the highlight beat the highlighted bar turns to the `highlight` color and the others dim, keeping their colors. The start and the total show their value; each step shows its change with a sign (`−$5.0M`, `+$500K`).
+
+Bars are drawn as columns or rows, as for bar charts (`layout`); rows have no joining lines. The running total must stay at zero or above in version 1.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `start.label` | string | yes | — | What the starting value is, e.g. `Revenue`. |
+| `start.value` | number | yes | — | The starting value. Zero or more. |
+| `steps` | list | yes | — | 1–6 changes, in order. |
+| `steps[].label` | string | yes | — | What the change is, e.g. `Salaries`. |
+| `steps[].value` | number | yes | — | The change: positive adds, negative takes away. |
+| `end.label` | string | no | `Total` | What the total is, e.g. `Profit`. Its value is computed. |
+| `number` | number format | no | — | Formatting of the values. |
+| `layout` | `auto` \| `columns` \| `rows` | no | `auto` | As for bar charts: `auto` uses columns at 16:9, rows at 9:16, and at 1:1 columns when they fit. |
+| `highlight.label` | string | no | the total | The bar to draw in the `highlight` color: the start, a step or the end. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
+
+Labels are unique across the start, the steps and the end. Default `duration`: 6.
+
+```yaml
+- id: profit
+  type: waterfall
+  title: How Northwind's revenue became profit
+  start: { label: Revenue, value: 12000000 }
+  steps:
+    - { label: Salaries, value: -5000000 }
+    - { label: Marketing, value: -2000000 }
+    - { label: Other income, value: 500000 }
+  end: { label: Profit }
+  number: { prefix: "$", compact: true }
 ```
 
 ## `share` — parts of a whole
@@ -727,10 +761,10 @@ Reports every error at once, with its location, for example:
 ```
 spec.yaml: 2 errors
   charts[1].series[0].values: expected 5 values (same as x), got 4
-  charts[2].type: unknown type "pie". Valid types: bar, line, stat, timeline
+  charts[2].type: unknown type "pie". Valid types: area, bar, bar-race, compare, grouped, line, line-race, progress, share, stacked, stat, table, timeline, waterfall
 ```
 
-The exit code is `0` when the spec is valid and `1` when it is not.
+The exit code is `0` when the spec is valid and `1` when it is not. `vizreel render` validates the spec first and renders nothing if it has errors; problems it can only find while drawing, such as a title too long for two lines, are reported for the chart they are in, and the other charts still render.
 
 ## JSON Schema
 
