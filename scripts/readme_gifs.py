@@ -30,6 +30,7 @@ CHARTS = {
     "revenue-mix": "stacked",
     "region-growth": "grouped",
     "users": "area",
+    "fundraiser": "progress",
     "market": "share",
     "top-markets": "table",
 }

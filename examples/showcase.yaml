@@ -92,6 +92,15 @@ charts:
     number: { suffix: "M" }
     highlight: { series: Mobile }
 
+  - id: fundraiser
+    type: progress
+    title: Northwind's fundraiser
+    value: 68000
+    goal: 100000
+    style: ring
+    label: raised for the new library
+    number: { prefix: "$", compact: true }
+
   - id: market
     type: share
     title: Northwind's share of the market

@@ -6,6 +6,10 @@ All notable changes to vizreel are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- The `progress` chart type: how far a value has come toward a goal. A bar fills from the left under a big percent, or with `style: ring` a ring fills clockwise from the top with the percent in its middle, while the value and the goal count up beneath. A value past the goal fills it and shows more than 100%.
+
 ### Changed
 
 - The example plugin in `examples/plugin` is now `vizreel-dots`, with a `dots` chart type: a number that counts up while as many dots of a grid fill in, such as 18 of 25 customers. Its `progress` type makes way for a built-in `progress` type.

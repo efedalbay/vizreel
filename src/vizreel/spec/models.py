@@ -221,6 +221,25 @@ class StatChart(BaseChart):
     """Colors the number with the theme's positive or negative color."""
 
 
+class ProgressChart(BaseChart):
+    """How far a value has come toward a goal, as a bar or a ring that fills."""
+
+    type: Literal["progress"]
+    duration: Duration = 4
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    value: float = Field(ge=0)
+    """How far it has come. Zero or more."""
+    goal: float = Field(gt=0)
+    """Where it is going. A value past the goal fills the bar and shows more than 100%."""
+    style: Literal["bar", "ring"] = "bar"
+    """A bar that fills from the left, or a ring that fills clockwise from the top with the
+    percent in the middle."""
+    label: Text | None = None
+    """Line under the chart, e.g. "raised for the new library"."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of the value and the goal."""
+
+
 class LineSeries(SpecModel):
     """One line on a line chart."""
 

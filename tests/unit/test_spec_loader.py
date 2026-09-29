@@ -8,8 +8,8 @@ from vizreel.spec.models import StatChart
 
 INVALID_DIR = Path(__file__).parent / "fixtures" / "invalid"
 VALID_TYPES = (
-    "Valid types: area, bar, compare, grouped, line, share, stacked, stat, table, timeline, "
-    "waterfall"
+    "Valid types: area, bar, compare, grouped, line, progress, share, stacked, stat, table, "
+    "timeline, waterfall"
 )
 
 EXPECTED_ERRORS: dict[str, list[str]] = {

@@ -269,6 +269,7 @@ def test_json_schema_lists_every_chart_type() -> None:
         "compare",
         "grouped",
         "line",
+        "progress",
         "share",
         "stacked",
         "stat",

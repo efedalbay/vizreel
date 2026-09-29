@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
+| `type` | string | yes | — | Chart type: `stat`, `progress`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -154,6 +154,31 @@ Default `duration`: 3.
   label: Northwind's peak valuation
   number: { prefix: "$", compact: true }
   source: "Source: example data"
+```
+
+## `progress` — toward a goal
+
+How far a value has come toward a goal, e.g. money raised for a fundraiser. A bar fills from the left under a big percent, or, with `style: ring`, a ring fills clockwise from the top with the percent in its middle. Under either, the value and the goal (`$68K / $100K`) count up, then the label. The fill is in the theme's `highlight` color on a track in its `grid` color. A value past the goal fills the bar or ring and shows more than 100%. The percent shrinks to fit, like the number of a stat.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `value` | number | yes | — | How far it has come. Zero or more. |
+| `goal` | number | yes | — | Where it is going. Above zero. |
+| `style` | `bar` \| `ring` | no | `bar` | A bar that fills from the left, or a ring that fills clockwise with the percent inside. |
+| `label` | string | no | — | Line under the chart. |
+| `number` | number format | no | — | Formatting of the value and the goal. |
+
+Default `duration`: 4.
+
+```yaml
+- id: fundraiser
+  type: progress
+  title: Northwind's fundraiser
+  value: 68000
+  goal: 100000
+  style: ring
+  label: raised for the new library
+  number: { prefix: "$", compact: true }
 ```
 
 ## `line` — values over time
@@ -520,7 +545,7 @@ The first clip is the chart as usual, emphasizing the first item. Each later cli
 | `table` | A row name. |
 | `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
 
-A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat` and `compare` charts have no elements to emphasize and no sequence.
+A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat`, `progress` and `compare` charts have no elements to emphasize and no sequence.
 
 ---
 
@@ -591,7 +616,7 @@ With more columns than the chart reads, name the ones to read, in order:
 | `compare` | A label and a value. | Two: the earlier value, then the later one. | `before`, `after` |
 | `table` | Two to four. A column holds numbers if its first row does; the first holds the row names. | One row each. | `rows`, and `columns` named by the first row, unless the spec writes `columns` to name them and set their number formats |
 
-`stat` charts read no data file. A chart type from a [plugin](PLUGINS.md) documents whether it reads one.
+`stat` and `progress` charts read no data file. A chart type from a [plugin](PLUGINS.md) documents whether it reads one.
 
 ---
 

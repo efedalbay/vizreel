@@ -90,6 +90,14 @@ charts:
     number: { suffix: " milyon" }
     highlight: { series: Mobil }
 
+  - id: fundraiser
+    type: progress
+    title: Northwind bağış kampanyası
+    value: 68000
+    goal: 100000
+    label: yeni kütüphane için toplandı
+    number: { suffix: " TL", compact: true }
+
   - id: market
     type: share
     title: Northwind'in pazar payı

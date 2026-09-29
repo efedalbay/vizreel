@@ -65,6 +65,7 @@ vizreel/
 │   │   ├── base.py          ← ChartType base class, timing helpers
 │   │   ├── registry.py      ← @register decorator, plugin entry points, lookup by type name
 │   │   ├── stat.py
+│   │   ├── progress.py
 │   │   ├── line.py
 │   │   ├── area.py
 │   │   ├── bar.py

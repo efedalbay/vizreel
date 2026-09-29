@@ -522,6 +522,36 @@ def test_area_keeps_the_highlighted_series_color(tmp_path: Path, aspect: str) ->
     assert pixels(colors.series[0]) < 20
 
 
+@pytest.mark.parametrize("aspect", ["16:9", "9:16", "1:1"])
+@pytest.mark.parametrize("style", ["bar", "ring"])
+def test_progress_fills_in_the_highlight_color(tmp_path: Path, style: str, aspect: str) -> None:
+    colors = load_default_colors()
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n"
+        f"  - {{ id: p, type: progress, value: 68, goal: 100, style: {style}, "
+        "label: raised for the new library }\n",
+        encoding="utf-8",
+    )
+    results = render_spec(
+        spec,
+        RenderOptions(out_dir=tmp_path, quality="preview", still=True, aspect=aspect),  # type: ignore[arg-type]
+        reraise=True,
+    )
+    [result] = results
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+    filled = np.all(np.abs(rgb - hex_rgb(colors.highlight)) <= 6, axis=2)
+    track = np.all(np.abs(rgb - hex_rgb(colors.grid)) <= 6, axis=2)
+
+    assert len(frames) == 4 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    # 68% of the track fills; the rest stays in the grid color.
+    assert filled.sum() / (filled.sum() + track.sum()) == pytest.approx(0.68, abs=0.05)
+
+
 def test_grouped_columns_too_narrow_for_their_values_become_rows(tmp_path: Path) -> None:
     spec = tmp_path / "spec.yaml"
     spec.write_text(

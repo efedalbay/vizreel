@@ -2,7 +2,7 @@
 
 **Animated charts for video, from a YAML file.**
 
-vizreel turns a short YAML spec into clean, animated chart clips (big numbers, line and area charts, bar charts, timelines, before/after comparisons, waterfalls, stacked and grouped bars, shares of a whole and tables) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
+vizreel turns a short YAML spec into clean, animated chart clips (big numbers, progress toward a goal, line and area charts, bar charts, timelines, before/after comparisons, waterfalls, stacked and grouped bars, shares of a whole and tables) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
 
 > **Status: 0.11.1, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
 
@@ -13,7 +13,7 @@ vizreel turns a short YAML spec into clean, animated chart clips (big numbers, l
 | ![A compare chart counting from 1,200 down to 340, a change of −72%](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/compare.gif) | ![A waterfall chart from revenue to profit](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/waterfall.gif) |
 | ![A stacked bar chart of revenue by product](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/stacked.gif) | ![A share ring with 47% in the middle](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/share.gif) |
 | ![A table with a highlighted row](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/table.gif) | ![A grouped bar chart comparing two years in four regions](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/grouped.gif) |
-| ![A stacked area chart of users by platform](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/area.gif) | |
+| ![A stacked area chart of users by platform](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/area.gif) | ![A progress ring filling to 68% of a fundraising goal](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/progress.gif) |
 
 ## Why
 
@@ -109,6 +109,7 @@ out/
 | Type | Use it for |
 |---|---|
 | `stat` | One number the viewer must remember, counting up to its value |
+| `progress` | How far a value has come toward a goal, as a bar or a ring that fills |
 | `line` | Values over time, up to 3 series, with an optional highlighted point |
 | `area` | Amounts over time as filled areas, up to 3 series, overlapping or stacked into a total |
 | `bar` | Comparing up to 8 categories, with one highlighted bar, as columns or rows |
