@@ -1,4 +1,4 @@
-"""vizreel: animated charts for video, from a YAML file."""
+"""vizreel: animated charts for video, from YAML and CSV files."""
 
 from importlib.metadata import version
 

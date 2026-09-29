@@ -25,7 +25,7 @@ from vizreel.watch import watch_spec
 
 app = typer.Typer(
     name="vizreel",
-    help="Animated charts for video, from a YAML file.",
+    help="Animated charts for video, from YAML and CSV files.",
     no_args_is_help=True,
     add_completion=False,
     pretty_exceptions_show_locals=False,
@@ -55,7 +55,7 @@ def main(
         typer.Option("--debug", help="Show the full traceback of unexpected errors."),
     ] = False,
 ) -> None:
-    """Animated charts for video, from a YAML file."""
+    """Animated charts for video, from YAML and CSV files."""
     _replace_unprintable_characters()
     ctx.obj = debug
 

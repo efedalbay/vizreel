@@ -1,8 +1,8 @@
 # vizreel
 
-**Animated charts for video, from a YAML file.**
+**Animated charts for video, from YAML and CSV files.**
 
-vizreel turns a short YAML file into animated chart clips that are ready to drop into a video editor: big numbers that count, bars that grow, lines that draw, races through the years. Each chart becomes its own clip, with a transparent background by default, so it sits directly over your footage.
+vizreel turns a short YAML file, with the data written in it or read from a CSV file, into animated chart clips that are ready to drop into a video editor: big numbers that count, bars that grow, lines that draw, races through the years. Each chart becomes its own clip, with a transparent background by default, so it sits directly over your footage.
 
 > **Status: 0.13.0, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
 
@@ -73,7 +73,7 @@ This writes `out/customers.mov`: 1080p at 60 frames per second unless the spec s
 
 ## How a spec works
 
-A spec is a YAML file with a `version`, optional shared settings in `meta`, and a list of `charts`. Each chart has an `id`, which names its clip, a `type`, and the fields of that type:
+A spec is a YAML file with a `version`, optional shared settings in `meta`, and a list of `charts`. Each chart has an `id`, which names its clip, a `type`, and its data: written in the spec, or read from a CSV file. Here the data is written in the spec:
 
 ```yaml
 version: 1
@@ -109,7 +109,7 @@ out/
 └── offers.mov            ← three bars growing, then Buyer C highlighted
 ```
 
-Values are always plain numbers; `number` decides how they are written (`$740M`). Every chart can also have a `title`, a `subtitle`, a `source` line and a `duration`. `vizreel validate charts.yaml` lists every mistake at once with its location, such as `charts[1].bars[2].value: must be at least 0, got -4`. The [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md) describes every field, and `vizreel new TYPE` prints a commented template for each chart type.
+The same bars could come from a spreadsheet instead: `data: data/offers.csv` in place of `bars` (see [Data from CSV files](#data-from-csv-files)); every chart type but `stat` and `progress` can read one. Values are always plain numbers; `number` decides how they are written (`$740M`). Every chart can also have a `title`, a `subtitle`, a `source` line and a `duration`. `vizreel validate charts.yaml` lists every mistake at once with its location, such as `charts[1].bars[2].value: must be at least 0, got -4`. The [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md) describes every field, and `vizreel new TYPE` prints a commented template for each chart type.
 
 ## Chart types
 

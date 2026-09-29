@@ -1,6 +1,6 @@
 # Spec format (version 1)
 
-A spec is a YAML file that describes one or more charts. This document is the source of truth for the format: if the code and this file disagree, one of them is a bug.
+A spec is a YAML file that describes one or more charts. A chart's data is written in the spec or read from a CSV file next to it (see [Data from files](#data-from-files)). This document is the source of truth for the format: if the code and this file disagree, one of them is a bug.
 
 All examples in this document use a fictional company, Northwind, and made-up numbers.
 
