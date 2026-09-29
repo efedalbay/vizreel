@@ -3,12 +3,26 @@
 Imports Manim at the top. Chart modules import this module inside `build`.
 """
 
-from manim import ORIGIN, VMobject
+from manim import ORIGIN, VGroup, VMobject
 
 from vizreel.render import elements
 from vizreel.themes.models import FontStyle
 
 DIGITS = "0123456789"
+
+
+def shape_copy(mobject: VMobject) -> VMobject:
+    """Copy the shapes and style of a mobject and its parts, and nothing else.
+
+    Manim's `copy` deep-copies every attribute, which for text takes far longer than drawing
+    it; a number that counts is built again on every frame.
+    """
+    if mobject.submobjects:
+        return VGroup(*(shape_copy(part) for part in mobject.submobjects))
+    copy = VMobject()
+    copy.set_points(mobject.points.copy())
+    copy.match_style(mobject)
+    return copy
 
 
 def digit_pattern(content: str) -> str:
@@ -57,7 +71,7 @@ class NumberGlyphs:
         pattern = digit_pattern(content)
         if pattern not in self._patterns:
             self._patterns[pattern] = self._layout(pattern)
-        result = self._patterns[pattern].copy()
+        result = shape_copy(self._patterns[pattern])
         visible = [char for char in content if not char.isspace()]
         for index, char in enumerate(visible):
             if char in DIGITS and char != "0":
@@ -77,7 +91,7 @@ class NumberGlyphs:
         return result.shift((x - result.get_center()[0], baseline - bottom, 0.0))
 
     def _digit_at(self, digit: int, zero_slot: VMobject) -> VMobject:
-        glyph = self._digits[digit].copy()
+        glyph = shape_copy(self._digits[digit])
         dx, dy = self._offsets[digit]
         glyph.shift(
             (
