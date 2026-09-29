@@ -566,6 +566,7 @@ Between two periods values change in a straight line. A gap (`null`) between two
 | `number` | number format | no | — | Formatting of the values. |
 | `highlight.series` | string | no | — | The series to follow, in the highlight color. |
 | `captions` | list | no | — | Up to 10 captions that appear over the race, in order: `{ period: "2008", text: "The crisis" }`. Each fades in at its period and stays until the next one, or to the end; it must stay long enough to be read (1 second per 3 words). |
+| `total` | string | no | — | Shows the total of every series under the period, after this label, e.g. `Total` or `Market`, counting as the race runs. |
 | `images` | object | no | — | Images for some series: a series name, then a PNG, JPEG or SVG file relative to the spec file, e.g. `{ Northwind: logos/northwind.svg }`. Each is drawn as tall as the bar, between its end and its value. A file that is missing or of another kind is an error that names it. |
 | `colors` | object | no | — | Brand colors for some series: a series name, then the name of a color in the theme's `colors.brand` (see [THEMES.md](THEMES.md)), e.g. `{ Contoso: contoso-coral }`. The other bars keep the accent color, and the followed series the highlight color. A name the theme does not have is an error when the chart renders. |
 

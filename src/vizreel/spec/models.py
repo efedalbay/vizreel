@@ -503,6 +503,8 @@ class BarRaceChart(BaseChart):
     """The series to follow, drawn in the highlight color."""
     captions: list[RaceCaption] = Field(default_factory=list, max_length=MAX_CAPTIONS)
     """Up to ten captions that appear over the race at the periods they name, in order."""
+    total: Text | None = None
+    """Show the total of every series under the period, after this label, e.g. "Total"."""
     colors: dict[Text, Text] = Field(default_factory=dict)
     """Brand colors for some series, by series name: the name of a color in the theme's
     `colors.brand`, e.g. {Northwind: northwind-blue}. The other bars keep the accent color."""

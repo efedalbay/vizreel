@@ -329,3 +329,11 @@ def test_captions_name_periods_in_order(kind: str) -> None:
         "in order",
         'charts[0].captions[2].period: "z" is not one of the periods: "a", "b", "c"',
     ]
+
+
+def test_a_bar_race_can_show_a_total_under_a_label() -> None:
+    race = race_spec(f"type: bar-race, periods: [a, b, c], series: [{TWO}], total: Market")
+
+    assert race.total == "Market"  # type: ignore[union-attr]
+    [message] = race_errors(f'type: bar-race, periods: [a, b, c], series: [{TWO}], total: ""')
+    assert message == "charts[0].total: must not be empty"

@@ -79,6 +79,7 @@ charts:
       - { period: "2008", text: "Northwind opens its first store abroad" }
       - { period: "2015", text: "A new product line takes off" }
       - { period: "2021", text: "Northwind takes the lead" }
+    total: Market
 
   - id: catching-up
     type: line-race

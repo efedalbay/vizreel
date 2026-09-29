@@ -287,6 +287,29 @@ class BarRaceChartType(ChartType):
             for period in chart.periods
         ]
         period_height = max(text.height for text in period_texts)
+        # The total goes under the period, right-aligned, its label in words the spec gives.
+        totals = [sum(values_now) for values_now in zip(*filled, strict=True)]
+        total_label = (
+            elements.text(chart.total, fonts.body, sizes.label, colors.muted)
+            if chart.total
+            else None
+        )
+
+        def total_text(value: float) -> "Mobject":
+            assert total_label is not None
+            number = value_text(value)
+            label = total_label.set_opacity(1.0)
+            group = Group(label, number).arrange(RIGHT, buff=gap)
+            label.align_to(number, DOWN)
+            return group
+
+        total_width = (
+            max(total_text(value).width for value in {*totals, *count_samples(0, max(totals))})
+            if total_label is not None
+            else 0.0
+        )
+        total_height = total_text(max(totals)).height if total_label is not None else 0.0
+        period_width = max(max(text.width for text in period_texts), total_width)
         # Captions go left of the period, above the bars.
         captions = [
             elements.wrapped_block(
@@ -294,20 +317,19 @@ class BarRaceChartType(ChartType):
                 fonts.body,
                 sizes.label,
                 colors.text,
-                content.width - max(text.width for text in period_texts) - gap * 2,
+                content.width - period_width - gap * 2,
                 "the caption",
                 "left",
             ).mobject
             for caption in chart.captions
         ]
-        period_height = max([period_height, *(caption.height for caption in captions)])
+        number_band = period_height + (total_height + gap / 2 if total_label is not None else 0.0)
+        band_height = max([number_band, *(caption.height for caption in captions)])
         caption_starts = [float(chart.periods.index(caption.period)) for caption in chart.captions]
         widest_value = max(
             value_text(value).width for value in {*every_value, *count_samples(0, max(every_value))}
         )
-        area = Box(
-            content.left, content.bottom, content.right, content.top - period_height - gap * 2
-        )
+        area = Box(content.left, content.bottom, content.right, content.top - band_height - gap * 2)
         # Images are as tall as a bar; loaded one unit tall, their width is their aspect.
         images = self._images(1.0)
         image_aspect = max((image.width for image in images.values()), default=0.0)
@@ -343,6 +365,11 @@ class BarRaceChartType(ChartType):
         def period_at(position: float) -> "VMobject":
             text = period_texts[min(max(round(position), 0), count - 1)]
             return text.align_to((content.right, content.top, 0.0), UP + RIGHT)
+
+        def total_at(value: float) -> "Mobject":
+            total = total_text(value)
+            top = content.top - period_height - gap / 2
+            return total.align_to((content.right, top, 0.0), UP + RIGHT)
 
         def race_frame(position: float, grown: float, with_names: bool) -> "Mobject":
             now = [value_at(series, position) for series in filled]
@@ -385,11 +412,13 @@ class BarRaceChartType(ChartType):
                 group.add(row)
             if with_names:
                 group.add(period_at(position))
+                if total_label is not None:
+                    group.add(total_at(sum(now)))
                 shown = caption_at(caption_starts, position)
                 if shown is not None and shown[1] > 0:
                     caption = captions[shown[0]].set_opacity(shown[1])
                     caption.align_to((content.left, 0.0, 0.0), LEFT)
-                    group.add(caption.set_y(content.top - period_height / 2))
+                    group.add(caption.set_y(content.top - band_height / 2))
             return group
 
         intro = (motion.title_fade if len(header) else 0.0) + motion.structure
@@ -425,13 +454,14 @@ class BarRaceChartType(ChartType):
 
         # The names and the first period appear while the bars grow to their first values.
         first_places = places_at(0.0)
-        labels = VGroup(
+        labels = Group(
             *(
                 place_name(names[index].copy(), rows.center(place))
                 for index, place in enumerate(first_places)
                 if place < chart.show
             ),
             period_at(0.0).copy(),
+            *([total_at(totals[0]).copy()] if total_label is not None else []),
         )
         growth = ValueTracker(0.0)
 
