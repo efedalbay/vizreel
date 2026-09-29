@@ -72,6 +72,10 @@ motion:                   # seconds
   hold: 2
 
 background_panel: true
+
+logo:
+  file: northwind-logo.svg
+  height: 48
 ```
 
 A theme is loaded, and checked against the minimum sizes, when a spec that uses it is validated or rendered; an error names the theme file and the field.
@@ -170,3 +174,12 @@ Seconds, except `easing`, `entrance` and `exit`. A spec can override `easing`, `
 ### `background_panel`
 
 `true` to draw a panel in the `surface` color behind charts in transparent output, because the footage underneath is unknown.
+
+### `logo` (optional)
+
+A logo drawn in the lower right corner of every chart, at the right end of the source line's band, which grows to fit it; a `stat` puts it in the lower right corner of its card. It appears with the chart's first animation and leaves with the clip's exit.
+
+| Field | Used for | Minimum |
+|---|---|---|
+| `file` | A PNG, JPEG or SVG file, relative to the theme file. A missing file, or one of another kind, is an error when the theme loads. | — |
+| `height` | Its height in pixels at 1080p. Optional, 48 by default. | 16 |

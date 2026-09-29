@@ -224,6 +224,10 @@ A spec's `meta.motion` and a chart's `motion` override the theme's `motion` fiel
 - **Entrances.** Chart types make the panel, titles, labels and legends appear with `elements.appear`, which fades them in and, for `rise` or `zoom`, moves or scales them a little into place. The end state is the same for every entrance, so sequences still cut seamlessly.
 - **Exits** need nothing from chart types. `clip_theme` lengthens the hold by `exit_time` for the clip that leaves (only the last clip of a sequence), so charts keep their full hold and their "duration too short" messages stay right. `ChartScene` holds back each `wait` until the next animation or the end of the clip; at the end it renders the last wait shortened by the exit, keeps that frame as the still, and plays `elements.leave`, which fades every part from its own opacity and sinks or shrinks everything.
 
+### The theme's logo
+
+A theme's `logo` is drawn by `ChartScene`, not by the chart types: it joins the chart's first `play`, appearing with the theme's entrance at the lower right of `layout.source`, which `build_layout` makes at least as tall as the logo (`logo_px`). A chart type that fits its panel around its own content, such as `stat`, leaves room for it and sets `logo_corner` before its first animation. The theme loader resolves the logo's path relative to the theme file and checks it, as the spec loader does for a race's images.
+
 ### Frames of many parts
 
 A chart whose every frame is built from many parts, such as a race, uses `elements.redrawn` instead of Manim's `always_redraw`: the group takes each frame's new parts as they are instead of copying them into the old ones, and reuses text mobjects instead of copying them, since Manim's copies deep-copy every attribute. Counting numbers (`NumberGlyphs`) copy only the shapes and style of their cached glyphs for the same reason.

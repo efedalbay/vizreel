@@ -55,3 +55,7 @@ motion:                   # seconds
   hold: 2
 
 background_panel: true
+
+logo:                     # drawn in the lower right corner of every chart
+  file: northwind-logo.svg
+  height: 48

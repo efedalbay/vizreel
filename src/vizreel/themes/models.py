@@ -165,6 +165,15 @@ class ThemeMotion(ThemeModel):
     """Length of the exit, within the clip's duration."""
 
 
+class ThemeLogo(ThemeModel):
+    """A logo drawn in the lower right corner of every chart."""
+
+    file: Annotated[str, Field(min_length=1)]
+    """A PNG, JPEG or SVG file, relative to the theme file."""
+    height: float = Field(default=48, ge=16)
+    """Its height, in pixels at 1080p. At least 16."""
+
+
 class Theme(ThemeModel):
     """A complete visual theme."""
 
@@ -180,3 +189,5 @@ class Theme(ThemeModel):
     """Animation timing."""
     background_panel: bool
     """Draw a panel in the surface color behind charts in transparent output."""
+    logo: ThemeLogo | None = None
+    """A logo in the lower right corner of every chart, in the band of the source line."""

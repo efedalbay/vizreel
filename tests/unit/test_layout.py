@@ -179,3 +179,20 @@ def test_a_square_frame_is_neither_landscape_nor_vertical() -> None:
     assert square.square and not square.vertical
     assert square.safe.width == pytest.approx(square.frame.width * 0.9)
     assert not layout().square
+
+
+def test_a_logo_makes_room_for_itself_in_the_source_band() -> None:
+    from vizreel.render.layout import build_layout, px
+
+    plain = build_layout(SIZES, panel=True, title_lines=1, subtitle_lines=0, source_lines=0)
+    with_logo = build_layout(
+        SIZES, panel=True, title_lines=1, subtitle_lines=0, source_lines=0, logo_px=48
+    )
+    with_source = build_layout(
+        SIZES, panel=True, title_lines=1, subtitle_lines=0, source_lines=1, logo_px=8
+    )
+
+    assert plain.source.height == 0
+    assert with_logo.source.height == pytest.approx(px(48))
+    assert with_logo.content.bottom > plain.content.bottom
+    assert with_source.source.height > px(8)

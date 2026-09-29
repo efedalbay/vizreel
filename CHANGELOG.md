@@ -10,6 +10,7 @@ All notable changes to vizreel are documented here. The format follows
 
 - Brand colors: a theme names colors in `colors.brand`, `vizreel theme check` tests them like the other data colors, and a `bar-race` gives them to its series by name with `colors: { Contoso: contoso-coral }`. `examples/brand.yaml` races in the example brand theme's colors.
 - Images in a `bar-race`: `images: { Northwind: logos/northwind.svg }` draws a logo or a flag, from a PNG, JPEG or SVG file next to the spec, at the end of the series' bar. `--watch` renders again when one is saved. The race in `examples/data.yaml` shows logos of the fictional companies.
+- A logo in the theme: `logo: { file: logo.svg, height: 48 }` draws it in the lower right corner of every chart, inside the panel, appearing with the chart and leaving with the clip's exit. Chart types from other packages show it too; one that fits its own card can place it with `logo_corner`.
 - A running total in a `bar-race`: `total: Market` shows the sum of every series under the period, after that label, counting as the race runs.
 - Captions over a race: `captions: [{ period: "2008", text: "The crisis" }]` in a `bar-race` or `line-race` fades in at its period and stays until the next one, checked to stay long enough to be read.
 

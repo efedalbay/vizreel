@@ -70,9 +70,34 @@ def load_theme(ref: str, base_dir: Path) -> Theme:
     path = resolve_theme_path(ref, base_dir)
     data = read_yaml_mapping(path, ThemeError, _KIND, _REQUIRED)
     try:
-        return Theme.model_validate(data)
+        theme = Theme.model_validate(data)
     except ValidationError as exc:
         raise ThemeError(str(path), [_issue_from_error(error) for error in exc.errors()]) from None
+    return _with_logo_path(theme, path)
+
+
+LOGO_SUFFIXES = (".png", ".jpg", ".jpeg", ".svg")
+"""The image files a theme logo can be."""
+
+
+def _with_logo_path(theme: Theme, path: Path) -> Theme:
+    """Return the theme with its logo file as a full path, checking the file.
+
+    Raises:
+        ThemeError: The logo file is missing or not a PNG, JPEG or SVG file.
+    """
+    if theme.logo is None:
+        return theme
+    reference = theme.logo.file
+    logo = path.parent / reference
+    if logo.suffix.lower() not in LOGO_SUFFIXES:
+        message = f"{reference} is not a PNG, JPEG or SVG file"
+    elif not logo.is_file():
+        message = f"{reference} was not found in {logo.parent}"
+    else:
+        resolved = theme.logo.model_copy(update={"file": str(logo.resolve())})
+        return theme.model_copy(update={"logo": resolved})
+    raise ThemeError(str(path), [InputIssue("logo.file", message)])
 
 
 def _issue_from_error(error: ErrorDetails) -> InputIssue:

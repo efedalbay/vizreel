@@ -76,6 +76,9 @@ class ChartType(ABC):
         theme: All styling.
         layout: All geometry.
         locale: How numbers are written. Pass it to every `format.numbers` call.
+        logo_corner: Where the lower right corner of the theme's logo goes, if the chart
+            type places it itself before its first animation, such as inside a card it fits
+            around its content; None puts it at the lower right of `layout.source`.
     """
 
     name: ClassVar[str]
@@ -89,6 +92,7 @@ class ChartType(ABC):
         self.theme = theme
         self.layout = layout
         self.locale = locale
+        self.logo_corner: tuple[float, float] | None = None
 
     @classmethod
     def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:

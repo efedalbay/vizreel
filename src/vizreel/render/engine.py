@@ -353,6 +353,7 @@ def render_chart(
             title_lines=title_lines,
             subtitle_lines=subtitle_lines,
             source_lines=1 if chart.source else 0,
+            logo_px=theme.logo.height if theme.logo else 0.0,
         )
 
     scene_width, scene_height = frame_size(settings.aspect)

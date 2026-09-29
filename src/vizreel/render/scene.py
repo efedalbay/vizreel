@@ -79,6 +79,7 @@ class ChartScene(Scene):
         self.still: Image | None = None
         self._waiting = False
         self._held_back: float | None = None
+        self._logo_shown = False
         super().__init__(**kwargs)
 
     def construct(self) -> None:
@@ -124,6 +125,7 @@ class ChartScene(Scene):
             self.chart_type.build(self)
         extent = content_extent(self.mobjects, layout.content)
         self.clear()
+        self._logo_shown = False
         if extent is None:
             return
         bottom, top = extent
@@ -165,7 +167,35 @@ class ChartScene(Scene):
         self._release_wait()
         frames = self.clock.frames_for(kwargs["run_time"])
         kwargs["run_time"] = (frames - 0.5) / self.clock.fps
+        if not self._logo_shown:
+            self._logo_shown = True
+            args = (*args, *self._logo_entrance())
         super().play(*args, **kwargs)
+
+    def _logo_entrance(self) -> list[Any]:
+        """The animation of the theme's logo, if it has one, appearing in its corner.
+
+        The logo comes with the chart's first animation, so every chart type shows it without
+        drawing it itself.
+        """
+        from manim import DOWN, RIGHT, ImageMobject, SVGMobject
+
+        from vizreel.errors import RenderError
+        from vizreel.render import elements
+        from vizreel.render.layout import px
+
+        theme, layout = self.chart_type.theme, self.chart_type.layout
+        if theme.logo is None:
+            return []
+        path = theme.logo.file
+        try:
+            logo = SVGMobject(path) if path.lower().endswith(".svg") else ImageMobject(path)
+        except Exception as exc:
+            raise RenderError(f"cannot read the logo {path}: {exc}") from None
+        logo.scale_to_fit_height(px(theme.logo.height))
+        corner = self.chart_type.logo_corner or (layout.source.right, layout.source.bottom)
+        logo.align_to((*corner, 0.0), DOWN + RIGHT)
+        return [elements.appear(logo, theme, rate_func=elements.easing(theme))]
 
     def wait(
         self,

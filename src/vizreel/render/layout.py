@@ -211,6 +211,7 @@ def build_layout(
     title_lines: int,
     subtitle_lines: int,
     source_lines: int,
+    logo_px: float = 0.0,
 ) -> Layout:
     """Divide the frame into bands for one chart.
 
@@ -221,6 +222,8 @@ def build_layout(
         title_lines: Lines of title text (0 without a title).
         subtitle_lines: Lines of subtitle text (0 without a subtitle).
         source_lines: Lines of source text (0 without a source).
+        logo_px: Height of the theme's logo, in pixels at 1080p (0 without one). The source
+            band is at least as tall, since the logo goes at its right end.
     """
     width, height = frame_size(aspect)
     margins = SAFE_MARGINS[aspect]
@@ -236,7 +239,7 @@ def build_layout(
     gap = px(sizes.title) * BAND_GAP
 
     title_height = px(LINE_HEIGHT * (sizes.title * title_lines + sizes.subtitle * subtitle_lines))
-    source_height = px(LINE_HEIGHT * sizes.caption * source_lines)
+    source_height = max(px(LINE_HEIGHT * sizes.caption * source_lines), px(logo_px))
     title_band = Box(inner.left, inner.top - title_height, inner.right, inner.top)
     source_band = Box(inner.left, inner.bottom, inner.right, inner.bottom + source_height)
     content_top = title_band.bottom - (gap if title_height else 0)

@@ -50,6 +50,7 @@ class StatChartType(ChartType):
         """Add the card to the scene and animate it."""
         from manim import (
             AnimationGroup,
+            Rectangle,
             UpdateFromAlphaFunc,
             ValueTracker,
             VGroup,
@@ -57,6 +58,7 @@ class StatChartType(ChartType):
         )
 
         from vizreel.render import elements
+        from vizreel.render.layout import px
         from vizreel.render.numbers_text import NumberGlyphs
 
         chart = self.chart
@@ -115,6 +117,12 @@ class StatChartType(ChartType):
         final_number = number(chart.value)
         widest_number = max((glyphs(text) for text in counted), key=lambda mobject: mobject.width)
         lines = [*header, (final_number, number_size), *footer]
+        logo = self.theme.logo
+        if logo is not None:
+            # Room for the theme's logo at the bottom of the card, which fits its content.
+            lines.append(
+                (Rectangle(width=1e-3, height=px(logo.height)).set_opacity(0), sizes.caption)
+            )
 
         elements.check_fits(widest_number, self.layout.inner, "the number")
         # The header and the source line are set apart; the number and its label stay close.
@@ -128,6 +136,9 @@ class StatChartType(ChartType):
             self.layout.content.center,
         )
         number_center = final_number.get_center()
+        if logo is not None:
+            box = elements.bounds(VGroup(column, widest_number.copy().move_to(number_center)))
+            self.logo_corner = (box.right, box.bottom)
 
         header_group = VGroup(*(mobject for mobject, _ in header))
         footer_group = VGroup(*(mobject for mobject, _ in footer))

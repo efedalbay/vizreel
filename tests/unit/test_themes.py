@@ -148,3 +148,46 @@ def test_themes_doc_lists_every_builtin_theme() -> None:
     for name in builtin_theme_names():
         description = load_theme(name, Path(".")).description
         assert f"| `{name}` | {description} |" in doc
+
+
+def logo_theme(folder: Path, logo: dict[str, object]) -> Path:
+    data = default_theme_data()
+    data["logo"] = logo
+    path = folder / "brand.yaml"
+    path.write_text(yaml.safe_dump(data), encoding="utf-8")
+    return path
+
+
+def test_a_theme_logo_is_found_next_to_the_theme(tmp_path: Path) -> None:
+    (tmp_path / "logo.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+
+    theme = load_theme(str(logo_theme(tmp_path, {"file": "logo.svg"})), Path("."))
+
+    assert theme.logo is not None
+    assert theme.logo.file == str((tmp_path / "logo.svg").resolve())
+    assert theme.logo.height == 48
+
+
+@pytest.mark.parametrize(
+    ("logo", "message"),
+    [
+        ({"file": "gone.png"}, "logo.file: gone.png was not found in"),
+        ({"file": "logo.gif"}, "logo.file: logo.gif is not a PNG, JPEG or SVG file"),
+        ({"file": "logo.png", "height": 8}, "logo.height: must be at least 16, got 8"),
+    ],
+)
+def test_a_wrong_theme_logo_is_an_error(
+    tmp_path: Path, logo: dict[str, object], message: str
+) -> None:
+    (tmp_path / "logo.png").write_bytes(b"")
+
+    [error] = theme_errors(logo_theme(tmp_path, logo))
+
+    assert error.startswith(message)
+
+
+def test_the_example_brand_theme_has_a_logo() -> None:
+    theme = load_theme(str(Path("examples") / "themes" / "example-brand.yaml"), Path("."))
+
+    assert theme.logo is not None
+    assert Path(theme.logo.file).name == "northwind-logo.svg"
