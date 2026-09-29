@@ -76,7 +76,10 @@ vizreel/
 │   │   ├── grouped.py
 │   │   ├── share.py
 │   │   ├── table.py
-│   │   └── _bars.py         ← parts the bar-like types share; not a chart type
+│   │   ├── bar_race.py
+│   │   ├── line_race.py
+│   │   ├── _bars.py         ← parts the bar-like types share; not a chart type
+│   │   └── _race.py         ← timing and ordering the races share; not a chart type
 │   ├── render/
 │   │   ├── engine.py        ← render a Spec: loop charts, configure Manim, write files
 │   │   ├── scene.py         ← generic Manim Scene that hosts one chart; fits vertical cards

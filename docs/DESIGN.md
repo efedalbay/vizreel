@@ -6,7 +6,7 @@ vizreel output is watched, not studied. A viewer sees each chart for a few secon
 
 - Every chart answers one question. If the title needs "and", it is two charts.
 - One key number → `stat`, not a chart. A one-bar bar chart is always wrong.
-- Change over time → `line`; amounts over time, or how a total over time divides → `area`. Comparing a few categories → `bar`. Order of events → `timeline`. One measure before and after → `compare`. How a value adds up from its parts → `waterfall`. Categories split into a few parts → `stacked`. The same few measures compared in each category → `grouped`. One whole split into parts → `share`. A few exact figures to read side by side → `table`. How far a value has come toward a goal → `progress`.
+- Change over time → `line`; amounts over time, or how a total over time divides → `area`. Comparing a few categories → `bar`. Order of events → `timeline`. One measure before and after → `compare`. How a value adds up from its parts → `waterfall`. Categories split into a few parts → `stacked`. The same few measures compared in each category → `grouped`. One whole split into parts → `share`. A few exact figures to read side by side → `table`. How a ranking or a trend unfolds over many periods → `bar-race` or `line-race`. How far a value has come toward a goal → `progress`.
 - **Emphasize one thing.** The element that carries the message gets the `highlight` color; everything else uses `muted`. Do not give every bar its own color.
 - **Never two y-axes.** Two measures on different scales become two charts.
 - Maximum 3 series on a line chart, 8 bars, 7 timeline events. The spec validator enforces these limits.
@@ -40,6 +40,7 @@ Motion guides the eye to the message. It is never decoration.
 
 - **Easing.** Every movement eases out (fast start, soft stop). No linear motion except the counting of numbers, which eases out as well. No bouncing or overshoot.
 - **Order of appearance:** title → structure (axes, baseline) → data → highlight → hold.
+- **Races** (`bar-race`, `line-race`) are the exception to the data reveal's share of the clip: moving through the periods is the chart, so it takes all the time the title, the first values and the hold leave. The periods pass at one pace, which is not decoration but time itself, and the race slows to a stop over the last one.
 - **Timing defaults** (seconds, overridable in the theme `motion` section):
 
 | Phase | Default |

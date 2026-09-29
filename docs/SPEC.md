@@ -60,7 +60,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `progress`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
+| `type` | string | yes | — | Chart type: `stat`, `progress`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, `bar-race`, `line-race`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -512,6 +512,70 @@ Default `duration`: 6.
   highlight: { row: Japan }
 ```
 
+## `bar-race` — bars racing through periods
+
+Bars that grow and change places as their values change over many periods, e.g. the revenue of ten companies over 24 years. The largest bars are on screen, from the largest down, each with its name on the left and its value counting at its end, and the period, as written, large above them. The race runs through the periods at one pace and slows to a stop on the last one; a bar slides to its new place when its value passes another's, briefly, and bars that enter or leave the largest slide in or out at the bottom. The value axis grows and shrinks with the largest value on screen. Bars are in the theme's `accent` color, the followed series in its `highlight` color.
+
+Between two periods values change in a straight line. A gap (`null`) between two values is filled in a straight line; before a series' first value it is 0, after its last value it keeps it.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `periods` | list of strings | yes | — | 2–200 periods, in order, e.g. years. Shown as written. Unique. |
+| `series` | list | yes | — | 2–30 contestants. |
+| `series[].name` | string | yes | — | Shown left of the bar. Unique. |
+| `series[].values` | list of numbers | yes | — | One value per period, zero or more; `null` for a gap. |
+| `show` | integer | no | `8` | How many of the largest bars are on screen, 3–12. |
+| `number` | number format | no | — | Formatting of the values. |
+| `highlight.series` | string | no | — | The series to follow, in the highlight color. |
+
+Default `duration`: 15. Each period needs at least 0.2 seconds of the race, which is what the duration leaves after the title, the first values and the hold; a duration too short says how long it must be. A race is the whole point of its clip, so, unlike other charts, its data moves for most of it.
+
+```yaml
+- id: market-race
+  type: bar-race
+  title: Northwind rises through the market
+  periods: ["2020", "2021", "2022", "2023", "2024"]
+  series:
+    - { name: Northwind, values: [40, 58, 80, 104, 131] }
+    - { name: Contoso, values: [70, 71, 74, 76, 79] }
+    - { name: Fabrikam, values: [61, 66, 70, 73, 77] }
+    - { name: Tailspin, values: [49, 55, 62, 70, 76] }
+  number: { prefix: "$", suffix: "M" }
+  highlight: { series: Northwind }
+  duration: 8
+```
+
+A race usually comes from a CSV file, the periods in the first column and a series in each other column (see [Data from files](#data-from-files)): `examples/data.yaml` races ten companies through 24 years.
+
+## `line-race` — lines racing through periods
+
+Lines that draw through many periods, e.g. revenue over 24 years. One pen draws every line from left to right at one pace and slows to a stop on the last period, each line with its name and value riding its tip; the vertical axis grows with the largest value drawn so far, so the lines always fill the frame. In a vertical or square frame the name goes above the value, leaving the lines more width.
+
+A gap (`null`) between two values is filled in a straight line; before a series' first value and after its last, its line is not drawn.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `periods` | list of strings | yes | — | 2–200 periods, in order, along the horizontal axis. Unique. |
+| `series` | list | yes | — | 1–6 lines. Without `highlight`, at most as many as the theme has `series` colors (three in the built-in themes). |
+| `series[].name` | string | yes | — | Shown at the line's tip. Unique. |
+| `series[].values` | list of numbers | yes | — | One value per period, zero or more; `null` for a gap. |
+| `number` | number format | no | — | Formatting of axis and value labels. |
+| `highlight.series` | string | no | — | The series to follow, in the highlight color; the others are muted. |
+
+Default `duration`: 15. Each period needs at least 0.2 seconds of the race, as for `bar-race`.
+
+```yaml
+- id: users-race
+  type: line-race
+  title: Northwind users by platform
+  periods: ["2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"]
+  series:
+    - { name: Web, values: [0.8, 1.0, 1.2, 1.5, 1.9, 2.4, 2.8, 3.0] }
+    - { name: Mobile, values: [0.1, 0.2, 0.4, 0.7, 1.1, 2.2, 3.6, 4.9] }
+  number: { suffix: "M" }
+  duration: 10
+```
+
 ---
 
 ## Sequences
@@ -547,7 +611,7 @@ The first clip is the chart as usual, emphasizing the first item. Each later cli
 | `table` | A row name. |
 | `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
 
-A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat`, `progress` and `compare` charts have no elements to emphasize and no sequence.
+A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat`, `progress` and `compare` charts have no elements to emphasize, and races already move through their periods; they have no sequence.
 
 ---
 
@@ -643,6 +707,7 @@ With more columns than the chart reads, name the ones to read, in order:
 | `stacked` | The categories, then one column per series, named by its first row. | One bar each. | `categories`, `series` |
 | `grouped` | The categories, then one column per series, named by its first row. | One group each. | `categories`, `series` |
 | `area` | The x labels, then one column per series, named by its first row. | One x label each; every cell needs a value. | `x`, `series` |
+| `bar-race`, `line-race` | The periods, then one column per series, named by its first row. | One period each; an empty cell leaves a gap. | `periods`, `series` |
 | `waterfall` | A label and a value. | The first row is the start and the others are steps; a last row with a label and no value names the total. | `start`, `steps`, and `end` if the last row names it |
 | `compare` | A label and a value. | Two: the earlier value, then the later one. | `before`, `after` |
 | `table` | Two to four. A column holds numbers if its first row does; the first holds the row names. | One row each. | `rows`, and `columns` named by the first row, unless the spec writes `columns` to name them and set their number formats |

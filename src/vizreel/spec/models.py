@@ -389,6 +389,101 @@ class LineChart(SequencedChart):
         return []
 
 
+class RaceSeries(SpecModel):
+    """One contestant of a race: a name and a value for every period."""
+
+    name: Text
+    """Shown next to its bar or line. Unique."""
+    values: list[Annotated[float, Field(ge=0)] | None]
+    """One value per period, zero or more. null leaves a gap that the periods around it fill
+    in."""
+
+
+class RaceHighlight(SpecModel):
+    """The series to follow."""
+
+    series: Text
+    """Name of the series drawn in the highlight color."""
+
+
+def _race_issues(periods: list[str], series: list[RaceSeries]) -> list[RuleViolation]:
+    """What is wrong with the periods and series of a race."""
+    issues = _duplicate_issues(periods, "periods", None, "periods")
+    issues += _duplicate_issues([item.name for item in series], "series", "name", "series names")
+    for index, item in enumerate(series):
+        loc: Location = ("series", index, "values")
+        if len(item.values) != len(periods):
+            issues.append(
+                (loc, f"expected {len(periods)} values (same as periods), got {len(item.values)}")
+            )
+        if all(value is None for value in item.values):
+            issues.append((loc, "needs at least one number, not only null"))
+    return issues
+
+
+def _highlight_issues(
+    highlight: RaceHighlight | None, series: list[RaceSeries]
+) -> list[RuleViolation]:
+    names = [item.name for item in series]
+    if highlight is None or highlight.series in names:
+        return []
+    return [
+        (
+            ("highlight", "series"),
+            f'"{highlight.series}" does not match any series. Series: {_quoted_list(names)}',
+        )
+    ]
+
+
+class BarRaceChart(BaseChart):
+    """Bars that grow and change places as their values change over many periods."""
+
+    type: Literal["bar-race"]
+    duration: Duration = 15
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    periods: list[Text] = Field(min_length=2, max_length=200)
+    """The periods, in order, e.g. years. Shown as written. Unique."""
+    series: list[RaceSeries] = Field(min_length=2, max_length=30)
+    """Two to thirty contestants."""
+    show: int = Field(default=8, ge=3, le=12)
+    """How many of the largest bars are on screen at once."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of the values."""
+    highlight: RaceHighlight | None = None
+    """The series to follow, drawn in the highlight color."""
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues = _race_issues(self.periods, self.series)
+        issues += _highlight_issues(self.highlight, self.series)
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+
+class LineRaceChart(BaseChart):
+    """Lines that draw through many periods, the axis growing to keep them in the frame."""
+
+    type: Literal["line-race"]
+    duration: Duration = 15
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    periods: list[Text] = Field(min_length=2, max_length=200)
+    """The periods, in order, e.g. years, along the horizontal axis. Unique."""
+    series: list[RaceSeries] = Field(min_length=1, max_length=6)
+    """One to six lines. Without a highlight, at most as many as the theme has series colors
+    (three in the built-in themes)."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of axis and value labels."""
+    highlight: RaceHighlight | None = None
+    """The series to follow, drawn in the highlight color while the others are muted."""
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues = _race_issues(self.periods, self.series)
+        issues += _highlight_issues(self.highlight, self.series)
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+
 class AreaSeries(SpecModel):
     """One filled area on an area chart."""
 

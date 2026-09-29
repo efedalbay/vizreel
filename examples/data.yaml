@@ -62,6 +62,21 @@ charts:
     stack: true
     number: { suffix: "M" }
 
+  - id: market-race
+    type: bar-race
+    title: Northwind rises through the market
+    subtitle: Revenue in millions of dollars, 2001 to 2024
+    data: data/market-race.csv
+    number: { prefix: "$", suffix: "M" }
+    highlight: { series: Northwind }
+
+  - id: catching-up
+    type: line-race
+    title: Northwind catches up
+    data: { file: data/market-race.csv, columns: [Year, Northwind, Contoso, Fabrikam, Alpine] }
+    number: { prefix: "$", suffix: "M" }
+    highlight: { series: Northwind }
+
   - id: history
     type: timeline
     title: How Northwind grew

@@ -1,0 +1,59 @@
+"""Races from a CSV file of 24 periods, in every frame shape."""
+
+from pathlib import Path
+
+import av
+import numpy as np
+import pytest
+
+from vizreel.render.engine import RenderOptions, render_spec
+
+DATA = Path(__file__).parents[2] / "examples" / "data.yaml"
+PREVIEW_FPS = 15
+
+pytestmark = pytest.mark.render
+
+
+def frames_rgba(path: Path) -> list[np.ndarray]:
+    with av.open(str(path)) as container:
+        return [frame.to_ndarray(format="rgba") for frame in container.decode(video=0)]
+
+
+@pytest.mark.parametrize("aspect", ["16:9", "9:16", "1:1"])
+@pytest.mark.parametrize("chart_id", ["market-race", "catching-up"])
+def test_a_race_of_24_periods_renders_in_every_shape(
+    tmp_path: Path, chart_id: str, aspect: str
+) -> None:
+    [result] = render_spec(
+        DATA,
+        RenderOptions(out_dir=tmp_path, only=(chart_id,), quality="preview", aspect=aspect),  # type: ignore[arg-type]
+        reraise=True,
+    )
+    assert result.video is not None
+    frames = frames_rgba(result.video)
+
+    assert len(frames) == 15 * PREVIEW_FPS
+    # The race moves on every frame until its hold, which is still.
+    hold = int(1.5 * PREVIEW_FPS)
+    for frame in frames[-hold:]:
+        assert np.array_equal(frame, frames[-1])
+    race = frames[int(1.1 * PREVIEW_FPS) : -hold - PREVIEW_FPS]
+    assert all(
+        not np.array_equal(earlier, later) for earlier, later in zip(race, race[1:], strict=False)
+    )
+
+
+def test_a_line_race_with_more_lines_than_colors_asks_to_follow_one(tmp_path: Path) -> None:
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n  - id: r\n    type: line-race\n    periods: [a, b]\n    series:\n"
+        + "".join(f"      - {{ name: S{index}, values: [1, {index}] }}\n" for index in range(4)),
+        encoding="utf-8",
+    )
+
+    [result] = render_spec(spec, RenderOptions(out_dir=tmp_path, quality="preview"))
+
+    assert result.error == (
+        "4 lines need as many colors and the theme has 3; follow one with highlight, which "
+        "mutes the others"
+    )

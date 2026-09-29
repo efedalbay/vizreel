@@ -100,6 +100,8 @@ def test_select_all_charts_in_spec_order() -> None:
         "fundraiser",
         "market",
         "top-markets",
+        "market-race",
+        "users-race",
     ]
 
 

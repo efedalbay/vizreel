@@ -33,6 +33,8 @@ CHARTS = {
     "fundraiser": "progress",
     "market": "share",
     "top-markets": "table",
+    "market-race": "bar-race",
+    "users-race": "line-race",
 }
 
 

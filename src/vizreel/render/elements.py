@@ -294,6 +294,19 @@ def fade_away(mobject: Mobject) -> UpdateFromAlphaFunc:
     return UpdateFromAlphaFunc(mobject, fade)  # type: ignore[arg-type]
 
 
+def redrawn(build: Callable[[], VMobject]) -> VGroup:
+    """Return a group whose parts are built again, by `build`, on every frame.
+
+    Unlike Manim's `always_redraw`, which copies the new parts into the old ones, it takes
+    the new parts as they are, which is much faster for a frame of many parts. It starts
+    empty: Manim draws, on every frame of an animation, the parts a moving group has when the
+    animation starts, and the first update comes before the first frame.
+    """
+    group = VGroup()
+    group.add_updater(lambda mobject: setattr(mobject, "submobjects", build().submobjects))
+    return group
+
+
 MOTION_DISTANCE = 1.0
 """How far an entrance rises and an exit sinks, as a multiple of the label size."""
 ZOOM_SCALE = 0.9

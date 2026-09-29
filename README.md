@@ -2,7 +2,7 @@
 
 **Animated charts for video, from a YAML file.**
 
-vizreel turns a short YAML spec into clean, animated chart clips (big numbers, progress toward a goal, line and area charts, bar charts, timelines, before/after comparisons, waterfalls, stacked and grouped bars, shares of a whole and tables) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
+vizreel turns a short YAML spec into clean, animated chart clips (big numbers, progress toward a goal, bar and line races, line and area charts, bar charts, timelines, before/after comparisons, waterfalls, stacked and grouped bars, shares of a whole and tables) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
 
 > **Status: 0.12.0, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
 
@@ -14,6 +14,7 @@ vizreel turns a short YAML spec into clean, animated chart clips (big numbers, p
 | ![A stacked bar chart of revenue by product](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/stacked.gif) | ![A share ring with 47% in the middle](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/share.gif) |
 | ![A table with a highlighted row](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/table.gif) | ![A grouped bar chart comparing two years in four regions](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/grouped.gif) |
 | ![A stacked area chart of users by platform](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/area.gif) | ![A progress ring filling to 68% of a fundraising goal](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/progress.gif) |
+| ![A bar chart race in which Northwind climbs to first place](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/bar-race.gif) | ![A line race drawing users by platform](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/line-race.gif) |
 
 ## Why
 
@@ -120,6 +121,8 @@ out/
 | `grouped` | Bars side by side in groups of 2 or 3, e.g. two years compared in each region |
 | `share` | How a whole divides into up to 6 parts, as a ring with the key part's percent inside |
 | `table` | A few rows and columns of numbers or text, the rows appearing one after another |
+| `bar-race` | Bars racing through up to 200 periods, changing places as their values pass each other |
+| `line-race` | Lines racing through up to 200 periods, the axis growing to keep them in the frame |
 
 `vizreel new TYPE` prints a commented template for each. Every field is documented in the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md).
 

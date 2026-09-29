@@ -24,6 +24,8 @@ CHART_IDS = [
     "fundraiser",
     "market",
     "top-markets",
+    "market-race",
+    "users-race",
 ]
 
 pytestmark = pytest.mark.render

@@ -4,6 +4,18 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The `bar-race` chart type: bars that grow and change places as their values change over up to 200 periods, the largest `show` of up to 30 series on screen, the period large above them. The race runs at one pace and slows to a stop on the last period; bars slide past each other briefly when their values cross, and enter or leave at the bottom. A followed series is drawn in the highlight color.
+- The `line-race` chart type: one to six lines drawn through up to 200 periods by one pen, each with its name and value at its tip, the vertical axis growing with the largest value drawn so far.
+- Both read their data from a CSV file, the periods in the first column and a series in each other column; `examples/data.yaml` races ten companies through 24 years.
+
+### Changed
+
+- Counting numbers are built much faster, which shortens the render of every chart that counts.
+
 ## [0.12.0] - 2026-09-29
 
 ### Added
