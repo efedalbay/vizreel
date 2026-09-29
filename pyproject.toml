@@ -27,6 +27,8 @@ dependencies = [
     "pyyaml",
     "rich",
     "av>=18.1.0",
+    # Manim 0.21 draws images with an argument Pillow 13 removes; lift once Manim supports it.
+    "pillow<13",
 ]
 
 [project.urls]

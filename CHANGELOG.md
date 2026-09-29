@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- vizreel installs a Pillow below 13. Manim, which vizreel draws with, passes Pillow an argument that Pillow 13 removes, so the images of a race and a theme's logo would fail to render once Pillow 13 is out.
+
 ## [0.14.0] - 2026-09-29
 
 ### Added
