@@ -141,9 +141,31 @@ From here on, each milestone ends with a minor release (M7 → 0.2.0, M8 → 0.3
 
 **Done when:** a race from a CSV file with at least 20 periods renders smoothly in 16:9, 9:16 and 1:1, with bars that change places without overlapping.
 
+## M18 — Richer races and a brand logo
+
+- Images next to the bars of a `bar-race`, such as logos or flags, one per series, from image files next to the spec.
+- Captions that appear over a race at the periods they name ("2008: the crisis"), in `bar-race` and `line-race`.
+- A running total of every series in the corner of a `bar-race`.
+- A logo in the theme, drawn in a corner of every chart's safe area.
+
+**Done when:** a race with images, three captions and a total renders in 16:9, 9:16 and 1:1 without anything overlapping, the theme logo appears on every chart type inside the safe area, and a missing or unreadable image is an error that names the file.
+
+## M19 — Scatter race
+
+- A `scatter-race`: points for each series moving over periods on two value axes, sized by a third value if given, with their names, the axes growing to keep them in the frame. Its CSV file has a row per period and series.
+
+**Done when:** a scatter race from a CSV file with at least 20 periods renders smoothly in 16:9, 9:16 and 1:1, with labels that do not overlap.
+
+## M20 — Title cards and Excel files
+
+- A `title` chart type: a headline card, with an optional line above and below it, to open a video or a section.
+- Data read from a sheet of an Excel file (`.xlsx`) as well as from CSV.
+
+**Done when:** a title card honors the themes, the frame shapes and the motion options like every chart type, and every chart type that reads CSV reads the same data from an Excel sheet.
+
 ## Testing by the community
 
-Every milestone above is done. Two checks need a setup the project does not have, so they are left to users, and the README asks for them under "Help test vizreel":
+Every milestone up to M17 is done. Two checks need a setup the project does not have, so they are left to users, and the README asks for them under "Help test vizreel":
 
 - **macOS**: installing vizreel and rendering the showcase.
 - **DaVinci Resolve**: whether transparent clips (`mov`, `prores`, `png`, `webm`) keep their alpha over footage.
