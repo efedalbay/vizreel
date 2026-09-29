@@ -10,7 +10,7 @@ from vizreel.charts._race import (
     slot_positions,
     value_at,
 )
-from vizreel.charts.base import ChartType, check_reading_time, count_samples
+from vizreel.charts.base import ChartType, arranged, check_reading_time, count_samples
 from vizreel.charts.registry import register
 from vizreel.errors import RenderError
 from vizreel.format.numbers import decimals_for, format_number
@@ -19,7 +19,7 @@ from vizreel.spec.data import Table
 from vizreel.spec.models import BarRaceChart
 
 if TYPE_CHECKING:
-    from manim import Animation, Scene, VMobject
+    from manim import Animation, Mobject, Scene, VMobject
 
 PERIOD_SCALE = 0.5
 """Size of the period shown above the bars, as a share of the theme's big number size."""
@@ -40,12 +40,13 @@ class RaceRows:
     """Where the rows of a bar race go, in scene units.
 
     Attributes:
-        label_right: Right edge of the series names.
+        label_right: Right edge of the series names, when they are left of the bars.
         bar_left: Where the bars start.
-        longest: Length of the bar with the largest value.
-        first: Vertical center of the first place.
+        longest: Length of the bar with the largest value, before its image and value.
+        first: Vertical center of the first place's bar.
         pitch: Distance between two places.
         thickness: Thickness of a bar.
+        names_above: Whether each name is above its bar instead of left of it.
     """
 
     label_right: float
@@ -54,6 +55,7 @@ class RaceRows:
     first: float
     pitch: float
     thickness: float
+    names_above: bool = False
 
     def center(self, place: float) -> float:
         """The vertical center of a place, which may be between two places."""
@@ -61,26 +63,76 @@ class RaceRows:
 
 
 def plan_race_rows(
-    area: Box, show: int, label_width: float, value_width: float, gap: float, thinnest: float
+    area: Box,
+    show: int,
+    label_width: float,
+    value_width: float,
+    gap: float,
+    thinnest: float,
+    image_aspect: float = 0.0,
 ) -> RaceRows:
-    """Plan `show` rows in `area`: the names in a column, then the bars and their values.
+    """Plan `show` rows in `area`: the names in a column, then the bars, images and values.
+
+    Args:
+        area: The room for the rows.
+        show: How many rows.
+        label_width: Width of the widest name.
+        value_width: Width of the widest value.
+        gap: Space between a name, a bar, an image and a value.
+        thinnest: Least thickness of a bar.
+        image_aspect: Width of the widest image when it is as tall as a bar, as a share of
+            its height; 0 without images.
 
     Raises:
         RenderError: The names are too wide, the bars too short or too thin.
     """
     if label_width > area.width * MAX_LABEL_SHARE:
         raise RenderError("the series names are too long for the frame; shorten them")
-    bar_left = area.left + label_width + gap
-    longest = area.right - value_width - gap - bar_left
-    if longest < area.width * MIN_BAR_SHARE:
-        raise RenderError("the values are too wide for the bars; use compact numbers")
     pitch = area.height / show
     thickness = pitch * BAR_FILL
+    bar_left = area.left + label_width + gap
+    longest = area.right - _after_bar(value_width, gap, thickness, image_aspect) - bar_left
+    _check_bars(area, show, longest, thickness, thinnest)
+    first = area.top - pitch / 2
+    return RaceRows(area.left + label_width, bar_left, longest, first, pitch, thickness)
+
+
+def plan_race_rows_above(
+    area: Box,
+    show: int,
+    label_height: float,
+    value_width: float,
+    gap: float,
+    thinnest: float,
+    image_aspect: float = 0.0,
+) -> RaceRows:
+    """Plan `show` rows in `area`, each name above its bar, for a narrow frame.
+
+    The bars have the whole width, as in the rows of a bar chart.
+
+    Raises:
+        RenderError: The bars are too short or too thin.
+    """
+    pitch = area.height / show
+    thickness = (pitch - label_height - gap / 2) * BAR_FILL
+    longest = area.width - _after_bar(value_width, gap, thickness, image_aspect)
+    _check_bars(area, show, longest, thickness, thinnest)
+    row = label_height + gap / 2 + thickness
+    first = area.top - (pitch - row) / 2 - label_height - gap / 2 - thickness / 2
+    return RaceRows(area.left, area.left, longest, first, pitch, thickness, names_above=True)
+
+
+def _after_bar(value_width: float, gap: float, thickness: float, image_aspect: float) -> float:
+    """The room a bar leaves after it, for its image and its value."""
+    image = thickness * image_aspect + gap if image_aspect else 0.0
+    return gap + image + value_width
+
+
+def _check_bars(area: Box, show: int, longest: float, thickness: float, thinnest: float) -> None:
+    if longest < area.width * MIN_BAR_SHARE:
+        raise RenderError("the values are too wide for the bars; use compact numbers")
     if thickness < thinnest:
         raise RenderError(f"{show} bars do not fit the frame; show fewer or shorten the title")
-    return RaceRows(
-        area.left + label_width, bar_left, longest, area.top - pitch / 2, pitch, thickness
-    )
 
 
 @register
@@ -159,13 +211,36 @@ class BarRaceChartType(ChartType):
                 result.append(colors.accent)
         return result
 
+    def _images(self, height: float) -> dict[int, "Mobject"]:
+        """Load each series' image, `height` tall, by the index of its series.
+
+        Raises:
+            RenderError: An image cannot be read.
+        """
+        from manim import ImageMobject, SVGMobject
+
+        assert isinstance(self.chart, BarRaceChart)
+        images: dict[int, Mobject] = {}
+        for index, series in enumerate(self.chart.series):
+            path = self.chart.images.get(series.name)
+            if path is None:
+                continue
+            try:
+                image = SVGMobject(path) if path.lower().endswith(".svg") else ImageMobject(path)
+            except Exception as exc:
+                raise RenderError(f"cannot read the image {path}: {exc}") from None
+            images[index] = image.scale_to_fit_height(height)
+        return images
+
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""
         from manim import (
+            DOWN,
             LEFT,
             RIGHT,
             UP,
             AnimationGroup,
+            Group,
             Rectangle,
             UpdateFromAlphaFunc,
             ValueTracker,
@@ -216,18 +291,34 @@ class BarRaceChartType(ChartType):
         area = Box(
             content.left, content.bottom, content.right, content.top - period_height - gap * 2
         )
-        rows = plan_race_rows(
-            area,
-            chart.show,
-            max(name.width for name in names),
-            widest_value,
-            gap,
-            px(MIN_BAR_PX),
+        # Images are as tall as a bar; loaded one unit tall, their width is their aspect.
+        images = self._images(1.0)
+        image_aspect = max((image.width for image in images.values()), default=0.0)
+        tallest_name = max(name.height for name in names)
+        rows = arranged(
+            layout,
+            lambda: plan_race_rows(
+                area,
+                chart.show,
+                max(name.width for name in names),
+                widest_value,
+                gap,
+                max(px(MIN_BAR_PX), tallest_name * BAR_FILL),
+                image_aspect,
+            ),
+            lambda: plan_race_rows_above(
+                area, chart.show, tallest_name, widest_value, gap, px(MIN_BAR_PX), image_aspect
+            ),
         )
-        if max(name.height for name in names) > rows.pitch:
-            raise RenderError(
-                f"{chart.show} bars do not fit the frame; show fewer or shorten the title"
-            )
+        for image in images.values():
+            image.scale_to_fit_height(rows.thickness)
+
+        def place_name(name: "VMobject", y: float) -> "VMobject":
+            if rows.names_above:
+                name.align_to((rows.bar_left, 0.0, 0.0), LEFT)
+                return name.align_to((0.0, y + rows.thickness / 2 + gap / 2, 0.0), DOWN)
+            return name.align_to((rows.label_right, 0.0, 0.0), RIGHT).set_y(y)
+
         places_at = slot_positions(filled, ease)
 
         # Every frame places the same name and period mobjects again rather than copies of
@@ -236,7 +327,7 @@ class BarRaceChartType(ChartType):
             text = period_texts[min(max(round(position), 0), count - 1)]
             return text.align_to((content.right, content.top, 0.0), UP + RIGHT)
 
-        def race_frame(position: float, grown: float, with_names: bool) -> "VMobject":
+        def race_frame(position: float, grown: float, with_names: bool) -> "Mobject":
             now = [value_at(series, position) for series in filled]
             places = places_at(position)
             before = places_at(max(position - RISING_LOOK_BACK, 0.0))
@@ -245,14 +336,14 @@ class BarRaceChartType(ChartType):
                 (index for index, place in enumerate(places) if place < chart.show),
                 key=lambda index: (places[index] < before[index] - 1e-9, -places[index]),
             )
-            group = VGroup()
+            group = Group()
             for index in drawn:
                 place = places[index]
                 opacity = min(chart.show - place, 1.0)
                 y = rows.center(min(place, chart.show - 1 + LEAVE_DROP))
                 length = rows.longest * now[index] / largest * grown
                 color = bar_colors[index]
-                row = VGroup()
+                row = Group()
                 if length > 0:
                     bar = Rectangle(
                         width=length,
@@ -264,10 +355,15 @@ class BarRaceChartType(ChartType):
                     row.add(bar.move_to((rows.bar_left + length / 2, y, 0.0)))
                 if with_names:
                     name = names[index].set_opacity(opacity)
-                    row.add(name.align_to((rows.label_right, 0.0, 0.0), RIGHT).set_y(y))
+                    row.add(place_name(name, y))
+                start = rows.bar_left + length + gap
+                image = images.get(index)
+                if image is not None and grown > 0:
+                    image.set_opacity(opacity)
+                    row.add(image.align_to((start, 0.0, 0.0), LEFT).set_y(y))
+                    start += image.width + gap
                 if grown > 0:
                     number = value_text(now[index] * grown).set_opacity(opacity)
-                    start = rows.bar_left + length + gap
                     row.add(number.align_to((start, 0.0, 0.0), LEFT).set_y(y))
                 group.add(row)
             if with_names:
@@ -299,10 +395,7 @@ class BarRaceChartType(ChartType):
         first_places = places_at(0.0)
         labels = VGroup(
             *(
-                names[index]
-                .copy()
-                .align_to((rows.label_right, 0.0, 0.0), RIGHT)
-                .set_y(rows.center(place))
+                place_name(names[index].copy(), rows.center(place))
                 for index, place in enumerate(first_places)
                 if place < chart.show
             ),

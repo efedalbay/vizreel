@@ -69,6 +69,12 @@ charts:
     data: data/market-race.csv
     number: { prefix: "$", suffix: "M" }
     highlight: { series: Northwind }
+    images:
+      Northwind: logos/northwind.svg
+      Contoso: logos/contoso.svg
+      Fabrikam: logos/fabrikam.svg
+      Tailspin: logos/tailspin.svg
+      Alpine: logos/alpine.svg
 
   - id: catching-up
     type: line-race

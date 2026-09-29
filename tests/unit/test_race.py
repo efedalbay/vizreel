@@ -223,3 +223,59 @@ def test_a_brand_color_must_be_in_the_theme() -> None:
     ]
     with pytest.raises(RenderError, match='the color "blue" of "A" is not a brand color'):
         BarRaceChartType(race, theme, layout, EN_US)._bar_colors()
+
+
+def test_race_images_are_found_next_to_the_spec(tmp_path: Path) -> None:
+    (tmp_path / "logos").mkdir()
+    (tmp_path / "logos" / "a.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+    chart = f"type: bar-race, periods: [a, b, c], series: [{TWO}]"
+
+    spec = parse_spec(
+        f"version: 1\ncharts:\n  - {{ id: r, {chart}, images: {{ A: logos/a.svg }} }}",
+        "spec.yaml",
+        tmp_path,
+    )
+    with pytest.raises(SpecError) as caught:
+        parse_spec(
+            f"version: 1\ncharts:\n  - {{ id: r, {chart}, "
+            "images: { A: logos/b.svg, B: logos/a.gif, C: logos/a.svg } }",
+            "spec.yaml",
+            tmp_path,
+        )
+
+    race = spec.charts[0]
+    assert isinstance(race, BarRaceChart)
+    assert race.images == {"A": str((tmp_path / "logos" / "a.svg").resolve())}
+    assert [str(issue) for issue in caught.value.issues] == [
+        f"charts[0].images.A: logos/b.svg was not found in {tmp_path / 'logos'}",
+        "charts[0].images.B: logos/a.gif is not a PNG, JPEG or SVG file",
+        'charts[0].images.C: "C" does not match any series. Series: "A", "B"',
+    ]
+
+
+def test_watching_includes_the_images_of_a_spec(tmp_path: Path) -> None:
+    from vizreel.spec.loader import spec_input_files
+
+    (tmp_path / "a.png").write_bytes(b"")
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n  - { id: r, type: bar-race, images: { A: a.png, B: gone.png } }\n"
+    )
+
+    assert spec_input_files(spec) == [tmp_path / "a.png"]
+
+
+def test_race_rows_in_a_narrow_frame_put_each_name_above_its_bar() -> None:
+    from vizreel.charts.bar_race import plan_race_rows_above
+
+    area = Box(0.0, 0.0, 4.0, 8.0)
+    rows = plan_race_rows_above(area, 8, 0.3, 1.0, 0.2, 0.1, image_aspect=1.0)
+
+    assert rows.names_above
+    assert rows.bar_left == 0.0
+    assert rows.thickness == pytest.approx((1.0 - 0.3 - 0.1) * BAR_FILL)
+    assert rows.longest == pytest.approx(4.0 - 0.2 - (rows.thickness + 0.2) - 1.0)
+    # The name, the gap and the bar of the first row are centered in its slot.
+    top = rows.center(0) + rows.thickness / 2 + 0.1 + 0.3
+    bottom = rows.center(0) - rows.thickness / 2
+    assert 8.0 - top == pytest.approx(bottom - 7.0)

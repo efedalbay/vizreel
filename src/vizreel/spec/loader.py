@@ -56,24 +56,30 @@ def parse_spec(text: str, source: str, base_dir: Path | None = None) -> Spec:
     return _validate(data, source, base_dir or Path())
 
 
-def spec_data_files(path: Path) -> list[Path]:
-    """Return the data files that exist among those a spec file names, even if it is invalid.
+def spec_input_files(path: Path) -> list[Path]:
+    """Return the data and image files that exist among those a spec file names.
 
-    Watching uses it to render again when a data file changes, including one that made the
-    spec invalid.
+    The spec is read loosely, so this works even if it is invalid. Watching uses it to render
+    again when one of these files changes, including one that made the spec invalid.
     """
     try:
         data = read_yaml_mapping(path, SpecError, _KIND, _REQUIRED)
     except SpecError:
         return []
     charts = data.get("charts")
-    files = []
+    references: list[object] = []
     for chart in charts if isinstance(charts, list) else []:
-        reference = chart.get("data") if isinstance(chart, dict) else None
-        if isinstance(reference, dict):
-            reference = reference.get("file")
-        if isinstance(reference, str) and reference and (path.parent / reference).is_file():
-            files.append(path.parent / reference)
+        if not isinstance(chart, dict):
+            continue
+        reference = chart.get("data")
+        references.append(reference.get("file") if isinstance(reference, dict) else reference)
+        images = chart.get("images")
+        references += list(images.values()) if isinstance(images, dict) else []
+    files = [
+        path.parent / reference
+        for reference in references
+        if isinstance(reference, str) and reference and (path.parent / reference).is_file()
+    ]
     return list(dict.fromkeys(files))
 
 
@@ -142,6 +148,7 @@ class _Filled:
 
 def _validate(data: dict[str, Any], source: str, base_dir: Path) -> Spec:
     filled = _fill_from_data_files(data, base_dir)
+    filled.issues += _resolve_images(filled.data, base_dir)
     try:
         spec = spec_model().model_validate(filled.data)
     except ValidationError as exc:
@@ -150,6 +157,40 @@ def _validate(data: dict[str, Any], source: str, base_dir: Path) -> Spec:
     if filled.issues:
         raise SpecError(source, filled.issues)
     return spec
+
+
+IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".svg")
+"""The image files a chart can show."""
+
+
+def _resolve_images(data: dict[str, Any], base_dir: Path) -> list[InputIssue]:
+    """Replace the image paths of each chart's `images` with full paths, checking each file.
+
+    A chart type draws its images long after the spec is read, from wherever vizreel runs, so
+    the paths are made absolute here, relative to the spec file as a user writes them.
+    """
+    charts = data.get("charts")
+    if not isinstance(charts, list):
+        return []
+    issues: list[InputIssue] = []
+    for index, chart in enumerate(charts):
+        images = chart.get("images") if isinstance(chart, dict) else None
+        if not isinstance(images, dict):
+            continue
+        resolved = dict(images)
+        for name, reference in images.items():
+            if not isinstance(reference, str) or not reference:
+                continue
+            path = base_dir / reference
+            loc: Location = ("charts", index, "images", str(name))
+            if path.suffix.lower() not in IMAGE_SUFFIXES:
+                issues.append(_issue(loc, f"{reference} is not a PNG, JPEG or SVG file"))
+            elif not path.is_file():
+                issues.append(_issue(loc, f"{reference} was not found in {path.parent}"))
+            else:
+                resolved[name] = str(path.resolve())
+        charts[index] = {**chart, "images": resolved}
+    return issues
 
 
 def _chart_order(issue: InputIssue) -> int:

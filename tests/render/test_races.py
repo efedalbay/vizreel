@@ -76,3 +76,30 @@ def test_a_race_draws_series_in_their_brand_colors(tmp_path: Path) -> None:
     for color in theme.colors.brand.values():
         target = [int(color[index : index + 2], 16) for index in (1, 3, 5)]
         assert np.all(np.abs(rgb - target) <= 4, axis=2).sum() > 500
+
+
+def test_a_race_shows_images_and_they_leave_with_it(tmp_path: Path) -> None:
+    from PIL import Image
+
+    Image.new("RGBA", (40, 20), (255, 0, 255, 255)).save(tmp_path / "logo.png")
+    spec = tmp_path / "spec.yaml"
+    spec.write_text(
+        "version: 1\ncharts:\n  - id: r\n    type: bar-race\n    periods: [a, b, c]\n"
+        "    series:\n      - { name: A, values: [1, 2, 3] }\n"
+        "      - { name: B, values: [3, 2, 1] }\n"
+        "    images: { A: logo.png }\n    duration: 5\n    motion: { exit: fade }\n",
+        encoding="utf-8",
+    )
+
+    [result] = render_spec(
+        spec, RenderOptions(out_dir=tmp_path, quality="preview", still=True), reraise=True
+    )
+
+    assert result.video is not None and result.still is not None
+    with av.open(str(result.still)) as container:
+        still = next(container.decode(video=0)).to_ndarray(format="rgb24").astype(int)
+    magenta = np.all(np.abs(still - [255, 0, 255]) <= 4, axis=2)
+    assert magenta.sum() > 50
+    rows, columns = np.nonzero(magenta)
+    assert columns.max() - columns.min() > rows.max() - rows.min()
+    assert frames_rgba(result.video)[-1][:, :, 3].max() == 0

@@ -550,6 +550,8 @@ Default `duration`: 6.
 
 Bars that grow and change places as their values change over many periods, e.g. the revenue of ten companies over 24 years. The largest bars are on screen, from the largest down, each with its name on the left and its value counting at its end, and the period, as written, large above them. The race runs through the periods at one pace and slows to a stop on the last one; a bar slides to its new place when its value passes another's, briefly, and bars that enter or leave the largest slide in or out at the bottom. The value axis grows and shrinks with the largest value on screen. Bars are in the theme's `accent` color, or in a brand color the spec gives them by name (`colors`), and the followed series in its `highlight` color. Brand colors come from the theme, never from the spec itself, so `vizreel theme check` tests them like every other color.
 
+Names are left of the bars in a 16:9 frame and above them in a 9:16 frame, where the bars need the whole width; a 1:1 frame puts them left when they fit.
+
 Between two periods values change in a straight line. A gap (`null`) between two values is filled in a straight line; before a series' first value it is 0, after its last value it keeps it.
 
 | Field | Type | Required | Default | Description |
@@ -561,6 +563,7 @@ Between two periods values change in a straight line. A gap (`null`) between two
 | `show` | integer | no | `8` | How many of the largest bars are on screen, 3–12. |
 | `number` | number format | no | — | Formatting of the values. |
 | `highlight.series` | string | no | — | The series to follow, in the highlight color. |
+| `images` | object | no | — | Images for some series: a series name, then a PNG, JPEG or SVG file relative to the spec file, e.g. `{ Northwind: logos/northwind.svg }`. Each is drawn as tall as the bar, between its end and its value. A file that is missing or of another kind is an error that names it. |
 | `colors` | object | no | — | Brand colors for some series: a series name, then the name of a color in the theme's `colors.brand` (see [THEMES.md](THEMES.md)), e.g. `{ Contoso: contoso-coral }`. The other bars keep the accent color, and the followed series the highlight color. A name the theme does not have is an error when the chart renders. |
 
 Default `duration`: 15. Each period needs at least 0.2 seconds of the race, which is what the duration leaves after the title, the first values and the hold; a duration too short says how long it must be. A race is the whole point of its clip, so, unlike other charts, its data moves for most of it.

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from vizreel.errors import VizreelError
 from vizreel.render.engine import ChartResult, RenderOptions, render_spec, select_charts
-from vizreel.spec.loader import load_spec, spec_data_files
+from vizreel.spec.loader import load_spec, spec_input_files
 from vizreel.spec.models import Spec
 from vizreel.themes.loader import load_theme, resolve_theme_path
 from vizreel.themes.models import Theme
@@ -152,7 +152,7 @@ class _Session:
         on_result: Callable[[ChartResult], None],
         on_error: Callable[[VizreelError], None],
     ) -> None:
-        data_files = spec_data_files(self.spec_path)
+        data_files = spec_input_files(self.spec_path)
         try:
             spec = load_spec(self.spec_path)
             theme_path = resolve_theme_path(spec.meta.theme, self.spec_path.parent)

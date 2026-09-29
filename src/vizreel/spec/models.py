@@ -469,12 +469,16 @@ class BarRaceChart(BaseChart):
     colors: dict[Text, Text] = Field(default_factory=dict)
     """Brand colors for some series, by series name: the name of a color in the theme's
     `colors.brand`, e.g. {Northwind: northwind-blue}. The other bars keep the accent color."""
+    images: dict[Text, Text] = Field(default_factory=dict)
+    """Images for some series, by series name: a PNG, JPEG or SVG file relative to the spec
+    file, e.g. {Northwind: logos/northwind.svg}, shown at the end of the series' bar."""
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         issues = _race_issues(self.periods, self.series)
         issues += _highlight_issues(self.highlight, self.series)
         issues += _named_series_issues(self.colors, self.series, "colors")
+        issues += _named_series_issues(self.images, self.series, "images")
         raise_rule_violations(type(self).__name__, issues)
         return self
 

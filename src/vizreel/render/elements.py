@@ -18,6 +18,7 @@ from manim import (
     Animation,
     FadeIn,
     Group,
+    ImageMobject,
     ManimColor,
     MarkupText,
     Mobject,
@@ -294,7 +295,7 @@ def fade_away(mobject: Mobject) -> UpdateFromAlphaFunc:
     return UpdateFromAlphaFunc(mobject, fade)  # type: ignore[arg-type]
 
 
-def redrawn(build: Callable[[], VMobject]) -> VGroup:
+def redrawn(build: Callable[[], Mobject]) -> Group:
     """Return a group whose parts are built again, by `build`, on every frame.
 
     Unlike Manim's `always_redraw`, which copies the new parts into the old ones, it takes
@@ -302,7 +303,7 @@ def redrawn(build: Callable[[], VMobject]) -> VGroup:
     empty: Manim draws, on every frame of an animation, the parts a moving group has when the
     animation starts, and the first update comes before the first frame.
     """
-    group = VGroup()
+    group = Group()
     group.add_updater(lambda mobject: setattr(mobject, "submobjects", build().submobjects))
     return group
 
@@ -345,14 +346,15 @@ def leave(mobjects: list[Mobject], theme: Theme, center: tuple[float, float]) ->
         center: The point everything shrinks toward.
     """
     exit_style = theme.motion.exit
-    parts = [
-        part
-        for part in dict.fromkeys(
+    members = list(
+        dict.fromkeys(
             member for mobject in mobjects for member in mobject.family_members_with_points()
         )
-        if isinstance(part, VMobject)
-    ]
+    )
+    parts = [part for part in members if isinstance(part, VMobject)]
     opacities = [(part.fill_rgbas[:, 3].copy(), part.stroke_rgbas[:, 3].copy()) for part in parts]
+    images = [part for part in members if isinstance(part, ImageMobject)]
+    image_alphas = [image.pixel_array[:, :, 3].copy() for image in images]
     distance = px(theme.sizes.label) * MOTION_DISTANCE
     reached = {"alpha": 0.0}
 
@@ -361,6 +363,8 @@ def leave(mobjects: list[Mobject], theme: Theme, center: tuple[float, float]) ->
         for part, (fill, stroke) in zip(parts, opacities, strict=True):
             part.fill_rgbas[:, 3] = fill * (1 - alpha)
             part.stroke_rgbas[:, 3] = stroke * (1 - alpha)
+        for image, image_alpha in zip(images, image_alphas, strict=True):
+            image.pixel_array[:, :, 3] = image_alpha * (1 - alpha)
         for mobject in mobjects:
             if exit_style == "sink":
                 mobject.shift(DOWN * distance * (alpha - before))

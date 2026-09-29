@@ -6,7 +6,7 @@ from vizreel.errors import SpecError
 from vizreel.format.locales import EN_US, FR_FR, NARROW_NO_BREAK_SPACE, NO_BREAK_SPACE, TR_TR
 from vizreel.format.numbers import parse_number
 from vizreel.spec.data import Table, TableError, read_table
-from vizreel.spec.loader import load_spec, parse_spec, spec_data_files, spec_json_schema
+from vizreel.spec.loader import load_spec, parse_spec, spec_input_files, spec_json_schema
 from vizreel.spec.models import (
     BarChart,
     CompareChart,
@@ -385,7 +385,7 @@ def test_data_files_are_read_from_the_spec_folder(tmp_path: Path) -> None:
 
     with pytest.raises(SpecError):
         load_spec(spec_path)
-    assert spec_data_files(spec_path) == [tmp_path / "data" / "sales.csv"]
+    assert spec_input_files(spec_path) == [tmp_path / "data" / "sales.csv"]
 
 
 def test_the_json_schema_describes_the_data_field() -> None:

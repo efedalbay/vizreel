@@ -9,6 +9,11 @@ All notable changes to vizreel are documented here. The format follows
 ### Added
 
 - Brand colors: a theme names colors in `colors.brand`, `vizreel theme check` tests them like the other data colors, and a `bar-race` gives them to its series by name with `colors: { Contoso: contoso-coral }`. `examples/brand.yaml` races in the example brand theme's colors.
+- Images in a `bar-race`: `images: { Northwind: logos/northwind.svg }` draws a logo or a flag, from a PNG, JPEG or SVG file next to the spec, at the end of the series' bar. `--watch` renders again when one is saved. The race in `examples/data.yaml` shows logos of the fictional companies.
+
+### Changed
+
+- In a 9:16 frame, and in a 1:1 frame when they do not fit beside the bars, a `bar-race` puts the names above the bars, so the bars keep the width they need.
 
 ## [0.13.0] - 2026-09-29
 
