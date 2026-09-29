@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from vizreel.charts._race import (
+    caption_at,
+    check_caption_times,
     check_race_time,
     fill_gaps,
     race_position,
@@ -285,6 +287,21 @@ class BarRaceChartType(ChartType):
             for period in chart.periods
         ]
         period_height = max(text.height for text in period_texts)
+        # Captions go left of the period, above the bars.
+        captions = [
+            elements.wrapped_block(
+                caption.text,
+                fonts.body,
+                sizes.label,
+                colors.text,
+                content.width - max(text.width for text in period_texts) - gap * 2,
+                "the caption",
+                "left",
+            ).mobject
+            for caption in chart.captions
+        ]
+        period_height = max([period_height, *(caption.height for caption in captions)])
+        caption_starts = [float(chart.periods.index(caption.period)) for caption in chart.captions]
         widest_value = max(
             value_text(value).width for value in {*every_value, *count_samples(0, max(every_value))}
         )
@@ -368,11 +385,26 @@ class BarRaceChartType(ChartType):
                 group.add(row)
             if with_names:
                 group.add(period_at(position))
+                shown = caption_at(caption_starts, position)
+                if shown is not None and shown[1] > 0:
+                    caption = captions[shown[0]].set_opacity(shown[1])
+                    caption.align_to((content.left, 0.0, 0.0), LEFT)
+                    group.add(caption.set_y(content.top - period_height / 2))
             return group
 
         intro = (motion.title_fade if len(header) else 0.0) + motion.structure
         race_seconds = chart.duration - intro - motion.hold
         check_race_time(race_seconds, count, chart.duration)
+        check_caption_times(
+            [
+                (caption.text, start)
+                for caption, start in zip(chart.captions, caption_starts, strict=True)
+            ],
+            intro,
+            race_seconds,
+            count,
+            chart.duration,
+        )
         check_reading_time(
             [(text, 0.0) for text in (chart.title, chart.subtitle, chart.source) if text],
             chart.duration,

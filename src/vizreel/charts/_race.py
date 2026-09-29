@@ -6,6 +6,7 @@ second and the third.
 """
 
 import bisect
+import math
 from collections.abc import Callable, Sequence
 
 from vizreel.errors import RenderError
@@ -130,3 +131,69 @@ def slot_positions(
         return result
 
     return at
+
+
+CAPTION_FADE = 0.3
+"""How long a caption takes to fade in, and out before the next one, in periods."""
+
+
+def race_time(position: float, total: float, periods: int) -> float:
+    """The seconds a race takes to reach a position: the inverse of `race_position`."""
+    last = periods - 1
+    pace = (last + 1) / total
+    steady = (last - 1) / pace
+    if position <= last - 1:
+        return position / pace
+    remaining = min(max(last - position, 0.0), 1.0)
+    return steady + (1 - math.sqrt(remaining)) * 2 / pace
+
+
+def caption_at(starts: Sequence[float], position: float) -> tuple[int, float] | None:
+    """Which caption shows at a position along the race, and how opaque it is.
+
+    Caption `i` shows from `starts[i]` until the next one starts, fading in over
+    `CAPTION_FADE` periods and out over the `CAPTION_FADE` before the next; the last stays to
+    the end. None before the first caption.
+    """
+    index = bisect.bisect_right(starts, position + 1e-9) - 1
+    if index < 0:
+        return None
+    opacity = min((position - starts[index]) / CAPTION_FADE, 1.0)
+    if index + 1 < len(starts):
+        opacity = min(opacity, (starts[index + 1] - position) / CAPTION_FADE)
+    return index, max(opacity, 0.0)
+
+
+def check_caption_times(
+    captions: Sequence[tuple[str, float]],
+    intro: float,
+    race_seconds: float,
+    periods: int,
+    duration: float,
+) -> None:
+    """Check that every caption stays on screen long enough to be read.
+
+    Args:
+        captions: Each caption's text and the position it appears at, in order.
+        intro: When the race starts, in seconds from the start of the clip.
+        race_seconds: How long the race takes.
+        periods: How many periods it runs through.
+        duration: Length of the clip; the last caption stays to its end.
+
+    Raises:
+        RenderError: A caption would go before it can be read.
+    """
+    from vizreel.charts.base import reading_time
+
+    for index, (text, start) in enumerate(captions):
+        shown = intro + race_time(start, race_seconds, periods)
+        if index + 1 < len(captions):
+            gone = intro + race_time(captions[index + 1][1], race_seconds, periods)
+        else:
+            gone = duration
+        if gone - shown < reading_time(text) - 1e-9:
+            raise RenderError(
+                f'the caption "{text}" is on screen for {gone - shown:.1f}s and needs '
+                f"{reading_time(text):.1f}s to be read; shorten it, move the next caption later "
+                "or make the clip longer"
+            )

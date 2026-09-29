@@ -550,6 +550,8 @@ Default `duration`: 6.
 
 Bars that grow and change places as their values change over many periods, e.g. the revenue of ten companies over 24 years. The largest bars are on screen, from the largest down, each with its name on the left and its value counting at its end, and the period, as written, large above them. The race runs through the periods at one pace and slows to a stop on the last one; a bar slides to its new place when its value passes another's, briefly, and bars that enter or leave the largest slide in or out at the bottom. The value axis grows and shrinks with the largest value on screen. Bars are in the theme's `accent` color, or in a brand color the spec gives them by name (`colors`), and the followed series in its `highlight` color. Brand colors come from the theme, never from the spec itself, so `vizreel theme check` tests them like every other color.
 
+Captions (`captions`) tell what happened at a period, such as a launch or a crisis; they sit above the bars, left of the period.
+
 Names are left of the bars in a 16:9 frame and above them in a 9:16 frame, where the bars need the whole width; a 1:1 frame puts them left when they fit.
 
 Between two periods values change in a straight line. A gap (`null`) between two values is filled in a straight line; before a series' first value it is 0, after its last value it keeps it.
@@ -563,6 +565,7 @@ Between two periods values change in a straight line. A gap (`null`) between two
 | `show` | integer | no | `8` | How many of the largest bars are on screen, 3–12. |
 | `number` | number format | no | — | Formatting of the values. |
 | `highlight.series` | string | no | — | The series to follow, in the highlight color. |
+| `captions` | list | no | — | Up to 10 captions that appear over the race, in order: `{ period: "2008", text: "The crisis" }`. Each fades in at its period and stays until the next one, or to the end; it must stay long enough to be read (1 second per 3 words). |
 | `images` | object | no | — | Images for some series: a series name, then a PNG, JPEG or SVG file relative to the spec file, e.g. `{ Northwind: logos/northwind.svg }`. Each is drawn as tall as the bar, between its end and its value. A file that is missing or of another kind is an error that names it. |
 | `colors` | object | no | — | Brand colors for some series: a series name, then the name of a color in the theme's `colors.brand` (see [THEMES.md](THEMES.md)), e.g. `{ Contoso: contoso-coral }`. The other bars keep the accent color, and the followed series the highlight color. A name the theme does not have is an error when the chart renders. |
 
@@ -587,7 +590,7 @@ A race usually comes from a CSV file, the periods in the first column and a seri
 
 ## `line-race` — lines racing through periods
 
-Lines that draw through many periods, e.g. revenue over 24 years. One pen draws every line from left to right at one pace and slows to a stop on the last period, each line with its name and value riding its tip; the vertical axis grows with the largest value drawn so far, so the lines always fill the frame. In a vertical or square frame the name goes above the value, leaving the lines more width.
+Lines that draw through many periods, e.g. revenue over 24 years. One pen draws every line from left to right at one pace and slows to a stop on the last period, each line with its name and value riding its tip; the vertical axis grows with the largest value drawn so far, so the lines always fill the frame. In a vertical or square frame the name goes above the value, leaving the lines more width. Captions (`captions`) sit above the lines, left of the labels at their tips.
 
 A gap (`null`) between two values is filled in a straight line; before a series' first value and after its last, its line is not drawn.
 
@@ -599,6 +602,7 @@ A gap (`null`) between two values is filled in a straight line; before a series'
 | `series[].values` | list of numbers | yes | — | One value per period, zero or more; `null` for a gap. |
 | `number` | number format | no | — | Formatting of axis and value labels. |
 | `highlight.series` | string | no | — | The series to follow, in the highlight color; the others are muted. |
+| `captions` | list | no | — | Up to 10 captions that appear over the race, in order: `{ period: "2008", text: "The crisis" }`. Each fades in at its period and stays until the next one, or to the end; it must stay long enough to be read (1 second per 3 words). |
 
 Default `duration`: 15. Each period needs at least 0.2 seconds of the race, as for `bar-race`.
 

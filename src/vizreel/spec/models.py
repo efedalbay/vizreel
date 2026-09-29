@@ -406,6 +406,41 @@ class RaceHighlight(SpecModel):
     """Name of the series drawn in the highlight color."""
 
 
+class RaceCaption(SpecModel):
+    """A caption over a race, from a period on."""
+
+    period: Text
+    """The period it appears at, one of the race's periods."""
+    text: Text
+    """What it says, e.g. "The crisis". It stays until the next caption, or the end."""
+
+
+MAX_CAPTIONS = 10
+
+
+def _caption_issues(captions: list[RaceCaption], periods: list[str]) -> list[RuleViolation]:
+    """What is wrong with the captions of a race: unknown periods, or periods out of order."""
+    issues: list[RuleViolation] = []
+    previous = -1
+    for index, caption in enumerate(captions):
+        loc: Location = ("captions", index, "period")
+        if caption.period not in periods:
+            issues.append(
+                (loc, f'"{caption.period}" is not one of the periods: {_quoted_list(periods)}')
+            )
+            continue
+        at = periods.index(caption.period)
+        if at <= previous:
+            issues.append(
+                (
+                    loc,
+                    f'"{caption.period}" comes before the caption above it; list captions in order',
+                )
+            )
+        previous = max(previous, at)
+    return issues
+
+
 def _race_issues(periods: list[str], series: list[RaceSeries]) -> list[RuleViolation]:
     """What is wrong with the periods and series of a race."""
     issues = _duplicate_issues(periods, "periods", None, "periods")
@@ -466,6 +501,8 @@ class BarRaceChart(BaseChart):
     """Formatting of the values."""
     highlight: RaceHighlight | None = None
     """The series to follow, drawn in the highlight color."""
+    captions: list[RaceCaption] = Field(default_factory=list, max_length=MAX_CAPTIONS)
+    """Up to ten captions that appear over the race at the periods they name, in order."""
     colors: dict[Text, Text] = Field(default_factory=dict)
     """Brand colors for some series, by series name: the name of a color in the theme's
     `colors.brand`, e.g. {Northwind: northwind-blue}. The other bars keep the accent color."""
@@ -479,6 +516,7 @@ class BarRaceChart(BaseChart):
         issues += _highlight_issues(self.highlight, self.series)
         issues += _named_series_issues(self.colors, self.series, "colors")
         issues += _named_series_issues(self.images, self.series, "images")
+        issues += _caption_issues(self.captions, self.periods)
         raise_rule_violations(type(self).__name__, issues)
         return self
 
@@ -498,11 +536,14 @@ class LineRaceChart(BaseChart):
     """Formatting of axis and value labels."""
     highlight: RaceHighlight | None = None
     """The series to follow, drawn in the highlight color while the others are muted."""
+    captions: list[RaceCaption] = Field(default_factory=list, max_length=MAX_CAPTIONS)
+    """Up to ten captions that appear over the race at the periods they name, in order."""
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         issues = _race_issues(self.periods, self.series)
         issues += _highlight_issues(self.highlight, self.series)
+        issues += _caption_issues(self.captions, self.periods)
         raise_rule_violations(type(self).__name__, issues)
         return self
 

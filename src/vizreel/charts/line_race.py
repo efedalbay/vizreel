@@ -2,7 +2,13 @@
 
 from typing import TYPE_CHECKING, Any
 
-from vizreel.charts._race import check_race_time, fill_gaps, race_position
+from vizreel.charts._race import (
+    caption_at,
+    check_caption_times,
+    check_race_time,
+    fill_gaps,
+    race_position,
+)
 from vizreel.charts.base import ChartType, check_reading_time
 from vizreel.charts.line import END_LABEL_ROOM, MIN_PLOT_PX, drawn, runs
 from vizreel.charts.registry import register
@@ -94,6 +100,7 @@ class LineRaceChartType(ChartType):
             DOWN,
             LEFT,
             RIGHT,
+            UP,
             AnimationGroup,
             Create,
             Dot,
@@ -178,12 +185,29 @@ class LineRaceChartType(ChartType):
         widest_end = max(end_label(index, largest).width for index in range(len(chart.series)))
         tallest_tick = max(tick_label(tick).height for tick in full_axis.ticks)
         x_label_gap = gap + tallest_tick / 2
+        plot_left = content.left + widest_tick + gap
+        plot_right = content.right - dot_radius - gap - widest_end * END_LABEL_ROOM
+        # Captions go above the plot, left of the labels at the tips of the lines.
+        captions = [
+            elements.wrapped_block(
+                caption.text,
+                fonts.body,
+                sizes.label,
+                colors.text,
+                plot_right - content.left,
+                "the caption",
+                "left",
+            ).mobject
+            for caption in chart.captions
+        ]
+        caption_band = max((caption.height for caption in captions), default=0.0)
         plot = Box(
-            content.left + widest_tick + gap,
+            plot_left,
             content.bottom + max(block.height for block in x_blocks) + x_label_gap,
-            content.right - dot_radius - gap - widest_end * END_LABEL_ROOM,
-            content.top - glyphs("0").height / 2,
+            plot_right,
+            content.top - max(glyphs("0").height / 2, caption_band + gap * 2),
         )
+        caption_starts = [float(chart.periods.index(caption.period)) for caption in chart.captions]
         if min(plot.width, plot.height) < px(MIN_PLOT_PX):
             raise RenderError(
                 "not enough room for the line race; shorten the series names or the title"
@@ -260,11 +284,25 @@ class LineRaceChartType(ChartType):
             for (index, (x, value)), label, center in zip(tips, labels, centers, strict=True):
                 group.add(Dot((x, y_of(value), 0.0), radius=dot_radius, color=line_colors[index]))
                 group.add(label.move_to((x + dot_radius + gap + label.width / 2, center, 0.0)))
+            shown = caption_at(caption_starts, position)
+            if shown is not None and shown[1] > 0:
+                caption = captions[shown[0]].set_opacity(shown[1])
+                group.add(caption.align_to((content.left, content.top, 0.0), UP + LEFT))
             return group
 
         intro = (motion.title_fade if len(header) else 0.0) + motion.structure
         race_seconds = chart.duration - intro - motion.hold
         check_race_time(race_seconds, count, chart.duration)
+        check_caption_times(
+            [
+                (caption.text, start)
+                for caption, start in zip(chart.captions, caption_starts, strict=True)
+            ],
+            intro,
+            race_seconds,
+            count,
+            chart.duration,
+        )
         check_reading_time(
             [(text, 0.0) for text in (chart.title, chart.subtitle, chart.source) if text],
             chart.duration,

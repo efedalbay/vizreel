@@ -279,3 +279,53 @@ def test_race_rows_in_a_narrow_frame_put_each_name_above_its_bar() -> None:
     top = rows.center(0) + rows.thickness / 2 + 0.1 + 0.3
     bottom = rows.center(0) - rows.thickness / 2
     assert 8.0 - top == pytest.approx(bottom - 7.0)
+
+
+def test_a_race_reaches_each_position_at_the_time_race_position_says() -> None:
+    from vizreel.charts._race import race_time
+
+    for position in (0, 1, 2.5, 3, 3.5, 3.99, 4):
+        assert race_position(race_time(position, 10, 5), 10, 5) == pytest.approx(position)
+
+
+def test_a_caption_shows_until_the_next_one_fading_in_and_out() -> None:
+    from vizreel.charts._race import CAPTION_FADE, caption_at
+
+    assert caption_at([1.0, 3.0], 0.5) is None
+    assert caption_at([1.0, 3.0], 1.0) == (0, 0.0)
+    assert caption_at([1.0, 3.0], 1.0 + CAPTION_FADE) == (0, pytest.approx(1.0))
+    assert caption_at([1.0, 3.0], 2.0) == (0, 1.0)
+    assert caption_at([1.0, 3.0], 3.0 - CAPTION_FADE / 2) == (0, pytest.approx(0.5))
+    assert caption_at([1.0, 3.0], 10.0) == (1, 1.0)
+
+
+def test_a_caption_must_stay_long_enough_to_be_read() -> None:
+    from vizreel.charts._race import check_caption_times
+
+    check_caption_times([("One two three", 0.0), ("Four", 4.0)], 1.0, 10.0, 5, 13.0)
+    with pytest.raises(RenderError, match='the caption "Words enough for three seconds of'):
+        check_caption_times(
+            [("Words enough for three seconds of reading here", 0.0), ("Next", 1.0)],
+            1.0,
+            10.0,
+            5,
+            13.0,
+        )
+
+
+@pytest.mark.parametrize("kind", ["bar-race", "line-race"])
+def test_captions_name_periods_in_order(kind: str) -> None:
+    chart = f"type: {kind}, periods: [a, b, c], series: [{TWO}]"
+
+    race = race_spec(
+        f"{chart}, captions: [{{ period: a, text: Start }}, {{ period: c, text: End }}]"
+    )
+    assert [caption.period for caption in race.captions] == ["a", "c"]
+    assert race_errors(
+        f"{chart}, captions: [{{ period: c, text: One }}, {{ period: b, text: Two }}, "
+        "{ period: z, text: Three }]"
+    ) == [
+        'charts[0].captions[1].period: "b" comes before the caption above it; list captions '
+        "in order",
+        'charts[0].captions[2].period: "z" is not one of the periods: "a", "b", "c"',
+    ]
