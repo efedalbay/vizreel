@@ -167,6 +167,21 @@ A chart can read its data from a CSV file, such as one exported from a spreadshe
 
 The first row of the file names the columns, and a bar chart reads a label and a value from each row after it. Commas, semicolons and tabs all work, and numbers may be written the way your locale writes them (`1.234,5` with `locale: tr-TR`). An error names the file, row and column, and `--watch` renders again when the file is saved. Every chart type but `stat` can read one; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#data-from-files) for what each reads, and [`examples/data.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/data.yaml).
 
+## Motion
+
+By default the panel and titles fade in and the clip ends on the complete chart, which an editor can freeze. `motion` makes them rise or grow into place instead, and the clip leave the screen by itself at the end:
+
+```yaml
+- id: offers
+  type: bar
+  bars:
+    - { label: North, value: 412 }
+    - { label: South, value: 298 }
+  motion: { entrance: rise, exit: fade }
+```
+
+The exit is part of the clip's duration, after the full hold, and `meta.motion` sets it for every chart at once. See the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#motion).
+
 ## Number locales
 
 Numbers are written the way your audience reads them. Set `locale` in the spec's `meta` to `en-US` (the default), `tr-TR`, `es-ES`, `pt-BR` or `fr-FR`:

@@ -67,7 +67,6 @@ class ProgressChartType(ChartType):
             TAU,
             AnimationGroup,
             AnnularSector,
-            FadeIn,
             Rectangle,
             UpdateFromAlphaFunc,
             ValueTracker,
@@ -220,10 +219,12 @@ class ProgressChartType(ChartType):
         opening: list[Animation] = []
         if layout.panel:
             card = elements.panel(layout.panel_around(layout.inner), theme)
-            opening.append(FadeIn(card, run_time=motion.title_fade, rate_func=ease))
+            opening.append(elements.appear(card, theme, run_time=motion.title_fade, rate_func=ease))
         titles = VGroup(header, *([source] if source else []))
         if len(titles):
-            opening.append(FadeIn(titles, run_time=motion.title_fade, rate_func=ease))
+            opening.append(
+                elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
+            )
         if len(header):
             scene.play(AnimationGroup(*opening), run_time=phases.intro)
             opening = []
@@ -244,9 +245,13 @@ class ProgressChartType(ChartType):
         fade = min(motion.title_fade, phases.main)
         # Manim calls the update function with (mobject, alpha) but types it with one argument.
         count = UpdateFromAlphaFunc(tracker, advance, run_time=phases.main, rate_func=ease)  # type: ignore[arg-type]
-        reveal: list[Animation] = [*opening, count, FadeIn(track, run_time=fade, rate_func=ease)]
+        reveal: list[Animation] = [
+            *opening,
+            count,
+            elements.appear(track, theme, run_time=fade, rate_func=ease),
+        ]
         if label is not None:
-            reveal.append(FadeIn(label, run_time=fade, rate_func=ease))
+            reveal.append(elements.appear(label, theme, run_time=fade, rate_func=ease))
         scene.play(AnimationGroup(*reveal), run_time=phases.main)
 
         for mobject in (fill, counting_percent, counting_amount):

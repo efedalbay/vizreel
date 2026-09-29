@@ -164,7 +164,6 @@ class TableChartType(ChartType):
             LEFT,
             AnimationGroup,
             Create,
-            FadeIn,
             Line,
             ManimColor,
             Rectangle,
@@ -317,10 +316,12 @@ class TableChartType(ChartType):
         opening: list[Animation] = []
         if layout.panel:
             card = elements.panel(layout.panel_around(layout.inner), theme)
-            opening.append(FadeIn(card, run_time=motion.title_fade, rate_func=ease))
+            opening.append(elements.appear(card, theme, run_time=motion.title_fade, rate_func=ease))
         titles = VGroup(header, *([source] if source else []))
         if len(titles):
-            opening.append(FadeIn(titles, run_time=motion.title_fade, rate_func=ease))
+            opening.append(
+                elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
+            )
         if len(header):
             scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
             opening = []
@@ -328,8 +329,9 @@ class TableChartType(ChartType):
             AnimationGroup(
                 *opening,
                 Create(rule, run_time=motion.structure, rate_func=ease),
-                FadeIn(
+                elements.appear(
                     VGroup(*(name.mobject for name in names)),
+                    theme,
                     run_time=motion.structure,
                     rate_func=ease,
                 ),

@@ -1,4 +1,4 @@
-"""Manim building blocks shared by chart types: text, headers, panels, easing.
+"""Manim building blocks shared by chart types: text, headers, panels, easing, motion.
 
 Imports Manim at the top. Chart modules import this module inside `build`.
 """
@@ -7,13 +7,17 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import cache
-from typing import Literal
+from typing import Any, Literal
 from xml.sax.saxutils import escape
 
 from manim import (
     DOWN,
     LEFT,
     ORIGIN,
+    UP,
+    Animation,
+    FadeIn,
+    Group,
     ManimColor,
     MarkupText,
     Mobject,
@@ -288,6 +292,73 @@ def fade_away(mobject: Mobject) -> UpdateFromAlphaFunc:
 
     # Manim calls the update function with (mobject, alpha) but types it with one argument.
     return UpdateFromAlphaFunc(mobject, fade)  # type: ignore[arg-type]
+
+
+MOTION_DISTANCE = 1.0
+"""How far an entrance rises and an exit sinks, as a multiple of the label size."""
+ZOOM_SCALE = 0.9
+"""The size an entrance grows from and an exit shrinks to, as a share of the full size."""
+
+
+def appear(mobject: Mobject, theme: Theme, **kwargs: Any) -> Animation:
+    """Make a panel, title, label or legend appear, as the theme's `entrance` says.
+
+    It fades in, and with `rise` also rises a little into place, with `zoom` grows a little
+    into place. Data does not appear this way: bars grow, lines draw and numbers count.
+
+    Args:
+        mobject: What appears.
+        theme: The entrance, and the label size that sets how far it rises.
+        **kwargs: Passed on to the animation, e.g. `run_time` and `rate_func`.
+    """
+    entrance = theme.motion.entrance
+    if entrance == "rise":
+        return FadeIn(mobject, shift=UP * px(theme.sizes.label) * MOTION_DISTANCE, **kwargs)
+    if entrance == "zoom":
+        return FadeIn(mobject, scale=ZOOM_SCALE, **kwargs)
+    return FadeIn(mobject, **kwargs)
+
+
+def leave(mobjects: list[Mobject], theme: Theme, center: tuple[float, float]) -> Animation:
+    """Make everything on the scene leave, as the theme's `exit` says.
+
+    Every part fades out from its own opacity, so a dimmed part stays dimmer than the rest
+    until the end. With `sink` everything also sinks a little, with `zoom` it shrinks a
+    little toward `center`.
+
+    Args:
+        mobjects: The mobjects on the scene.
+        theme: The exit, and the label size that sets how far it sinks.
+        center: The point everything shrinks toward.
+    """
+    exit_style = theme.motion.exit
+    parts = [
+        part
+        for part in dict.fromkeys(
+            member for mobject in mobjects for member in mobject.family_members_with_points()
+        )
+        if isinstance(part, VMobject)
+    ]
+    opacities = [(part.fill_rgbas[:, 3].copy(), part.stroke_rgbas[:, 3].copy()) for part in parts]
+    distance = px(theme.sizes.label) * MOTION_DISTANCE
+    reached = {"alpha": 0.0}
+
+    def step(_: Mobject, alpha: float) -> None:
+        before, reached["alpha"] = reached["alpha"], alpha
+        for part, (fill, stroke) in zip(parts, opacities, strict=True):
+            part.fill_rgbas[:, 3] = fill * (1 - alpha)
+            part.stroke_rgbas[:, 3] = stroke * (1 - alpha)
+        for mobject in mobjects:
+            if exit_style == "sink":
+                mobject.shift(DOWN * distance * (alpha - before))
+            elif exit_style == "zoom":
+                factor = (1 - (1 - ZOOM_SCALE) * alpha) / (1 - (1 - ZOOM_SCALE) * before)
+                mobject.scale(factor, about_point=(*center, 0.0))
+
+    # The animation is on everything, so that Manim redraws it all instead of keeping the
+    # parts it thinks are still as a fixed background. Manim calls the update function with
+    # (mobject, alpha) but types it with one argument.
+    return UpdateFromAlphaFunc(Group(*mobjects), step)  # type: ignore[arg-type]
 
 
 def panel(box: Box, theme: Theme) -> RoundedRectangle:

@@ -108,7 +108,6 @@ class AreaChartType(ChartType):
             AnimationGroup,
             Create,
             Dot,
-            FadeIn,
             Line,
             ValueTracker,
             VGroup,
@@ -281,10 +280,12 @@ class AreaChartType(ChartType):
         opening: list[Animation] = []
         if layout.panel:
             card = elements.panel(layout.panel_around(layout.inner), theme)
-            opening.append(FadeIn(card, run_time=motion.title_fade, rate_func=ease))
+            opening.append(elements.appear(card, theme, run_time=motion.title_fade, rate_func=ease))
         titles = VGroup(header, *([source] if source else []))
         if len(titles):
-            opening.append(FadeIn(titles, run_time=motion.title_fade, rate_func=ease))
+            opening.append(
+                elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
+            )
         if len(header):
             scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
             opening = []
@@ -292,7 +293,7 @@ class AreaChartType(ChartType):
             AnimationGroup(
                 *opening,
                 Create(grid, run_time=motion.structure, rate_func=ease),
-                FadeIn(axis_labels, run_time=motion.structure, rate_func=ease),
+                elements.appear(axis_labels, theme, run_time=motion.structure, rate_func=ease),
             ),
             run_time=motion.structure,
         )

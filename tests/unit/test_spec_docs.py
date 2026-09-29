@@ -31,8 +31,8 @@ README_EXAMPLES = spec_examples(ROOT / "README.md")
 
 
 def test_examples_are_found() -> None:
-    assert len(SPEC_EXAMPLES) == 17
-    assert len(README_EXAMPLES) == 3
+    assert len(SPEC_EXAMPLES) == 18
+    assert len(README_EXAMPLES) == 4
 
 
 @pytest.mark.parametrize("example", SPEC_EXAMPLES)

@@ -5,6 +5,7 @@ Importing this module imports Manim, which takes several seconds; import it insi
 
 from vizreel.render.elements import (
     TextBlock,
+    appear,
     bounds,
     check_fits,
     color,
@@ -24,6 +25,7 @@ from vizreel.render.numbers_text import NumberGlyphs
 __all__ = [
     "NumberGlyphs",
     "TextBlock",
+    "appear",
     "bounds",
     "check_fits",
     "color",

@@ -128,7 +128,6 @@ class GroupedChartType(ChartType):
         from manim import (
             AnimationGroup,
             Create,
-            FadeIn,
             ValueTracker,
             VGroup,
             always_redraw,
@@ -217,10 +216,12 @@ class GroupedChartType(ChartType):
         opening: list[Animation] = []
         if layout.panel:
             card = elements.panel(layout.panel_around(layout.inner), theme)
-            opening.append(FadeIn(card, run_time=motion.title_fade, rate_func=ease))
+            opening.append(elements.appear(card, theme, run_time=motion.title_fade, rate_func=ease))
         titles = VGroup(header, *([source] if source else []))
         if len(titles):
-            opening.append(FadeIn(titles, run_time=motion.title_fade, rate_func=ease))
+            opening.append(
+                elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
+            )
         if len(header):
             scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
             opening = []
@@ -231,7 +232,9 @@ class GroupedChartType(ChartType):
                 if geometry.axis
                 else []
             ),
-            FadeIn(VGroup(legend, *geometry.labels), run_time=motion.structure, rate_func=ease),
+            elements.appear(
+                VGroup(legend, *geometry.labels), theme, run_time=motion.structure, rate_func=ease
+            ),
         ]
         scene.play(AnimationGroup(*structure), run_time=motion.structure)
 

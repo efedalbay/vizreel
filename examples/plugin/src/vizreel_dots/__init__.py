@@ -90,7 +90,7 @@ class DotsChartType(ChartType):
 
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""
-        from manim import AnimationGroup, Dot, FadeIn, ValueTracker, VGroup, always_redraw
+        from manim import AnimationGroup, Dot, ValueTracker, VGroup, always_redraw
 
         from vizreel.plugin import render
 
@@ -170,10 +170,10 @@ class DotsChartType(ChartType):
         opening: list[Animation] = []
         if layout.panel:
             card = render.panel(layout.panel_around(layout.inner), theme)
-            opening.append(FadeIn(card, run_time=motion.title_fade, rate_func=ease))
+            opening.append(render.appear(card, theme, run_time=motion.title_fade, rate_func=ease))
         titles = VGroup(header, *([source] if source else []))
         if len(titles):
-            opening.append(FadeIn(titles, run_time=motion.title_fade, rate_func=ease))
+            opening.append(render.appear(titles, theme, run_time=motion.title_fade, rate_func=ease))
         if len(header):
             scene.play(AnimationGroup(*opening), run_time=phases.intro)
             opening = []
@@ -196,10 +196,10 @@ class DotsChartType(ChartType):
         reveal: list[Animation] = [
             *opening,
             tracker.animate(run_time=phases.main, rate_func=lambda t: t).set_value(1.0),
-            FadeIn(grid, run_time=fade, rate_func=ease),
+            render.appear(grid, theme, run_time=fade, rate_func=ease),
         ]
         if label is not None:
-            reveal.append(FadeIn(label, run_time=fade, rate_func=ease))
+            reveal.append(render.appear(label, theme, run_time=fade, rate_func=ease))
         scene.play(AnimationGroup(*reveal), run_time=phases.main)
 
         for mobject in (filling, number):

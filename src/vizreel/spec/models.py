@@ -11,6 +11,7 @@ from pydantic import (
     model_validator,
 )
 
+from vizreel.themes.models import Easing, Entrance, Exit
 from vizreel.validation import Location, RuleViolation, raise_rule_violations, rule_error
 
 CHART_ID_PATTERN = r"^[a-z0-9-]+$"
@@ -76,6 +77,20 @@ class SpecModel(BaseModel):
     )
 
 
+class Motion(SpecModel):
+    """Motion settings that override the theme's `motion` for a chart or a whole spec."""
+
+    easing: Easing | None = None
+    """Curve of every movement and of counting numbers; all ease out. The theme's if left
+    out."""
+    entrance: Entrance | None = None
+    """How the panel, titles, labels and legends appear: fade, rise or zoom. The theme's if
+    left out."""
+    exit: Exit | None = None
+    """How the clip ends: none keeps the complete chart; fade, sink and zoom make it leave the
+    screen. The theme's if left out."""
+
+
 class Meta(SpecModel):
     """Settings shared by all charts in the spec."""
 
@@ -96,6 +111,9 @@ class Meta(SpecModel):
     4444 in ID.prores.mov, png a folder of numbered PNG frames."""
     locale: Literal["en-US", "tr-TR", "es-ES", "pt-BR", "fr-FR"] = "en-US"
     """How numbers are written: separators, the percent sign and compact unit names."""
+    motion: Motion = Field(default_factory=Motion)
+    """Motion settings for every chart, over the theme's; a chart's own `motion` goes over
+    these."""
 
 
 class NumberFormat(SpecModel):
@@ -141,6 +159,8 @@ class BaseChart(SpecModel):
     """Short source label shown at the bottom, e.g. "Source: example data"."""
     duration: Duration
     """Total clip length in seconds, including the final hold. Minimum 2."""
+    motion: Motion = Field(default_factory=Motion)
+    """Motion settings for this chart, over those of `meta` and the theme."""
 
 
 class SequencedChart(BaseChart):

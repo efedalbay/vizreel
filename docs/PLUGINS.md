@@ -15,7 +15,7 @@ A plugin is an ordinary Python package with three things:
 ```toml
 [project]
 name = "vizreel-dots"
-dependencies = ["vizreel>=0.7"]
+dependencies = ["vizreel>=0.12"]
 
 [project.entry-points."vizreel.chart_types"]
 dots = "vizreel_dots:DotsChartType"
@@ -102,6 +102,7 @@ A plugin chart looks at home next to the built-in ones when it follows the same 
 - **Exactly `chart.duration` long.** Divide the clip with `split_duration` and end with the theme's hold, in which nothing moves. `check_reading_time` checks that text stays on screen long enough to be read.
 - **Text that does not fit is an error, not smaller text.** `wrapped_block` wraps text onto two lines and raises `RenderError` when it still does not fit; `check_fits` does the same for one mobject. A big number may shrink, with `fitting_number_size` and `count_samples`, as the built-in types do.
 - **Expected failures raise `RenderError`** with a message the user can act on. Other exceptions are reported as unexpected errors in your package.
+- **Make the panel, titles, labels and legends appear with `render.appear`**, not Manim's `FadeIn`, so that they honor the entrance the theme or spec chooses (`fade`, `rise` or `zoom`). The exit at the end of a clip needs nothing from the chart type: vizreel plays it after the chart's last wait.
 - **Import Manim and `vizreel.plugin.render` inside `build`**, not at the top of the module. vizreel imports every chart type to validate a spec, and importing Manim takes several seconds.
 
 The [design rules](DESIGN.md) describe the look every chart follows: one highlighted element, large type, the safe area, eased motion.
@@ -113,7 +114,7 @@ Import everything from `vizreel.plugin` and `vizreel.plugin.render`. The rest of
 | Module | Contains |
 |---|---|
 | `vizreel.plugin` | `ChartType`, `CHART_API_VERSION`, `BaseChart`, `SequencedChart`, `SpecModel`, `NumberFormat`, `Text`, `Duration`, `Theme`, `FontStyle`, `Layout`, `Box`, `Locale`, `RenderError`; `Table` and `TableError` for `from_table`; number formatting (`format_number`, `format_numbers`, `format_percent`, `format_change`, `change_amount`, `change_decimals`, `decimals_for`, `shared_decimals`, `whole_percents`, `MINUS_SIGN`); timing (`split_duration`, `Phases`, `check_reading_time`, `staggered_progress`, `sequential_progress`); sizes (`px`, `stack_gap`, `stroke_width`, `count_samples`, `fitting_number_size`, `SMALLEST_NUMBER_SCALE`); `arranged`, which picks a landscape or vertical geometry for the frame and tries both at 1:1; for tests, `render_spec`, `RenderOptions` and `ChartResult`. It does not import Manim. |
-| `vizreel.plugin.render` | Manim building blocks: `header`, `source_line`, `panel`, `text`, `text_block`, `wrapped_block`, `TextBlock`, `line_metrics`, `NumberGlyphs`, `stack`, `bounds`, `check_fits`, `color`, `easing`, `fade_away`. It imports Manim. |
+| `vizreel.plugin.render` | Manim building blocks: `appear`, `header`, `source_line`, `panel`, `text`, `text_block`, `wrapped_block`, `TextBlock`, `line_metrics`, `NumberGlyphs`, `stack`, `bounds`, `check_fits`, `color`, `easing`, `fade_away`. It imports Manim. |
 
 Every name has a docstring. The built-in chart types in [`src/vizreel/charts`](https://github.com/efedalbay/vizreel/tree/main/src/vizreel/charts) use the same functions and are worth reading.
 
@@ -121,7 +122,7 @@ Every name has a docstring. The built-in chart types in [`src/vizreel/charts`](h
 
 `CHART_API_VERSION` is the version of this API. It goes up when a change to it would break chart types written for the previous version; the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) says what changed. A chart type whose `api_version` does not match is not loaded, with a message asking for a version of the package made for this vizreel, rather than failing in the middle of a render.
 
-Declare the lowest vizreel version with your API version as a dependency: `vizreel>=0.7` for API 1.
+Declare the lowest vizreel version that has everything you use as a dependency: `vizreel>=0.7` for API 1, or `vizreel>=0.12` if you use `render.appear`, as the example plugin does.
 
 ## Trying a plugin
 

@@ -193,7 +193,6 @@ class CompareChartType(ChartType):
             AnimationGroup,
             Arrow,
             Create,
-            FadeIn,
             ManimColor,
             UpdateFromAlphaFunc,
             ValueTracker,
@@ -328,10 +327,12 @@ class CompareChartType(ChartType):
         opening: list[Animation] = []
         if layout.panel:
             card = elements.panel(layout.panel_around(layout.inner), theme)
-            opening.append(FadeIn(card, run_time=motion.title_fade, rate_func=ease))
+            opening.append(elements.appear(card, theme, run_time=motion.title_fade, rate_func=ease))
         titles = VGroup(header, *([source] if source else []))
         if len(titles):
-            opening.append(FadeIn(titles, run_time=motion.title_fade, rate_func=ease))
+            opening.append(
+                elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
+            )
         if len(header):
             scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
             opening = []
@@ -366,7 +367,12 @@ class CompareChartType(ChartType):
             AnimationGroup(
                 *opening,
                 count(before_tracker, 0.0, before_value, half),
-                FadeIn(before_label.mobject, run_time=min(motion.title_fade, half), rate_func=ease),
+                elements.appear(
+                    before_label.mobject,
+                    theme,
+                    run_time=min(motion.title_fade, half),
+                    rate_func=ease,
+                ),
             ),
             run_time=half,
         )
@@ -383,7 +389,12 @@ class CompareChartType(ChartType):
             AnimationGroup(
                 Create(arrow, run_time=min(motion.structure, half), rate_func=ease),
                 count(after_tracker, before_value, after_value, half),
-                FadeIn(after_label.mobject, run_time=min(motion.title_fade, half), rate_func=ease),
+                elements.appear(
+                    after_label.mobject,
+                    theme,
+                    run_time=min(motion.title_fade, half),
+                    rate_func=ease,
+                ),
             ),
             run_time=half,
         )

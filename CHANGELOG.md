@@ -4,6 +4,17 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Motion options, in a chart's `motion`, in `meta.motion` for every chart, or in a theme's `motion`:
+  - `entrance: rise` or `zoom` makes the panel, title, labels and legends rise or grow a little into place as they fade in; `fade` is the default.
+  - `exit: fade`, `sink` or `zoom` makes a clip leave the screen at its end, after the full hold and within its duration; `--still` saves the complete chart from just before. A sequence leaves only at the end of its last clip.
+  - `easing` chooses the ease-out curve.
+- Themes take `entrance`, `exit` and `exit_time` in `motion`.
+- `render.appear` in `vizreel.plugin.render`, for chart types from other packages to honor the entrance.
+
 ## [0.11.2] - 2026-09-29
 
 ### Added

@@ -16,6 +16,14 @@ Color = Annotated[str, Field(pattern=r"^#[0-9A-Fa-f]{6}$")]
 Easing = Literal["ease_out_sine", "ease_out_cubic", "ease_out_quart", "ease_out_expo"]
 """Ease-out curves only: movement starts fast and stops softly, without overshoot."""
 
+Entrance = Literal["fade", "rise", "zoom"]
+"""How the panel, titles, labels and legends appear: fading in, also rising a little, or also
+growing a little."""
+
+Exit = Literal["none", "fade", "sink", "zoom"]
+"""How a clip ends: on the complete chart, or with everything fading out, also sinking a
+little, or also shrinking a little."""
+
 FontWeight = Literal["regular", "semibold", "bold"]
 
 MAX_FONT_FAMILIES = 2
@@ -143,6 +151,12 @@ class ThemeMotion(ThemeModel):
     """The highlight beat."""
     hold: float = Field(ge=1.5)
     """Final hold where nothing moves. At least 1.5."""
+    entrance: Entrance = "fade"
+    """How the panel, titles, labels and legends appear. Data always grows, draws or counts."""
+    exit: Exit = "none"
+    """How a clip ends. With an exit, the hold still lasts `hold` before it."""
+    exit_time: float = Field(default=0.5, gt=0)
+    """Length of the exit, within the clip's duration."""
 
 
 class Theme(ThemeModel):

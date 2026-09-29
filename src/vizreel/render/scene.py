@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from manim import DEFAULT_WAIT_TIME, Mobject, Scene, config
 from manim.scene.scene_file_writer import to_av_frame_rate
@@ -10,6 +10,9 @@ from manim.scene.scene_file_writer import to_av_frame_rate
 from vizreel.charts.base import ChartType, Continuation, FrameClock
 from vizreel.render.elements import PANEL_Z_INDEX
 from vizreel.render.layout import Box, Layout
+
+if TYPE_CHECKING:
+    from PIL.Image import Image
 
 FIT_BELOW_SHARE = 0.9
 """The layout closes in around content that needs less than this share of its height."""
@@ -44,6 +47,13 @@ class ChartScene(Scene):
     With a `continuation`, the scene renders a later clip of a sequence instead: the chart,
     which emphasizes the previous item, is built without recording, then the emphasis moves
     on (see `ChartType.continue_to`).
+
+    With an exit in the chart's theme (`motion.exit`), the chart's last wait, its final hold,
+    ends early by the exit's length, and the exit plays in the time left. Waits are held back
+    until the next animation, or the end of the clip, to know which wait is the last.
+
+    Attributes:
+        still: With an exit, the frame before it, where the chart is complete; else None.
     """
 
     def __init__(
@@ -66,7 +76,9 @@ class ChartScene(Scene):
         self.continuation = continuation
         self.relayout = relayout
         self.clock = FrameClock(to_av_frame_rate(config.frame_rate))
+        self.still: Image | None = None
         self._waiting = False
+        self._held_back: float | None = None
         super().__init__(**kwargs)
 
     def construct(self) -> None:
@@ -77,6 +89,28 @@ class ChartScene(Scene):
             self.chart_type.build(self)
         else:
             self.chart_type.continue_to(self, self.continuation.item, self.continuation.duration)
+        self._end()
+
+    def _end(self) -> None:
+        """Hold the last wait, or the part of it before the exit, then play the exit."""
+        from vizreel.render import elements
+
+        theme = self.chart_type.theme
+        motion = theme.motion
+        if motion.exit == "none" or self._held_back is None:
+            self._release_wait()
+            return
+        hold, self._held_back = self._held_back, None
+        self._hold(hold - motion.exit_time)
+        camera = self.renderer.camera
+        # A copy: the image shares its pixels with the camera, which the exit draws over.
+        self.still = camera.get_image().copy() if hasattr(camera, "get_image") else None
+        center = self.chart_type.layout.inner.center
+        self.play(
+            elements.leave(list(self.mobjects), theme, center),
+            run_time=motion.exit_time,
+            rate_func=elements.easing(theme),
+        )
 
     def fit_to_content(self, relayout: Callable[[Layout], ChartType]) -> None:
         """Close the layout in around the chart's content if it leaves much of it empty.
@@ -108,6 +142,7 @@ class ChartScene(Scene):
         renderer._original_skipping_status = True
         try:
             yield
+            self._release_wait()
         finally:
             renderer._original_skipping_status = False
             renderer.skip_animations = False
@@ -127,6 +162,7 @@ class ChartScene(Scene):
             return
         if "run_time" not in kwargs:
             raise TypeError("ChartScene.play() needs an explicit run_time")
+        self._release_wait()
         frames = self.clock.frames_for(kwargs["run_time"])
         kwargs["run_time"] = (frames - 0.5) / self.clock.fps
         super().play(*args, **kwargs)
@@ -139,15 +175,28 @@ class ChartScene(Scene):
     ) -> None:
         """Hold the current frame, unchanged, for a whole number of frames.
 
-        The wait is always frozen, whatever `frozen_frame` says, which guarantees that
-        nothing moves. A frozen wait renders int(duration × fps) frames, so half a frame
-        more gives exactly the frames the clock hands out.
+        The wait is held back until the next animation or the end of the clip (see the class
+        docstring). It is always frozen, whatever `frozen_frame` says, which guarantees that
+        nothing moves; `stop_condition` is not supported.
+        """
+        self._release_wait()
+        self._held_back = duration
+
+    def _release_wait(self) -> None:
+        """Render the wait held back, if there is one."""
+        if self._held_back is not None:
+            duration, self._held_back = self._held_back, None
+            self._hold(duration)
+
+    def _hold(self, duration: float) -> None:
+        """Render a frozen wait for a whole number of frames.
+
+        A frozen wait renders int(duration × fps) frames, so half a frame more gives exactly
+        the frames the clock hands out.
         """
         frames = self.clock.frames_for(duration)
         self._waiting = True
         try:
-            super().wait(
-                (frames + 0.5) / self.clock.fps, stop_condition=stop_condition, frozen_frame=True
-            )
+            super().wait((frames + 0.5) / self.clock.fps, frozen_frame=True)
         finally:
             self._waiting = False

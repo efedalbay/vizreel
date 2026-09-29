@@ -54,7 +54,8 @@ Motion guides the eye to the message. It is never decoration.
 - **Reading time.** Any text that appears must stay on screen for at least 1 second per 3 words before the clip ends.
 - **Highlight moment.** The highlight is a distinct beat: the highlighted element changes color, and everything else dims slightly. This is where the narration's key sentence lands, so it must be clearly visible in the timing.
 - Lines draw from left to right. Bars grow from the baseline. Numbers count; they do not fade in.
-- The last frame must be a complete, clean chart. Editors often freeze it.
+- The last frame must be a complete, clean chart. Editors often freeze it. The exception is a clip asked to leave the screen (`exit`), which ends empty after its full hold.
+- **Entrances and exits** (`motion` in the spec or theme) only fade, rise, sink, grow or shrink a little, easing out like everything else. They apply to the panel, titles, labels and legends, never to the data, which grows, draws or counts.
 
 ## 4. Color
 

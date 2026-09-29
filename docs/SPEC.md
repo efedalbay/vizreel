@@ -50,6 +50,7 @@ vizreel new line -o revenue.yaml
 | `aspect` | `16:9` \| `9:16` \| `1:1` | `16:9` | Frame shape. `16:9` is landscape; `9:16` is vertical, for Shorts, Reels and TikTok, and keeps clear of the platforms' buttons and captions; `1:1` is square, for feeds. Vertical clips are named `ID.vertical.mov` and square ones `ID.square.mov`. Quote the value: `aspect: "9:16"`. |
 | `fps` | `23.976` \| `24` \| `25` \| `29.97` \| `30` \| `50` \| `59.94` \| `60` | `60` | Frames per second. Use your editor timeline's rate: a clip at another rate is blended or loses frames. 25 and 50 are the PAL rates used in Europe, 29.97 and 59.94 the NTSC rates, 23.976 and 24 film. The NTSC rates are stored exactly (29.97 is 30000/1001), and a clip always has `round(duration × fps)` frames. |
 | `format` | `mov` \| `webm` \| `mp4` \| `prores` \| `png` | `mov` | `mov` (QuickTime Animation), `webm`, `prores` and `png` have a transparent background. `prores` is ProRes 4444, the professional editors' standard, written as `ID.prores.mov`. `png` writes a folder named like the clip, holding one PNG per frame (`ID/ID_00001.png`, ...), which every editor imports as an image sequence. `mp4` is opaque and uses the theme background color. |
+| `motion` | object | — | Motion settings for every chart: how things appear and leave, and the easing. See [Motion](#motion). |
 | `locale` | `en-US` \| `tr-TR` \| `es-ES` \| `pt-BR` \| `fr-FR` | `en-US` | How numbers are written: separators, the percent sign and compact unit names. See [Locales](#locales). Text you write, such as labels and dates, is shown as written. |
 
 CLI flags override `meta` values.
@@ -65,6 +66,7 @@ CLI flags override `meta` values.
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
 | `duration` | number (seconds) | no | depends on type | Total clip length, including the final hold. Minimum 2. |
 | `highlight` | object | no | — | Type-specific emphasis. See each type. `stat` has no `highlight`. |
+| `motion` | object | no | — | Motion settings for this chart, over those of `meta.motion`. See [Motion](#motion). |
 | `data` | string or object | no | — | A CSV file that gives the chart's data, such as its bars, in place of writing them in the spec. See [Data from files](#data-from-files). |
 
 ### Number format (`number`)
@@ -546,6 +548,35 @@ The first clip is the chart as usual, emphasizing the first item. Each later cli
 | `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
 
 A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat`, `progress` and `compare` charts have no elements to emphasize and no sequence.
+
+---
+
+## Motion
+
+Every chart moves as the [design rules](DESIGN.md#3-motion) say: data grows, draws or counts, every movement eases out, and the clip ends on a hold. `motion` chooses, within those rules, how the rest appears, whether the clip leaves the screen at the end, and the easing curve:
+
+```yaml
+version: 1
+meta:
+  motion: { entrance: rise }       # every chart
+charts:
+  - id: offers
+    type: bar
+    bars:
+      - { label: North, value: 412 }
+      - { label: South, value: 298 }
+    motion: { exit: fade }          # this chart
+```
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `entrance` | `fade` \| `rise` \| `zoom` | the theme's, `fade` | How the panel, title, labels and legends appear: fading in, also rising a little into place, or also growing a little into place. Data appears as always. |
+| `exit` | `none` \| `fade` \| `sink` \| `zoom` | the theme's, `none` | How the clip ends: on the complete chart, or leaving the screen by fading out, also sinking a little, or also shrinking a little. |
+| `easing` | `ease_out_sine` \| `ease_out_cubic` \| `ease_out_quart` \| `ease_out_expo` | the theme's | The curve of every movement and of counting numbers. |
+
+Each field of a chart's `motion` goes over `meta.motion`, which goes over the theme's `motion` (see [THEMES.md](THEMES.md)).
+
+An exit takes the theme's `exit_time` (0.5 seconds in the built-in themes) from the end of the clip, after the full hold, so the clip keeps its `duration` and still holds still long enough; a `duration` too short for both says how long it must be. The clip then ends on an empty, transparent frame, and `--still` saves the complete chart from just before the exit. A chart told as a [sequence](#sequences) leaves only at the end of its last clip, so the clips still cut together.
 
 ---
 

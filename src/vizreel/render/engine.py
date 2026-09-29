@@ -17,7 +17,7 @@ from vizreel.errors import OutputError, RenderError, VizreelError
 from vizreel.format.locales import Locale, locale_for
 from vizreel.render.layout import Aspect, Layout, build_layout, frame_size
 from vizreel.spec.loader import load_spec
-from vizreel.spec.models import BaseChart, SequencedChart, Spec
+from vizreel.spec.models import BaseChart, Motion, SequencedChart, Spec
 from vizreel.themes.loader import load_theme
 from vizreel.themes.models import Theme
 
@@ -199,6 +199,27 @@ def output_paths(
     return video, still
 
 
+def clip_theme(theme: Theme, spec_motion: Motion, chart_motion: Motion, *, last: bool) -> Theme:
+    """Return the theme a clip renders with: the theme's motion under the spec's and chart's.
+
+    Each field of the chart's `motion` goes over the spec's, which goes over the theme's. Only
+    the last clip of a chart leaves the screen, so the clips of a sequence cut together. A
+    clip that leaves holds for its exit on top of the theme's hold, which the chart types
+    count in their timing; the scene then plays the exit at the end of that hold.
+    """
+    motion = theme.motion.model_copy(
+        update={
+            **spec_motion.model_dump(exclude_none=True),
+            **chart_motion.model_dump(exclude_none=True),
+        }
+    )
+    if not last:
+        motion = motion.model_copy(update={"exit": "none"})
+    elif motion.exit != "none":
+        motion = motion.model_copy(update={"hold": motion.hold + motion.exit_time})
+    return theme.model_copy(update={"motion": motion})
+
+
 def select_charts(spec: Spec, only: tuple[str, ...]) -> list[BaseChart]:
     """Return the charts to render, in spec order.
 
@@ -259,7 +280,9 @@ def render_spec(
         plans = plan_clips(chart)
         steps = len(plans) if plans[0].step is not None else None
         for plan in plans:
-            result = _render_safely(plan, steps, theme, locale, settings, options, reraise)
+            last = plan.step is None or plan.step == steps
+            motion_theme = clip_theme(theme, spec.meta.motion, plan.chart.motion, last=last)
+            result = _render_safely(plan, steps, motion_theme, locale, settings, options, reraise)
             results.append(result)
             if on_done:
                 on_done(result)
@@ -373,9 +396,13 @@ def render_chart(
             else:
                 _move(movie, video_path)
             if still_path is not None:
-                camera = scene.renderer.camera
-                assert isinstance(camera, Camera)
-                camera.get_image().save(still_path)
+                # A clip that leaves the screen ends empty; its still is the chart before.
+                if scene.still is not None:
+                    scene.still.save(still_path)
+                else:
+                    camera = scene.renderer.camera
+                    assert isinstance(camera, Camera)
+                    camera.get_image().save(still_path)
 
 
 def _move(source: Path, target: Path) -> None:

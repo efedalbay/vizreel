@@ -100,7 +100,7 @@ The minimum text sizes keep charts readable on a phone (see `docs/DESIGN.md` §2
 
 ### `motion`
 
-Seconds, except `easing`.
+Seconds, except `easing`, `entrance` and `exit`. A spec can override `easing`, `entrance` and `exit` for all its charts or for one; see [Motion](SPEC.md#motion).
 
 | Field | Used for | Minimum |
 |---|---|---|
@@ -110,6 +110,9 @@ Seconds, except `easing`.
 | `stagger` | Delay between bars appearing one after another | 0 |
 | `highlight` | The highlight beat | more than 0 |
 | `hold` | Final hold, where nothing moves | 1.5 |
+| `entrance` | How the panel, titles, labels and legends appear: `fade`, `rise` (also rising a little) or `zoom` (also growing a little). Optional, `fade` by default | — |
+| `exit` | How a clip ends: `none` (on the complete chart), `fade`, `sink` (also sinking a little) or `zoom` (also shrinking a little). Optional, `none` by default | — |
+| `exit_time` | Length of the exit, taken from the end of the clip after the full hold. Optional, 0.5 by default | more than 0 |
 
 ### `background_panel`
 

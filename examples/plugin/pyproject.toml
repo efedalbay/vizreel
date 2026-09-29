@@ -5,7 +5,7 @@ description = "A dots chart type for vizreel: how many of a group, as a grid of 
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["vizreel>=0.7"]
+dependencies = ["vizreel>=0.12"]
 
 # This line is what makes it a vizreel plugin: the chart type's name, then where its class is.
 [project.entry-points."vizreel.chart_types"]

@@ -215,7 +215,6 @@ class TimelineChartType(ChartType):
         """Add the timeline to the scene and animate it."""
         from manim import (
             AnimationGroup,
-            FadeIn,
             UpdateFromAlphaFunc,
             ValueTracker,
             VGroup,
@@ -259,10 +258,12 @@ class TimelineChartType(ChartType):
         opening: list[Animation] = []
         if layout.panel:
             card = elements.panel(layout.panel_around(layout.inner), theme)
-            opening.append(FadeIn(card, run_time=motion.title_fade, rate_func=ease))
+            opening.append(elements.appear(card, theme, run_time=motion.title_fade, rate_func=ease))
         titles = VGroup(header, *([source] if source else []))
         if len(titles):
-            opening.append(FadeIn(titles, run_time=motion.title_fade, rate_func=ease))
+            opening.append(
+                elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
+            )
         if len(header):
             scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
             opening = []

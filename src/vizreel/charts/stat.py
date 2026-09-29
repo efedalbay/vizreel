@@ -50,7 +50,6 @@ class StatChartType(ChartType):
         """Add the card to the scene and animate it."""
         from manim import (
             AnimationGroup,
-            FadeIn,
             UpdateFromAlphaFunc,
             ValueTracker,
             VGroup,
@@ -149,9 +148,15 @@ class StatChartType(ChartType):
             widest_in_place = widest_number.copy().move_to(number_center)
             card_box = self.layout.panel_around(elements.bounds(VGroup(column, widest_in_place)))
             card = elements.panel(card_box, self.theme)
-            opening.append(FadeIn(card, run_time=motion.title_fade, rate_func=ease))
+            opening.append(
+                elements.appear(card, self.theme, run_time=motion.title_fade, rate_func=ease)
+            )
         if header:
-            opening.append(FadeIn(header_group, run_time=motion.title_fade, rate_func=ease))
+            opening.append(
+                elements.appear(
+                    header_group, self.theme, run_time=motion.title_fade, rate_func=ease
+                )
+            )
             scene.play(AnimationGroup(*opening), run_time=phases.intro)
             opening = []
 
@@ -168,7 +173,7 @@ class StatChartType(ChartType):
         reveal: list[Animation] = [*opening, count]
         if footer:
             fade = min(motion.title_fade, phases.main)
-            reveal.append(FadeIn(footer_group, run_time=fade, rate_func=ease))
+            reveal.append(elements.appear(footer_group, self.theme, run_time=fade, rate_func=ease))
         scene.play(AnimationGroup(*reveal), run_time=phases.main)
 
         counting.clear_updaters()
