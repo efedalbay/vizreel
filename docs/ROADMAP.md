@@ -141,7 +141,11 @@ From here on, each milestone ends with a minor release (M7 → 0.2.0, M8 → 0.3
 
 **Done when:** a race from a CSV file with at least 20 periods renders smoothly in 16:9, 9:16 and 1:1, with bars that change places without overlapping.
 
-## Later (not scheduled)
+## Testing by the community
 
-- macOS testing (needs a contributor with a Mac).
-- Verify that transparent clips import with alpha in DaVinci Resolve on Windows (M2 verified CapCut only). If the default `mov` (QuickTime Animation) does not keep alpha there, add a ProRes 4444 re-encode step.
+Every milestone above is done. Two checks need a setup the project does not have, so they are left to users, and the README asks for them under "Help test vizreel":
+
+- **macOS**: installing vizreel and rendering the showcase.
+- **DaVinci Resolve**: whether transparent clips (`mov`, `prores`, `png`, `webm`) keep their alpha over footage.
+
+Results come in as [test reports](https://github.com/efedalbay/vizreel/issues/new?template=test-report.yml) on GitHub Issues. A report of a problem becomes a fix in the next release; the README's editor table records what is confirmed to work.

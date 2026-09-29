@@ -1,0 +1,70 @@
+name: Test report
+description: Tell us how vizreel works on a system or in an editor we have not tested, such as macOS or DaVinci Resolve.
+title: "Test report: "
+labels: ["test report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing vizreel. The README lists what has not been tested yet. A report that something works is as useful as one that it does not.
+  - type: dropdown
+    id: area
+    attributes:
+      label: What did you test?
+      options:
+        - Installing and rendering on macOS
+        - Transparent clips in DaVinci Resolve
+        - Transparent clips in another editor
+        - Something else
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - It works
+        - It works partly
+        - It does not work
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Operating system and version
+      placeholder: macOS 15.1 on an M3, Windows 11 24H2, Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: vizreel and Python versions
+      description: "`vizreel --version` and `python --version`"
+      placeholder: vizreel 0.13.0, Python 3.12.7
+    validations:
+      required: true
+  - type: input
+    id: editor
+    attributes:
+      label: Editor and version, if you tested one
+      placeholder: DaVinci Resolve 19.1
+  - type: checkboxes
+    id: formats
+    attributes:
+      label: Formats you tried
+      description: Rendered with `--format`; `mov` is the default.
+      options:
+        - label: mov (QuickTime Animation, the default)
+        - label: prores (ProRes 4444)
+        - label: png (image sequence)
+        - label: webm
+        - label: mp4
+  - type: textarea
+    id: details
+    attributes:
+      label: What happened
+      description: >-
+        The commands you ran and what you saw. For an editor: was the background transparent
+        over your footage, dark, or did the clip not import? A screenshot helps.
+    validations:
+      required: true
