@@ -13,6 +13,9 @@ from vizreel.validation import raise_rule_violations
 Color = Annotated[str, Field(pattern=r"^#[0-9A-Fa-f]{6}$")]
 """A color as #RRGGBB."""
 
+BrandName = Annotated[str, Field(pattern=r"^[a-z0-9-]+$")]
+"""The name of a brand color, [a-z0-9-]+, e.g. "northwind-blue"."""
+
 Easing = Literal["ease_out_sine", "ease_out_cubic", "ease_out_quart", "ease_out_expo"]
 """Ease-out curves only: movement starts fast and stops softly, without overshoot."""
 
@@ -65,6 +68,9 @@ class ThemeColors(ThemeModel):
     """Series colors, used in this order. At least three, one per line chart series."""
     dim_opacity: float = Field(gt=0, le=1)
     """Opacity of everything except the highlighted element during the highlight beat."""
+    brand: dict[BrandName, Color] = Field(default_factory=dict)
+    """Named brand colors, e.g. {"northwind-blue": "#1F6FEB"}, that a race can give to its
+    series by name. Checked like the other data colors."""
 
 
 class FontStyle(ThemeModel):

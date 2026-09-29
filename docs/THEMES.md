@@ -39,6 +39,10 @@ colors:
   highlight: "#FFC857"
   series: ["#4FC3F7", "#F78FB3", "#9575CD"]
   dim_opacity: 0.5
+  brand:                  # named colors a race can give to its series
+    contoso-coral: "#FF7A7A"
+    fabrikam-violet: "#7E57C2"
+    tailspin-teal: "#26A69A"
 
 fonts:
   heading: { family: Inter, weight: bold }
@@ -83,8 +87,8 @@ The check fails, with exit code 1, if any of these is not met:
 | Check | Minimum |
 |---|---|
 | `text` and `muted` against `surface` and `background` | contrast 4.5:1 (WCAG 1.4.3) |
-| `accent`, `positive`, `negative`, `highlight` and every `series` color against `surface` and `background` | contrast 3:1 (WCAG 1.4.11) |
-| Every pair of `series` colors, `highlight` and each `series` color, `highlight` and `muted` | CIEDE2000 difference of 10, with normal vision and with simulated protanopia, deuteranopia and tritanopia |
+| `accent`, `positive`, `negative`, `highlight`, every `series` color and every `brand` color against `surface` and `background` | contrast 3:1 (WCAG 1.4.11) |
+| Every pair of `series` colors, `highlight` and each `series` color, `highlight` and `muted`; every pair of `brand` colors, and each `brand` color with `accent` and `highlight` | CIEDE2000 difference of 10, with normal vision and with simulated protanopia, deuteranopia and tritanopia |
 
 The second group of pairs are the colors that appear side by side in a chart. Color vision deficiency is simulated with the matrices of Machado, Oliveira and Fernandes (2009) at full severity. Add `--verbose` to see every measured value. Built-in themes pass every check.
 
@@ -113,6 +117,7 @@ Colors are `#RRGGBB`.
 | `highlight` | The one element that carries the message: a highlighted bar or point, the followed series of a race, the fill of a `progress`. |
 | `series` | The series of `line`, `area`, `stacked`, `grouped` and `line-race` charts, in this order. At least three; a chart never reuses one for a second series. |
 | `dim_opacity` | How much of their color other elements keep during the highlight beat, from 0 (exclusive) to 1. |
+| `brand` | Optional. Named brand colors, such as `{ contoso-coral: "#FF7A7A" }`, which a `bar-race` gives to its series by name (`colors` in the spec), so a company can race in its own color. Names are lowercase letters, digits and hyphens. |
 
 ### `fonts`
 

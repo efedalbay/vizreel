@@ -62,6 +62,7 @@ Motion guides the eye to the message. It is never decoration.
 
 - Colors come only from the theme's named roles. A chart module never contains a color value.
 - Series colors are used in fixed order from `colors.series`. They are never generated, cycled or reassigned by rank.
+- **Brand colors** let a race show companies in their own colors. They are named in the theme (`colors.brand`) and checked there, never written as values in a spec, so a race cannot turn into an unchecked rainbow.
 - `positive` and `negative` mean up and down. They are not used as series colors.
 - Themes are checked for contrast and color-vision-deficiency separation (`vizreel theme check`, see `docs/THEMES.md`). A theme that fails is not shipped as built-in.
 

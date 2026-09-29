@@ -195,6 +195,7 @@ def check_theme(theme: Theme) -> list[CheckResult]:
         "colors.negative": colors.negative,
         "colors.highlight": colors.highlight,
         **{f"colors.series[{i}]": color for i, color in enumerate(colors.series)},
+        **{f"colors.brand.{name}": color for name, color in colors.brand.items()},
     }
     results: list[CheckResult] = []
     for roles, minimum in ((text_roles, TEXT_CONTRAST), (mark_roles, MARK_CONTRAST)):
@@ -208,16 +209,23 @@ def check_theme(theme: Theme) -> list[CheckResult]:
                 )
 
     series = {f"colors.series[{i}]": color for i, color in enumerate(colors.series)}
+    brand = {f"colors.brand.{name}": color for name, color in colors.brand.items()}
+    # Brand colors meet each other and, in a race, the accent of the other bars and the
+    # highlight of the followed one.
     side_by_side = [
-        *(
-            (first, second)
-            for index, first in enumerate(series)
-            for second in list(series)[index + 1 :]
-        ),
+        *_pairs(list(series)),
         *(("colors.highlight", role) for role in series),
         ("colors.highlight", "colors.muted"),
+        *_pairs(list(brand)),
+        *((role, other) for role in brand for other in ("colors.accent", "colors.highlight")),
     ]
-    palette = {**series, "colors.highlight": colors.highlight, "colors.muted": colors.muted}
+    palette = {
+        **series,
+        **brand,
+        "colors.accent": colors.accent,
+        "colors.highlight": colors.highlight,
+        "colors.muted": colors.muted,
+    }
     for vision, matrix in VISIONS.items():
         for first, second in side_by_side:
             difference = color_difference(palette[first], palette[second], matrix)
@@ -231,3 +239,8 @@ def check_theme(theme: Theme) -> list[CheckResult]:
                 )
             )
     return results
+
+
+def _pairs(roles: list[str]) -> list[tuple[str, str]]:
+    """Every pair of different roles, each once."""
+    return [(first, second) for index, first in enumerate(roles) for second in roles[index + 1 :]]

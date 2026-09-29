@@ -435,6 +435,21 @@ def _highlight_issues(
     ]
 
 
+def _named_series_issues(
+    by_series: dict[str, Any], series: list[RaceSeries], field: str
+) -> list[RuleViolation]:
+    """What is wrong with a field that gives something to series by name."""
+    names = [item.name for item in series]
+    return [
+        (
+            (field, name),
+            f'"{name}" does not match any series. Series: {_quoted_list(names)}',
+        )
+        for name in by_series
+        if name not in names
+    ]
+
+
 class BarRaceChart(BaseChart):
     """Bars that grow and change places as their values change over many periods."""
 
@@ -451,11 +466,15 @@ class BarRaceChart(BaseChart):
     """Formatting of the values."""
     highlight: RaceHighlight | None = None
     """The series to follow, drawn in the highlight color."""
+    colors: dict[Text, Text] = Field(default_factory=dict)
+    """Brand colors for some series, by series name: the name of a color in the theme's
+    `colors.brand`, e.g. {Northwind: northwind-blue}. The other bars keep the accent color."""
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         issues = _race_issues(self.periods, self.series)
         issues += _highlight_issues(self.highlight, self.series)
+        issues += _named_series_issues(self.colors, self.series, "colors")
         raise_rule_violations(type(self).__name__, issues)
         return self
 

@@ -22,6 +22,10 @@ colors:
   highlight: "#FFC857"
   series: ["#4FC3F7", "#F78FB3", "#9575CD"]
   dim_opacity: 0.5
+  brand:                  # named colors a race can give to its series
+    contoso-coral: "#FF7A7A"
+    fabrikam-violet: "#7E57C2"
+    tailspin-teal: "#26A69A"
 
 fonts:
   heading: { family: Inter, weight: bold }

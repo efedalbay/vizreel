@@ -86,3 +86,25 @@ def test_check_reports_low_contrast_and_similar_series(tmp_path: Path) -> None:
     for result in results:
         assert result.passed == (result.value >= result.minimum)
         assert result.minimum in (TEXT_CONTRAST, MARK_CONTRAST, MIN_DIFFERENCE)
+
+
+def test_brand_colors_are_checked_like_the_other_data_colors() -> None:
+    theme = load_theme("default", Path("."))
+    brand = {"dark-blue": "#0A1A40", "near-accent": theme.colors.accent, "coral": "#FF7A7A"}
+    colors = theme.colors.model_copy(update={"brand": brand})
+    failed = {
+        result.description
+        for result in check_theme(theme.model_copy(update={"colors": colors}))
+        if not result.passed
+    }
+
+    assert "colors.brand.dark-blue on colors.surface" in failed
+    assert "colors.brand.near-accent and colors.accent with normal vision" in failed
+    assert not any("colors.brand.coral on" in description for description in failed)
+
+
+def test_the_example_brand_theme_passes_with_its_brand_colors() -> None:
+    theme = load_theme(str(Path("examples") / "themes" / "example-brand.yaml"), Path("."))
+
+    assert set(theme.colors.brand) == {"contoso-coral", "fabrikam-violet", "tailspin-teal"}
+    assert all(result.passed for result in check_theme(theme))

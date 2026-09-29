@@ -22,3 +22,12 @@ charts:
       - { name: Services, values: [0.4, 0.9, 1.1, 1.8] }
     number: { prefix: "$", suffix: "B" }
     highlight: { x: "2021", label: "Cloud passes devices" }
+
+  - id: brand-race
+    type: bar-race
+    title: Northwind rises through the market
+    subtitle: Revenue in millions of dollars
+    data: data/market-race.csv
+    number: { prefix: "$", suffix: "M" }
+    highlight: { series: Northwind }
+    colors: { Contoso: contoso-coral, Fabrikam: fabrikam-violet, Tailspin: tailspin-teal }

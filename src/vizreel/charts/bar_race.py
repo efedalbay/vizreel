@@ -133,6 +133,32 @@ class BarRaceChartType(ChartType):
             ],
         }
 
+    def _bar_colors(self) -> list[str]:
+        """The color of each series' bar: the highlight, its brand color, or the accent.
+
+        Raises:
+            RenderError: A brand color is not in the theme.
+        """
+        assert isinstance(self.chart, BarRaceChart)
+        colors = self.theme.colors
+        followed = self.chart.highlight.series if self.chart.highlight else None
+        result = []
+        for series in self.chart.series:
+            brand = self.chart.colors.get(series.name)
+            if brand is not None and brand not in colors.brand:
+                known = ", ".join(f'"{name}"' for name in colors.brand) or "none"
+                raise RenderError(
+                    f'the color "{brand}" of "{series.name}" is not a brand color of the theme '
+                    f"({known}); add it to colors.brand in the theme"
+                )
+            if series.name == followed:
+                result.append(colors.highlight)
+            elif brand is not None:
+                result.append(colors.brand[brand])
+            else:
+                result.append(colors.accent)
+        return result
+
     def build(self, scene: "Scene") -> None:
         """Add the chart to the scene and animate it."""
         from manim import (
@@ -160,7 +186,7 @@ class BarRaceChartType(ChartType):
         count = len(chart.periods)
         values = [fill_gaps(series.values, 0.0) for series in chart.series]
         filled = [[value or 0.0 for value in series] for series in values]
-        followed = chart.highlight.series if chart.highlight else None
+        bar_colors = self._bar_colors()
 
         header = elements.header(chart.title, chart.subtitle, theme, layout)
         source = elements.source_line(chart.source, theme, layout)
@@ -225,7 +251,7 @@ class BarRaceChartType(ChartType):
                 opacity = min(chart.show - place, 1.0)
                 y = rows.center(min(place, chart.show - 1 + LEAVE_DROP))
                 length = rows.longest * now[index] / largest * grown
-                color = colors.highlight if chart.series[index].name == followed else colors.accent
+                color = bar_colors[index]
                 row = VGroup()
                 if length > 0:
                     bar = Rectangle(

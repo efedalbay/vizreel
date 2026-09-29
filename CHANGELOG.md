@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Brand colors: a theme names colors in `colors.brand`, `vizreel theme check` tests them like the other data colors, and a `bar-race` gives them to its series by name with `colors: { Contoso: contoso-coral }`. `examples/brand.yaml` races in the example brand theme's colors.
+
 ## [0.13.0] - 2026-09-29
 
 ### Added

@@ -57,3 +57,22 @@ def test_a_line_race_with_more_lines_than_colors_asks_to_follow_one(tmp_path: Pa
         "4 lines need as many colors and the theme has 3; follow one with highlight, which "
         "mutes the others"
     )
+
+
+def test_a_race_draws_series_in_their_brand_colors(tmp_path: Path) -> None:
+    from vizreel.themes.loader import load_theme
+
+    spec = Path(__file__).parents[2] / "examples" / "brand.yaml"
+    theme = load_theme("themes/example-brand.yaml", spec.parent)
+    [result] = render_spec(
+        spec,
+        RenderOptions(out_dir=tmp_path, only=("brand-race",), quality="preview", still=True),
+        reraise=True,
+    )
+    assert result.still is not None
+    with av.open(str(result.still)) as container:
+        rgb = next(container.decode(video=0)).to_ndarray(format="rgb24").astype(int)
+
+    for color in theme.colors.brand.values():
+        target = [int(color[index : index + 2], 16) for index in (1, 3, 5)]
+        assert np.all(np.abs(rgb - target) <= 4, axis=2).sum() > 500

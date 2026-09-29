@@ -188,3 +188,38 @@ def test_a_race_reads_its_data_from_a_file(tmp_path: Path) -> None:
             ("A", [1, None, 3]),
             ("B", [3, 2, None]),
         ]
+
+
+def test_a_bar_race_gives_brand_colors_to_series_by_name() -> None:
+    race = race_spec(f"type: bar-race, periods: [a, b, c], series: [{TWO}], colors: {{ A: blue }}")
+
+    assert race.colors == {"A": "blue"}  # type: ignore[union-attr]
+    assert race_errors(
+        f"type: bar-race, periods: [a, b, c], series: [{TWO}], colors: {{ Z: blue }}"
+    ) == ['charts[0].colors.Z: "Z" does not match any series. Series: "A", "B"']
+
+
+def test_a_brand_color_must_be_in_the_theme() -> None:
+    from vizreel.charts.bar_race import BarRaceChartType
+    from vizreel.format.locales import EN_US
+    from vizreel.render.layout import build_layout
+    from vizreel.themes.loader import load_theme
+
+    theme = load_theme("default", Path("."))
+    brand = theme.model_copy(
+        update={"colors": theme.colors.model_copy(update={"brand": {"blue": "#1F6FEB"}})}
+    )
+    race = race_spec(
+        f"type: bar-race, periods: [a, b, c], series: [{TWO}], colors: {{ A: blue }}, "
+        "highlight: { series: B }"
+    )
+    layout = build_layout(
+        theme.sizes, aspect="16:9", panel=True, title_lines=0, subtitle_lines=0, source_lines=0
+    )
+
+    assert BarRaceChartType(race, brand, layout, EN_US)._bar_colors() == [
+        "#1F6FEB",
+        brand.colors.highlight,
+    ]
+    with pytest.raises(RenderError, match='the color "blue" of "A" is not a brand color'):
+        BarRaceChartType(race, theme, layout, EN_US)._bar_colors()
