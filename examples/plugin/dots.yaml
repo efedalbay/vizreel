@@ -1,0 +1,10 @@
+# A chart from the vizreel-dots plugin. All data is fictional.
+version: 1
+charts:
+  - id: renewals
+    type: dots
+    title: Northwind renewals
+    value: 18
+    total: 25
+    label: of 25 customers renew their plan
+    source: "Source: example data"

@@ -98,7 +98,7 @@ vizreel/
 │   ├── brand.yaml           ← charts in the example brand theme
 │   ├── data.yaml, data/     ← charts that read their data from CSV files
 │   ├── themes/example-brand.yaml  ← a complete custom theme
-│   └── plugin/              ← vizreel-progress, an example plugin package
+│   └── plugin/              ← vizreel-dots, an example plugin package
 ├── scripts/
 │   └── readme_gifs.py       ← development tool: README GIFs
 └── tests/

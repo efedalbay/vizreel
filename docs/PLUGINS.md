@@ -2,7 +2,7 @@
 
 vizreel finds chart types in other installed packages. Such a package, a plugin, adds a `type:` to the spec format that validates, renders, has a template for `vizreel new` and appears in the JSON Schema, just like the built-in types.
 
-[`examples/plugin`](https://github.com/efedalbay/vizreel/tree/main/examples/plugin) is a complete plugin with a `progress` chart type. Copy it to start your own.
+[`examples/plugin`](https://github.com/efedalbay/vizreel/tree/main/examples/plugin) is a complete plugin with a `dots` chart type, a grid of dots of which a number fill in. Copy it to start your own.
 
 ## The parts of a plugin
 
@@ -14,14 +14,14 @@ A plugin is an ordinary Python package with three things:
 
 ```toml
 [project]
-name = "vizreel-progress"
+name = "vizreel-dots"
 dependencies = ["vizreel>=0.7"]
 
 [project.entry-points."vizreel.chart_types"]
-progress = "vizreel_progress:ProgressChartType"
+dots = "vizreel_dots:DotsChartType"
 ```
 
-The entry point's name (`progress`) must be the chart type's `name`, which is the `type:` value in the spec.
+The entry point's name (`dots`) must be the chart type's `name`, which is the `type:` value in the spec. It cannot be the name of a built-in type.
 
 ## The spec model
 
@@ -33,13 +33,13 @@ from pydantic import Field
 from vizreel.plugin import BaseChart, Duration, NumberFormat, Text
 
 
-class ProgressChart(BaseChart):
-    """How far a value has come toward a goal."""
+class DotsChart(BaseChart):
+    """How many of a group, as a grid of dots of which that many fill in."""
 
-    type: Literal["progress"]
+    type: Literal["dots"]
     duration: Duration = 4
-    value: Annotated[float, Field(ge=0)]
-    goal: Annotated[float, Field(gt=0)]
+    value: Annotated[int, Field(ge=0)]
+    total: Annotated[int, Field(ge=2, le=100)]
     label: Text | None = None
     number: NumberFormat = Field(default_factory=NumberFormat)
 ```
@@ -55,21 +55,21 @@ class ProgressChart(BaseChart):
 from vizreel.plugin import CHART_API_VERSION, ChartType
 
 
-class ProgressChartType(ChartType):
-    """A bar that fills toward a goal while its percent counts up."""
+class DotsChartType(ChartType):
+    """A number that counts up while as many dots of a grid fill in."""
 
-    name = "progress"
-    model = ProgressChart
+    name = "dots"
+    model = DotsChart
     api_version = CHART_API_VERSION
     template = """\
-- id: fundraiser
-  type: progress
-  value: 68000
-  goal: 100000
+- id: renewals
+  type: dots
+  value: 18
+  total: 25
 """
 
     def build(self, scene):
-        from manim import Rectangle
+        from manim import Dot
 
         from vizreel.plugin import render
         ...
@@ -129,7 +129,7 @@ In the plugin's folder, `uv run` installs the plugin and the vizreel it depends 
 
 ```bash
 uv run vizreel types
-uv run vizreel new progress -o chart.yaml
+uv run vizreel new dots -o chart.yaml
 uv run vizreel render chart.yaml --quality preview --still
 ```
 

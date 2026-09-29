@@ -750,7 +750,7 @@ def test_long_numbers_shrink_to_fit_a_vertical_frame_in_every_locale(
 def test_the_example_plugin_renders(tmp_path: Path, aspect: str) -> None:
     from vizreel.themes.loader import load_theme
 
-    spec = Path(__file__).parents[2] / "examples" / "plugin" / "progress.yaml"
+    spec = Path(__file__).parents[2] / "examples" / "plugin" / "dots.yaml"
     options = RenderOptions(out_dir=tmp_path, quality="preview", aspect=aspect, still=True)  # type: ignore[arg-type]
 
     [result] = render_spec(spec, options, reraise=True)

@@ -50,8 +50,8 @@ jobs:
         shell: bash
         run: |
           uv pip install --no-deps -e ./examples/plugin
-          uv run --no-sync vizreel types 2>types-errors.txt | grep "progress.*vizreel-progress 0.1.0"
+          uv run --no-sync vizreel types 2>types-errors.txt | grep "dots.*vizreel-dots 0.1.0"
           test ! -s types-errors.txt
-          uv run --no-sync vizreel new progress > progress-template.yaml
-          uv run --no-sync vizreel validate progress-template.yaml
-          uv run --no-sync vizreel render examples/plugin/progress.yaml --quality preview --out plugin-out
+          uv run --no-sync vizreel new dots > dots-template.yaml
+          uv run --no-sync vizreel validate dots-template.yaml
+          uv run --no-sync vizreel render examples/plugin/dots.yaml --quality preview --out plugin-out
