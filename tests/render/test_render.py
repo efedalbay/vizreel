@@ -502,6 +502,26 @@ def test_grouped_keeps_the_highlighted_series_color(tmp_path: Path, aspect: str)
     assert pixels(colors.series[0]) < 20
 
 
+@pytest.mark.parametrize("aspect", ["16:9", "9:16", "1:1"])
+def test_area_keeps_the_highlighted_series_color(tmp_path: Path, aspect: str) -> None:
+    colors = load_default_colors()
+    [result] = render_one_in(tmp_path, "users", aspect)
+    assert result.video is not None and result.still is not None
+    frames = frames_rgba(result.video)
+    rgb = image_rgba(result.still)[:, :, :3].astype(int)
+
+    def pixels(color: str) -> int:
+        return int(np.all(np.abs(rgb - hex_rgb(color)) <= 6, axis=2).sum())
+
+    assert len(frames) == 6 * PREVIEW_FPS
+    for frame in frames[-int(1.5 * PREVIEW_FPS) :]:
+        assert np.array_equal(frame, frames[-1])
+    # Mobile, the second series, is highlighted: its top line keeps its color. Web, the first,
+    # is dimmed, so its line and dot no longer show the full series color.
+    assert pixels(colors.series[1]) > 100
+    assert pixels(colors.series[0]) < 20
+
+
 def test_grouped_columns_too_narrow_for_their_values_become_rows(tmp_path: Path) -> None:
     spec = tmp_path / "spec.yaml"
     spec.write_text(
@@ -610,6 +630,7 @@ SEQUENCE_DURATIONS = {
     "waterfall": 6,
     "stacked": 6,
     "grouped": 6,
+    "area": 6,
     "share": 6,
     "table": 6,
 }

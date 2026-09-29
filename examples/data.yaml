@@ -55,6 +55,13 @@ charts:
     number: { prefix: "$", suffix: "M" }
     highlight: { series: "2023" }
 
+  - id: users
+    type: area
+    title: Northwind users by platform
+    data: data/users.csv
+    stack: true
+    number: { suffix: "M" }
+
   - id: history
     type: timeline
     title: How Northwind grew

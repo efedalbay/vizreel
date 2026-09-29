@@ -78,6 +78,18 @@ charts:
       - { name: "2023", values: [412, 298, 188, 356] }
     highlight: { series: "2023" }
 
+  - id: users
+    type: area
+    title: Platformlara göre Northwind kullanıcıları
+    subtitle: Aylık aktif kullanıcı
+    x: ["2020", "2021", "2022", "2023", "2024"]
+    series:
+      - { name: Web, values: [1.2, 1.9, 2.4, 2.8, 3.0] }
+      - { name: Mobil, values: [0.4, 1.1, 2.2, 3.6, 4.9] }
+    stack: true
+    number: { suffix: " milyon" }
+    highlight: { series: Mobil }
+
   - id: market
     type: share
     title: Northwind'in pazar payı

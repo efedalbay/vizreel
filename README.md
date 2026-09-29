@@ -2,7 +2,7 @@
 
 **Animated charts for video, from a YAML file.**
 
-vizreel turns a short YAML spec into clean, animated chart clips (big numbers, line charts, bar charts, timelines, before/after comparisons, waterfalls, stacked and grouped bars, shares of a whole and tables) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
+vizreel turns a short YAML spec into clean, animated chart clips (big numbers, line and area charts, bar charts, timelines, before/after comparisons, waterfalls, stacked and grouped bars, shares of a whole and tables) ready to drop into any video editor. Clips render with a transparent background by default, so they layer directly over your footage.
 
 > **Status: 0.11.0, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
 
@@ -13,6 +13,7 @@ vizreel turns a short YAML spec into clean, animated chart clips (big numbers, l
 | ![A compare chart counting from 1,200 down to 340, a change of −72%](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/compare.gif) | ![A waterfall chart from revenue to profit](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/waterfall.gif) |
 | ![A stacked bar chart of revenue by product](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/stacked.gif) | ![A share ring with 47% in the middle](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/share.gif) |
 | ![A table with a highlighted row](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/table.gif) | ![A grouped bar chart comparing two years in four regions](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/grouped.gif) |
+| ![A stacked area chart of users by platform](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/area.gif) | |
 
 ## Why
 
@@ -109,6 +110,7 @@ out/
 |---|---|
 | `stat` | One number the viewer must remember, counting up to its value |
 | `line` | Values over time, up to 3 series, with an optional highlighted point |
+| `area` | Amounts over time as filled areas, up to 3 series, overlapping or stacked into a total |
 | `bar` | Comparing up to 8 categories, with one highlighted bar, as columns or rows |
 | `timeline` | A sequence of up to 7 events, with an emphasized moment |
 | `compare` | One measure before and after, with the change in percent or as a difference |
@@ -148,7 +150,7 @@ When a narration walks through a chart ("first 2016... then 2018..."), tell the 
   sequence: ["2016", "2018", "2020"]
 ```
 
-This renders `history.1.mov`, `history.2.mov` and `history.3.mov`. The first draws the chart and emphasizes 2016; each later clip starts on exactly the last frame of the one before and moves the emphasis on. Put them one after another on a track, with your narration between the moves, and they play as one continuous chart. Bar, line, timeline, waterfall, stacked, grouped, share and table charts can be told as sequences; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#sequences).
+This renders `history.1.mov`, `history.2.mov` and `history.3.mov`. The first draws the chart and emphasizes 2016; each later clip starts on exactly the last frame of the one before and moves the emphasis on. Put them one after another on a track, with your narration between the moves, and they play as one continuous chart. Bar, line, area, timeline, waterfall, stacked, grouped, share and table charts can be told as sequences; see the [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#sequences).
 
 ## Data from CSV files
 

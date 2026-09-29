@@ -59,7 +59,7 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `line`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
+| `type` | string | yes | — | Chart type: `stat`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Axios, 2023"`. Keep it short; it is on screen. |
@@ -387,6 +387,40 @@ Default `duration`: 6.
   highlight: { series: "2023" }
 ```
 
+## `area` — amounts over time
+
+One to three series drawn from left to right as filled areas, e.g. users per platform over five years. With `stack: true` the areas sit on each other, so the top edge shows their total; otherwise each area fills from zero and they overlap, translucent.
+
+Grid lines and axis labels appear first. Then the areas fill from left to right behind a line along their top, with a label at the tip that counts along: the series name (when there is more than one series) and its own value, not the running total. A stacked area's label points at the middle of its band. At the highlight beat the highlighted series keeps its color and the others dim. The vertical axis always starts at zero, since an area's height is its amount.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `x` | list of strings | yes | — | Labels on the horizontal axis, in order. At least 2. Unique. |
+| `series` | list | yes | — | 1–3 series, drawn in order; stacked, the first is at the bottom. |
+| `series[].name` | string | if more than one series | — | Shown next to the area's end. Unique. |
+| `series[].values` | list of numbers | yes | — | One value per x label, zero or more. No gaps: an area needs every value. |
+| `stack` | boolean | no | `false` | Stack the areas on each other instead of overlapping them from zero. |
+| `number` | number format | no | — | Formatting of axis and value labels. |
+| `highlight.series` | string | no | — | The series that keeps its color while the others dim. |
+| `sequence` | list | no | — | Tells the chart as a sequence of clips, one per item, each moving the emphasis on. See [Sequences](#sequences). |
+| `step_duration` | number | no | `3` | Length in seconds of each clip of a sequence after the first. |
+
+Default `duration`: 6.
+
+```yaml
+- id: users
+  type: area
+  title: Northwind users by platform
+  subtitle: Monthly active users
+  x: ["2020", "2021", "2022", "2023", "2024"]
+  series:
+    - { name: Web, values: [1.2, 1.9, 2.4, 2.8, 3.0] }
+    - { name: Mobile, values: [0.4, 1.1, 2.2, 3.6, 4.9] }
+  stack: true
+  number: { suffix: "M" }
+  highlight: { series: Mobile }
+```
+
 ## `share` — parts of a whole
 
 How a whole divides into two to six parts, e.g. shares of a market, as a ring.
@@ -481,7 +515,7 @@ The first clip is the chart as usual, emphasizing the first item. Each later cli
 |---|---|
 | `bar`, `waterfall` | A bar label. |
 | `timeline` | An event date. A date used by two events cannot be named. |
-| `stacked`, `grouped` | A series name. |
+| `stacked`, `grouped`, `area` | A series name. |
 | `share` | A part label. |
 | `table` | A row name. |
 | `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
@@ -552,6 +586,7 @@ With more columns than the chart reads, name the ones to read, in order:
 | `line` | The x labels, then one column per series, named by its first row. | One x label each; an empty cell leaves a gap. | `x`, `series` |
 | `stacked` | The categories, then one column per series, named by its first row. | One bar each. | `categories`, `series` |
 | `grouped` | The categories, then one column per series, named by its first row. | One group each. | `categories`, `series` |
+| `area` | The x labels, then one column per series, named by its first row. | One x label each; every cell needs a value. | `x`, `series` |
 | `waterfall` | A label and a value. | The first row is the start and the others are steps; a last row with a label and no value names the total. | `start`, `steps`, and `end` if the last row names it |
 | `compare` | A label and a value. | Two: the earlier value, then the later one. | `before`, `after` |
 | `table` | Two to four. A column holds numbers if its first row does; the first holds the row names. | One row each. | `rows`, and `columns` named by the first row, unless the spec writes `columns` to name them and set their number formats |

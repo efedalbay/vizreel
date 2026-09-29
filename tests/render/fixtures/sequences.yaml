@@ -49,6 +49,15 @@ charts:
       - { name: "2023", values: [412, 298] }
     sequence: ["2023", "2022"]
 
+  - id: area
+    type: area
+    x: ["2020", "2021", "2022"]
+    series:
+      - { name: Web, values: [1.2, 1.9, 2.4] }
+      - { name: Mobile, values: [0.4, 1.1, 2.2] }
+    stack: true
+    sequence: [Mobile, Web]
+
   - id: share
     type: share
     parts:

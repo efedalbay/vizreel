@@ -66,6 +66,7 @@ vizreel/
 │   │   ├── registry.py      ← @register decorator, plugin entry points, lookup by type name
 │   │   ├── stat.py
 │   │   ├── line.py
+│   │   ├── area.py
 │   │   ├── bar.py
 │   │   ├── timeline.py
 │   │   ├── compare.py

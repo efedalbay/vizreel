@@ -31,7 +31,7 @@ README_EXAMPLES = spec_examples(ROOT / "README.md")
 
 
 def test_examples_are_found() -> None:
-    assert len(SPEC_EXAMPLES) == 15
+    assert len(SPEC_EXAMPLES) == 16
     assert len(README_EXAMPLES) == 3
 
 
@@ -49,6 +49,7 @@ def test_showcase_is_valid() -> None:
     spec = load_spec(ROOT / "examples" / "showcase.yaml")
 
     assert sorted(chart.type for chart in spec.charts) == [
+        "area",
         "bar",
         "compare",
         "grouped",

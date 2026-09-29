@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The `area` chart type: one to three series as filled areas drawn from left to right, overlapping from zero or stacked with `stack: true` so the top shows their total. A label rides each area's tip with its name and own value, and a highlighted series keeps its color while the others dim. It can be told as a sequence and read its data from a CSV file.
+
 ## [0.11.0] - 2026-09-28
 
 ### Added

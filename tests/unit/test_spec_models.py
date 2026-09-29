@@ -264,6 +264,7 @@ def test_json_schema_lists_every_chart_type() -> None:
     discriminator = schema["properties"]["charts"]["items"]["discriminator"]
     assert discriminator["propertyName"] == "type"
     assert sorted(discriminator["mapping"]) == [
+        "area",
         "bar",
         "compare",
         "grouped",

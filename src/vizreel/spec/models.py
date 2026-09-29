@@ -350,6 +350,101 @@ class LineChart(SequencedChart):
         return []
 
 
+class AreaSeries(SpecModel):
+    """One filled area on an area chart."""
+
+    name: Text | None = None
+    """Shown next to the area's end. Required if the chart has more than one series."""
+    values: list[Annotated[float, Field(ge=0)]]
+    """One value per x label, zero or more."""
+
+
+class AreaHighlight(SpecModel):
+    """The series to emphasize."""
+
+    series: Text
+    """Name of the series that keeps its color while the others dim."""
+
+
+class AreaChart(SequencedChart):
+    """One to three series drawn from left to right as filled areas, overlapping or stacked."""
+
+    sequence_noun: ClassVar[str] = "series name"
+
+    type: Literal["area"]
+    duration: Duration = 6
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    x: list[str] = Field(min_length=2)
+    """Labels on the horizontal axis, in order. Must be unique."""
+    series: list[AreaSeries] = Field(min_length=1, max_length=3)
+    """One to three series."""
+    stack: bool = False
+    """Stack the areas on each other, so the top shows their total, instead of overlapping
+    them from zero."""
+    number: NumberFormat = Field(default_factory=NumberFormat)
+    """Formatting of axis and value labels."""
+    highlight: AreaHighlight | None = None
+    """The series to emphasize."""
+
+    def sequence_names(self) -> list[str]:
+        """The series names."""
+        return [series.name for series in self.series if series.name is not None]
+
+    def has_highlight(self) -> bool:
+        """Whether a series is emphasized."""
+        return self.highlight is not None
+
+    def with_highlight(self, item: Any) -> Self:
+        """Return a copy that emphasizes the series with this name."""
+        return self.model_copy(update={"highlight": AreaHighlight(series=item)})
+
+    @model_validator(mode="after")
+    def _check_consistency(self) -> Self:
+        issues = _duplicate_issues(self.x, "x", None, "x labels")
+        names = [series.name or "" for series in self.series]
+        issues += _duplicate_issues(
+            [name for name in names if name], "series", "name", "series names"
+        )
+        for index, series in enumerate(self.series):
+            if len(series.values) != len(self.x):
+                issues.append(
+                    (
+                        ("series", index, "values"),
+                        f"expected {len(self.x)} values (same as x), got {len(series.values)}",
+                    )
+                )
+            if len(self.series) > 1 and series.name is None:
+                issues.append(
+                    (("series", index, "name"), "required when the chart has more than one series")
+                )
+        if self.highlight is not None and self.highlight.series not in names:
+            issues.append(
+                (
+                    ("highlight", "series"),
+                    f'"{self.highlight.series}" does not match any series. '
+                    f"Series: {_quoted_list([name for name in names if name])}",
+                )
+            )
+        issues += self._sequence_issues()
+        raise_rule_violations(type(self).__name__, issues)
+        return self
+
+    def tops(self) -> list[list[float]]:
+        """The top of each area at each x label: its values, or its running total if stacked."""
+        if not self.stack:
+            return [list(series.values) for series in self.series]
+        tops, below = [], [0.0] * len(self.x)
+        for series in self.series:
+            below = [low + value for low, value in zip(below, series.values, strict=True)]
+            tops.append(below)
+        return tops
+
+    def bottoms(self) -> list[list[float]]:
+        """The bottom of each area at each x label: zero, or the top of the area below it."""
+        zero = [0.0] * len(self.x)
+        return [zero, *self.tops()[:-1]] if self.stack else [zero for _ in self.series]
+
+
 class Bar(SpecModel):
     """One bar on a bar chart."""
 

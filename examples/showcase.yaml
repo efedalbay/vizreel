@@ -80,6 +80,18 @@ charts:
     number: { prefix: "$", suffix: "M" }
     highlight: { series: "2023" }
 
+  - id: users
+    type: area
+    title: Northwind users by platform
+    subtitle: Monthly active users
+    x: ["2020", "2021", "2022", "2023", "2024"]
+    series:
+      - { name: Web, values: [1.2, 1.9, 2.4, 2.8, 3.0] }
+      - { name: Mobile, values: [0.4, 1.1, 2.2, 3.6, 4.9] }
+    stack: true
+    number: { suffix: "M" }
+    highlight: { series: Mobile }
+
   - id: market
     type: share
     title: Northwind's share of the market

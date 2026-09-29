@@ -35,6 +35,6 @@ def test_template_starts_with_usage_comments(name: str) -> None:
 
 def test_unknown_type_lists_valid_types() -> None:
     with pytest.raises(
-        UsageError, match='unknown chart type "pie". Valid types: bar, compare, grouped, line'
+        UsageError, match='unknown chart type "pie". Valid types: area, bar, compare, grouped, line'
     ):
         spec_template("pie")
