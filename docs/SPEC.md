@@ -676,7 +676,7 @@ A headline that opens a video or a part of one, with a short line above it (`kic
 | `title` | string | yes | — | The headline. |
 | `kicker` | string | no | — | Short line above the headline, e.g. `Part 2`. |
 
-`subtitle` and `source` are as for every chart; the subtitle goes under the headline. A title card has no data, so it takes no `data` file. Default `duration`: 3, enough for a headline of about eight words; give a longer one more, or `vizreel render` says how long it needs.
+`subtitle` and `source` are as for every chart; the subtitle goes under the headline. A title card has no data, so it takes no `data` file. Default `duration`: 3, enough for a headline of about seven words; give a longer one more, or `vizreel render` says how long it needs.
 
 ```yaml
 - id: part-two

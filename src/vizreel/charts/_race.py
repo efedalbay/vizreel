@@ -9,6 +9,7 @@ import bisect
 import math
 from collections.abc import Callable, Sequence
 
+from vizreel.charts.base import seconds_up
 from vizreel.errors import RenderError
 
 MIN_PERIOD_SECONDS = 0.2
@@ -90,7 +91,7 @@ def check_race_time(seconds: float, periods: int, duration: float) -> None:
     if seconds < needed - 1e-9:
         raise RenderError(
             f"duration {duration:g}s is too short for {periods} periods; use at least "
-            f"{duration - seconds + needed:.1f}s"
+            f"{seconds_up(duration - seconds + needed)}s"
         )
 
 

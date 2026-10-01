@@ -296,6 +296,14 @@ class FrameClock:
         return self._frames
 
 
+def seconds_up(seconds: float) -> str:
+    """Write a number of seconds a user must give, rounded up to a tenth: 3.04 is "3.1".
+
+    Rounding to the nearest tenth could suggest a duration that is still too short.
+    """
+    return f"{math.ceil(seconds * 10 - 1e-9) / 10:.1f}"
+
+
 def reading_time(text: str) -> float:
     """Seconds a text must stay on screen to be read."""
     return len(text.split()) / WORDS_PER_SECOND
@@ -316,7 +324,7 @@ def check_reading_time(texts: list[tuple[str, float]], duration: float) -> None:
         if needed > duration:
             raise RenderError(
                 f'"{text}" needs {reading_time(text):.1f}s on screen to be read; '
-                f"set duration to at least {needed:.1f}s"
+                f"set duration to at least {seconds_up(needed)}s"
             )
 
 

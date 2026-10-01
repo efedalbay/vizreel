@@ -159,3 +159,17 @@ def test_the_clock_counts_ntsc_frames_exactly() -> None:
 
     assert clock.frames == round(3 * 30000 / 1001) == 90
     assert sum(frames) == 90
+
+
+def test_a_suggested_duration_is_rounded_up_so_it_is_enough() -> None:
+    from vizreel.charts.base import seconds_up
+
+    assert seconds_up(3.04) == "3.1"
+    assert seconds_up(3.0) == "3.0"
+    assert seconds_up(2.9999999999) == "3.0"
+    assert seconds_up(4.5) == "4.5"
+
+
+def test_a_text_that_needs_a_little_more_than_the_duration_asks_for_more() -> None:
+    with pytest.raises(RenderError, match=r"set duration to at least 3.1s"):
+        check_reading_time([("one two three four five six seven eight", 0.38)], 3)
