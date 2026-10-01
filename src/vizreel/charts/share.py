@@ -205,7 +205,6 @@ class ShareChartType(ChartType):
             UpdateFromAlphaFunc,
             ValueTracker,
             VGroup,
-            always_redraw,
             interpolate_color,
             linear,
         )
@@ -335,12 +334,12 @@ class ShareChartType(ChartType):
             return min(max((pen() - start) / (end - start), 0.0), 1.0)
 
         def drawing_sector(index: int) -> "VMobject":
-            return always_redraw(
+            return elements.redrawn_shapes(
                 lambda: sector(index, min(pen(), spans[index][1]), shade_colors[index])
             )
 
         def counting_percent(index: int) -> "VMobject":
-            return always_redraw(
+            return elements.redrawn_shapes(
                 lambda: (
                     percent_text(index, percents[index] * local(index))
                     if local(index) > 0

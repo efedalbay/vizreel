@@ -130,7 +130,6 @@ class GroupedChartType(ChartType):
             Create,
             ValueTracker,
             VGroup,
-            always_redraw,
             linear,
         )
 
@@ -252,10 +251,14 @@ class GroupedChartType(ChartType):
 
         def growing_bar(series: int, category: int) -> "VMobject":
             color = series_colors[series]
-            return always_redraw(lambda: geometry.bar(series, category, grown(category), color))
+            return elements.redrawn_shapes(
+                lambda: geometry.bar(series, category, grown(category), color)
+            )
 
         def counting_value(series: int, category: int) -> "VMobject":
-            return always_redraw(lambda: geometry.value(series, category, grown(category)))
+            return elements.redrawn_shapes(
+                lambda: geometry.value(series, category, grown(category))
+            )
 
         pairs = [
             (series, category)

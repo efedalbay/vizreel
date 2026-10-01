@@ -54,7 +54,6 @@ class StatChartType(ChartType):
             UpdateFromAlphaFunc,
             ValueTracker,
             VGroup,
-            always_redraw,
         )
 
         from vizreel.render import elements
@@ -172,7 +171,9 @@ class StatChartType(ChartType):
             opening = []
 
         tracker = ValueTracker(chart.start)
-        counting = always_redraw(lambda: number(tracker.get_value()).move_to(number_center))
+        counting = elements.redrawn_shapes(
+            lambda: number(tracker.get_value()).move_to(number_center)
+        )
         scene.add(counting)
         start, end = chart.start, chart.value
 

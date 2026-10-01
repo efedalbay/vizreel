@@ -308,6 +308,18 @@ def redrawn(build: Callable[[], Mobject]) -> Group:
     return group
 
 
+def redrawn_shapes(build: Callable[[], VMobject]) -> VGroup:
+    """Return a group holding a shape that `build` builds again on every frame.
+
+    A faster `always_redraw` for shapes and text: Manim's copies the new points into the old
+    shape, aligning them point by point, which takes most of a frame's time. It is a
+    `VGroup`, so it can be grouped with other shapes, and starts empty like `redrawn`.
+    """
+    group = VGroup()
+    group.add_updater(lambda mobject: setattr(mobject, "submobjects", [build()]))
+    return group
+
+
 MOTION_DISTANCE = 1.0
 """How far an entrance rises and an exit sinks, as a multiple of the label size."""
 ZOOM_SCALE = 0.9

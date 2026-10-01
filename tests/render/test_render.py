@@ -1203,3 +1203,19 @@ def test_a_chart_from_a_data_file_renders_as_if_its_data_were_written(tmp_path: 
 
     assert from_file.still is not None and from_spec.still is not None
     assert np.array_equal(image_rgba(from_file.still), image_rgba(from_spec.still))
+
+
+def test_a_redrawn_shape_starts_empty_and_holds_each_frames_shape() -> None:
+    from manim import Square, VGroup, VMobject
+
+    from vizreel.render import elements
+
+    sides = iter([1.0, 2.0])
+    group = elements.redrawn_shapes(lambda: Square(side_length=next(sides)))
+
+    assert isinstance(group, VGroup) and len(group) == 0
+    group.update()
+    first = group[0]
+    group.update()
+    assert isinstance(group[0], VMobject) and group[0] is not first
+    assert len(group) == 1 and group.width == pytest.approx(2.0)

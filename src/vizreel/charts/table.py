@@ -169,7 +169,6 @@ class TableChartType(ChartType):
             Rectangle,
             ValueTracker,
             VGroup,
-            always_redraw,
             interpolate_color,
             linear,
         )
@@ -365,7 +364,7 @@ class TableChartType(ChartType):
                     return VGroup()
                 return number_at(row, column, value * amount).set_opacity(amount)
 
-            return always_redraw(build)
+            return elements.redrawn_shapes(build)
 
         for (row, _), block in texts.items():
             fade_with_row(block.mobject, row)

@@ -135,7 +135,6 @@ class WaterfallChartType(ChartType):
             Create,
             ValueTracker,
             VGroup,
-            always_redraw,
             linear,
         )
 
@@ -230,10 +229,10 @@ class WaterfallChartType(ChartType):
 
         def growing_bar(index: int) -> "VMobject":
             fill = fills[bars[index].kind]
-            return always_redraw(lambda: geometry.bar(index, grown(index), fill))
+            return elements.redrawn_shapes(lambda: geometry.bar(index, grown(index), fill))
 
         def counting_value(index: int) -> "VMobject":
-            return always_redraw(lambda: geometry.value(index, grown(index)))
+            return elements.redrawn_shapes(lambda: geometry.value(index, grown(index)))
 
         def connectors_now() -> "VMobject":
             return VGroup(
@@ -247,7 +246,7 @@ class WaterfallChartType(ChartType):
 
         growing = [growing_bar(index) for index in range(count)]
         counting = [counting_value(index) for index in range(count)]
-        joining = always_redraw(connectors_now)
+        joining = elements.redrawn_shapes(connectors_now)
         scene.add(joining, *growing, *counting)
         scene.play(progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear)
 

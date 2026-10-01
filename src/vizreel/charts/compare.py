@@ -197,7 +197,6 @@ class CompareChartType(ChartType):
             UpdateFromAlphaFunc,
             ValueTracker,
             VGroup,
-            always_redraw,
             interpolate_color,
         )
 
@@ -343,7 +342,7 @@ class CompareChartType(ChartType):
             glyphs: "NumberGlyphs",
             position: tuple[float, float],
         ) -> "VMobject":
-            return always_redraw(lambda: glyphs.at(text(tracker.get_value()), *position))
+            return elements.redrawn_shapes(lambda: glyphs.at(text(tracker.get_value()), *position))
 
         def count(tracker: ValueTracker, start: float, end: float, run_time: float) -> "Animation":
             def step(mobject: ValueTracker, alpha: float) -> None:

@@ -218,7 +218,6 @@ class TimelineChartType(ChartType):
             UpdateFromAlphaFunc,
             ValueTracker,
             VGroup,
-            always_redraw,
             linear,
         )
 
@@ -284,13 +283,13 @@ class TimelineChartType(ChartType):
             return VGroup(geometry.stem(index, amount), geometry.dot(index, amount))
 
         def appearing_marks(index: int) -> "VMobject":
-            return always_redraw(lambda: marks_at(index))
+            return elements.redrawn_shapes(lambda: marks_at(index))
 
         def fade_with_pen(index: int) -> None:
             # Setting the opacity in place is much cheaper than copying the text every frame.
             blocks[index].add_updater(lambda block: block.set_opacity(grown(index)))
 
-        drawing_axis = always_redraw(lambda: geometry.axis(pen()))
+        drawing_axis = elements.redrawn_shapes(lambda: geometry.axis(pen()))
         appearing = [appearing_marks(index) for index in range(count)]
         for index in range(count):
             fade_with_pen(index)

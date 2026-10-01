@@ -126,7 +126,6 @@ class StackedChartType(ChartType):
             Create,
             ValueTracker,
             VGroup,
-            always_redraw,
             linear,
         )
 
@@ -233,7 +232,7 @@ class StackedChartType(ChartType):
 
         def growing_part(series: int, category: int) -> "VMobject":
             color = series_colors[series]
-            return always_redraw(
+            return elements.redrawn_shapes(
                 lambda: geometry.part(series, category, reached(series, category), color)
             )
 
@@ -245,7 +244,7 @@ class StackedChartType(ChartType):
                 )
                 return geometry.total(category, amount) if amount > 0 else VGroup()
 
-            return always_redraw(build)
+            return elements.redrawn_shapes(build)
 
         growing = [
             growing_part(series, category)

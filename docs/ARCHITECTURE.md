@@ -242,7 +242,7 @@ A theme's `logo` is drawn by `ChartScene`, not by the chart types: it joins the 
 
 ### Frames of many parts
 
-A chart whose every frame is built from many parts, such as a race, uses `elements.redrawn` instead of Manim's `always_redraw`: the group takes each frame's new parts as they are instead of copying them into the old ones, and reuses text mobjects instead of copying them, since Manim's copies deep-copy every attribute. Counting numbers (`NumberGlyphs`) copy only the shapes and style of their cached glyphs for the same reason.
+Manim's `always_redraw` copies each frame's new shape into the old one, aligning their points one by one, which took about a third of the render time of a bar chart. Chart types use `elements.redrawn_shapes` instead, a `VGroup` that takes each frame's new shape as it is. A chart whose every frame is built from many parts, such as a race, uses `elements.redrawn`, which also holds images: the group takes each frame's new parts as they are instead of copying them into the old ones, and reuses text mobjects instead of copying them, since Manim's copies deep-copy every attribute. Counting numbers (`NumberGlyphs`) copy only the shapes and style of their cached glyphs for the same reason.
 
 ### Watch mode
 

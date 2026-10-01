@@ -4,6 +4,20 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Charts render about a third faster. Every chart type but the races, which already did, now builds its growing bars, lines and counting numbers anew on each frame instead of reshaping the last frame's point by point. Frames look the same.
+- Chart types from other packages can do the same with `render.redrawn_shapes`.
+- The source package leaves out the README's GIFs, which the README shows from GitHub: 2.7 MB instead of 9.1 MB.
+
+### Fixed
+
+- A duration too short to read a text, or for a race's periods, suggests a duration rounded up, so following it is always enough: a clip of 3 seconds no longer asks for "at least 3.0s".
+- `vizreel --help` and the package description mention Excel files, and the help of `--watch` says that it watches the data files a spec reads.
+- The guides cover the scatter race, the title card and Excel workbooks everywhere they list chart types, theme colors and data files, and name the reading-time rule for every chart.
+
 ## [0.16.0] - 2026-10-01
 
 ### Added

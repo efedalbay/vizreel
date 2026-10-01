@@ -92,7 +92,6 @@ class BarChartType(ChartType):
             Create,
             ValueTracker,
             VGroup,
-            always_redraw,
             linear,
         )
 
@@ -181,10 +180,10 @@ class BarChartType(ChartType):
             return ease(local)
 
         def growing_bar(index: int) -> "VMobject":
-            return always_redraw(lambda: geometry.bar(index, grown(index), colors.accent))
+            return elements.redrawn_shapes(lambda: geometry.bar(index, grown(index), colors.accent))
 
         def counting_value(index: int) -> "VMobject":
-            return always_redraw(lambda: geometry.value(index, grown(index)))
+            return elements.redrawn_shapes(lambda: geometry.value(index, grown(index)))
 
         growing = [growing_bar(index) for index in range(count)]
         counting = [counting_value(index) for index in range(count)]

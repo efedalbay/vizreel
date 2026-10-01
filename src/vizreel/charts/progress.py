@@ -72,7 +72,6 @@ class ProgressChartType(ChartType):
             ValueTracker,
             VGroup,
             VMobject,
-            always_redraw,
         )
 
         from vizreel.render import elements
@@ -230,11 +229,11 @@ class ProgressChartType(ChartType):
             opening = []
 
         tracker = ValueTracker(0.0)
-        fill = always_redraw(lambda: fill_to(tracker.get_value()))
-        counting_percent = always_redraw(
+        fill = elements.redrawn_shapes(lambda: fill_to(tracker.get_value()))
+        counting_percent = elements.redrawn_shapes(
             lambda: percent_text(tracker.get_value()).move_to(percent_center)
         )
-        counting_amount = always_redraw(
+        counting_amount = elements.redrawn_shapes(
             lambda: amount_text(tracker.get_value()).move_to(amount_center)
         )
         scene.add(fill, counting_percent, counting_amount)

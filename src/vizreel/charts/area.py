@@ -112,7 +112,6 @@ class AreaChartType(ChartType):
             ValueTracker,
             VGroup,
             VMobject,
-            always_redraw,
             linear,
         )
 
@@ -306,7 +305,7 @@ class AreaChartType(ChartType):
             return sweep_end if eased >= 1 else sweep_start + eased * (sweep_end - sweep_start)
 
         def redrawn(build: Callable[[], "VMobject"]) -> "VMobject":
-            return always_redraw(build)
+            return elements.redrawn_shapes(build)
 
         def drawing(index: int) -> list["VMobject"]:
             return [
