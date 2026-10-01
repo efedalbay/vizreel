@@ -57,6 +57,24 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/vizreel"]
 
+[tool.hatch.build.targets.sdist]
+# Everything but docs/images: the README shows its GIFs from GitHub, and they would make
+# most of the source package.
+only-include = [
+    "src",
+    "tests",
+    "examples",
+    "scripts",
+    "docs/ARCHITECTURE.md",
+    "docs/DESIGN.md",
+    "docs/PLUGINS.md",
+    "docs/ROADMAP.md",
+    "docs/SPEC.md",
+    "docs/THEMES.md",
+    "CHANGELOG.md",
+    "uv.lock",
+]
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100
