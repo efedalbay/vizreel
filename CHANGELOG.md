@@ -4,11 +4,11 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.16.1] - 2026-10-01
 
 ### Changed
 
-- Charts render about a third faster. Every chart type but the races, which already did, now builds its growing bars, lines and counting numbers anew on each frame instead of reshaping the last frame's point by point. Frames look the same.
+- Charts take about 30% less time to render. Every chart type but the races, which already did, now builds its growing bars, lines and counting numbers anew on each frame instead of reshaping the last frame's point by point. Frames look the same.
 - Chart types from other packages can do the same with `render.redrawn_shapes`.
 - The source package leaves out the README's GIFs, which the README shows from GitHub: 2.7 MB instead of 9.1 MB.
 
@@ -251,6 +251,7 @@ The first release.
 - `vizreel new TYPE` prints a commented template for each chart type.
 - The Inter typeface, bundled so that output looks the same on every machine.
 
+[0.16.1]: https://github.com/efedalbay/vizreel/releases/tag/v0.16.1
 [0.16.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.16.0
 [0.15.0]: https://github.com/efedalbay/vizreel/releases/tag/v0.15.0
 [0.14.1]: https://github.com/efedalbay/vizreel/releases/tag/v0.14.1
