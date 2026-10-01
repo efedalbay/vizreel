@@ -358,14 +358,23 @@ def test_a_chart_type_without_from_table_does_not_read_data(tmp_path: Path) -> N
     [
         (
             "5",
-            "charts[0].data: expected the path of a CSV file, or file and columns, got the "
-            "number 5",
+            "charts[0].data: expected the path of a CSV file or an Excel workbook, or file and "
+            "columns, got the number 5",
         ),
         ('""', "charts[0].data: must not be empty"),
         ("{ columns: [A] }", "charts[0].data.file: required field is missing"),
         (
+            "{ file: data.csv, tab: 1 }",
+            "charts[0].data.tab: unknown field. Check the spelling against docs/SPEC.md",
+        ),
+        (
             "{ file: data.csv, sheet: 1 }",
-            "charts[0].data.sheet: unknown field. Check the spelling against docs/SPEC.md",
+            'charts[0].data.sheet: expected text, got the number 1. Put it in quotes: "1"',
+        ),
+        (
+            "{ file: data.csv, sheet: Offers }",
+            "charts[0].data: data.csv is not an Excel workbook, so it has no sheets; leave out "
+            "sheet",
         ),
     ],
 )

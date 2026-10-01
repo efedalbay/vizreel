@@ -9,6 +9,7 @@ All notable changes to vizreel are documented here. The format follows
 ### Added
 
 - The `title-card` chart type: a headline that opens a video or a part of one, with a short `kicker` line above it and the `subtitle` under it, centered and appearing one line after another. The headline wraps onto up to three lines with its words spread evenly over them. Themes get an optional `sizes.headline`, 96 by default. The showcase opens with one.
+- Data from Excel workbooks: `data: report.xlsx`, or `data: { file: report.xlsx, sheet: Markets, columns: [...] }`, gives every chart type that reads a CSV file the same data from a sheet. Numbers are read as the workbook stores them, whatever their format or the locale, dates as ISO text and formulas as their last calculated values; errors name the file, the sheet, the row and the column. `examples/data/northwind.xlsx` is an example workbook. vizreel now depends on openpyxl.
 - Chart types, including those from other packages, can set `own_header = True` to set their title themselves, without a title band.
 
 ## [0.15.0] - 2026-09-29

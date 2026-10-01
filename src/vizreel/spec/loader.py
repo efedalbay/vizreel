@@ -15,6 +15,7 @@ from vizreel.errors import InputIssue, SpecError
 from vizreel.format.locales import EN_US, LOCALES, Locale
 from vizreel.spec.data import TableError, read_table
 from vizreel.spec.models import DataFile, Spec
+from vizreel.spec.workbook import WORKBOOK_SUFFIXES
 from vizreel.validation import (
     Location,
     describe,
@@ -220,10 +221,14 @@ def _fill_from_data_files(data: dict[str, Any], base_dir: Path) -> _Filled:
             filled.data["charts"][index] = {key: chart[key] for key in chart if key != "data"}
             continue
         try:
-            table = read_table(base_dir / reference.file, locale, reference.columns)
+            table = read_table(
+                base_dir / reference.file, locale, reference.columns, reference.sheet
+            )
             fields = registry.get(name).from_table(table, chart)
         except TableError as exc:
-            where = f", {exc.where()}" if exc.where() else ""
+            in_workbook = Path(reference.file).suffix.lower() in WORKBOOK_SUFFIXES
+            sheet = f'sheet "{reference.sheet}"' if reference.sheet and in_workbook else ""
+            where = "".join(f", {part}" for part in (sheet, exc.where()) if part)
             filled.issues.append(_issue(loc, f"{reference.file}{where} {exc.message}"))
             continue
         for key in fields:
@@ -243,7 +248,7 @@ def _data_reference(value: object, loc: Location, issues: list[InputIssue]) -> D
         issues.append(_issue(loc, "must not be empty"))
         return None
     if not isinstance(value, dict):
-        expected = "expected the path of a CSV file, or file and columns"
+        expected = "expected the path of a CSV file or an Excel workbook, or file and columns"
         issues.append(_issue(loc, f"{expected}, got {describe(value)}"))
         return None
     try:

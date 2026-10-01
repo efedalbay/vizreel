@@ -131,10 +131,13 @@ class NumberFormat(SpecModel):
 
 
 class DataFile(SpecModel):
-    """A CSV file with a chart's data, and the columns to read from it."""
+    """A CSV file or an Excel workbook with a chart's data, and what to read from it."""
 
     file: Text
-    """Path to the file, relative to the spec file."""
+    """Path to the file, relative to the spec file: a .csv file, or an .xlsx or .xlsm
+    workbook."""
+    sheet: Text | None = None
+    """The sheet of a workbook to read, by its name. The first sheet if left out."""
     columns: list[Text] | None = Field(default=None, min_length=1)
     """The columns to read, by the names in the header row and in this order. All of them if
     left out."""
@@ -148,9 +151,9 @@ class BaseChart(SpecModel):
     type: str
     """Chart type."""
     data: Text | DataFile | None = None
-    """A CSV file that gives the chart's data in place of fields such as `bars`: its path,
-    relative to the spec file, or the path and the columns to read. See "Data from files" in
-    docs/SPEC.md."""
+    """A CSV file or an Excel workbook that gives the chart's data in place of fields such as
+    `bars`: its path, relative to the spec file, or the path with the sheet and the columns to
+    read. See "Data from files" in docs/SPEC.md."""
     title: Text | None = None
     """Shown at the top of the chart."""
     subtitle: Text | None = None

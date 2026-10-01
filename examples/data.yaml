@@ -1,4 +1,5 @@
-# Every chart type that can read its data from a CSV file, reading it from data/.
+# Every chart type that can read its data from a CSV file, reading it from data/,
+# and a chart that reads a sheet of an Excel workbook.
 # See "Data from files" in docs/SPEC.md.
 version: 1
 
@@ -34,6 +35,13 @@ charts:
       - { name: Revenue, number: { prefix: "$", compact: true } }
       - { name: Growth, number: { suffix: "%" } }
     highlight: { row: Japan }
+
+  - id: markets-sheet
+    type: bar
+    title: Northwind revenue by market
+    data: { file: data/northwind.xlsx, sheet: Markets, columns: [Market, Revenue] }
+    number: { prefix: "$", compact: true }
+    highlight: { label: Japan }
 
   - id: market
     type: share

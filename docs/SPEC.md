@@ -1,6 +1,6 @@
 # Spec format (version 1)
 
-A spec is a YAML file that describes one or more charts. A chart's data is written in the spec or read from a CSV file next to it (see [Data from files](#data-from-files)). This document is the source of truth for the format: if the code and this file disagree, one of them is a bug.
+A spec is a YAML file that describes one or more charts. A chart's data is written in the spec or read from a CSV file or an Excel workbook next to it (see [Data from files](#data-from-files)). This document is the source of truth for the format: if the code and this file disagree, one of them is a bug.
 
 All examples in this document use a fictional company, Northwind, and made-up numbers.
 
@@ -79,7 +79,7 @@ CLI flags override `meta` values.
 | `duration` | number (seconds) | no | depends on type | Total clip length, including the final hold. Minimum 2. |
 | `highlight` | object | no | — | The element to emphasize; its fields depend on the type (see [at a glance](#chart-types-at-a-glance)). `stat`, `progress`, `compare`, `timeline` and `title-card` have none; a timeline marks an event with `emphasis`. |
 | `motion` | object | no | — | Motion settings for this chart, over those of `meta.motion`. See [Motion](#motion). |
-| `data` | string or object | no | — | A CSV file that gives the chart's data, such as its bars, in place of writing them in the spec. See [Data from files](#data-from-files). |
+| `data` | string or object | no | — | A CSV file or an Excel workbook that gives the chart's data, such as its bars, in place of writing them in the spec. See [Data from files](#data-from-files). |
 
 ### Number format (`number`)
 
@@ -149,7 +149,7 @@ This renders `740 milyon TL`.
 
 ## Chart types at a glance
 
-| Type | Shows | Emphasis | [Sequence](#sequences) | [CSV](#data-from-files) | Default `duration` |
+| Type | Shows | Emphasis | [Sequence](#sequences) | [Data file](#data-from-files) | Default `duration` |
 |---|---|---|---|---|---|
 | [`stat`](#stat--big-number-card) | One number, counting up | `trend` colors it | | | 3 |
 | [`progress`](#progress--toward-a-goal) | A value toward a goal, as a bar or a ring | | | | 4 |
@@ -756,7 +756,7 @@ An exit takes the theme's `exit_time` (0.5 seconds in the built-in themes) from 
 
 ## Data from files
 
-A chart can read its data from a CSV file instead of the spec, so numbers exported from a spreadsheet or a script render without being copied by hand. `data` names the file, relative to the spec file:
+A chart can read its data from a CSV file or a sheet of an Excel workbook instead of the spec, so numbers kept in a spreadsheet or exported by a script render without being copied by hand. `data` names the file, relative to the spec file:
 
 ```yaml
 - id: regions
@@ -777,7 +777,7 @@ West,356000000
 
 The file gives the chart's data fields, listed below; every other field, such as `title`, `number`, `highlight` or `sequence`, is written in the spec as usual. Writing a field the file gives as well is an error. The data is checked as if it were written in the spec: a bar chart still takes two to eight bars, zero or more each, and an error in a field the file gave names the file: `charts[0].bars[1].value: must be at least 0, got -2 (from data/regions.csv)`. `examples/data.yaml` has a chart of each kind.
 
-### The file
+### CSV files
 
 - The first row names the columns.
 - Cells are separated by commas, semicolons or tabs, whichever the first row uses most, so the semicolons Excel writes in many European languages work too. Put a cell that holds the separator in double quotes: `"Revenue, net"`.
@@ -786,6 +786,27 @@ The file gives the chart's data fields, listed below; every other field, such as
 - Text is shown as written. Years and dates need no quotes: `2016` in a label column stays the text `2016`.
 - A number is written plainly, `1234.5`, or the way `meta.locale` writes numbers: `1.234,5` in `tr-TR`, with or without its group separators. Where the two read the same text differently, the locale's way wins: in `tr-TR`, `1.234` is one thousand two hundred and thirty-four. Leave out units, currencies and percent signs (`$12M` is an error) and format the numbers with `number`.
 - An error in the file names the file, the row, counted as lines of the file, and the column: `charts[0].data: data/regions.csv, row 4, column "Revenue" is not a number: "187,5M"`.
+
+### Excel workbooks
+
+A chart reads a sheet of an Excel workbook, an `.xlsx` or `.xlsm` file, as it reads a CSV file: the first row names the columns, empty rows are skipped, and an error names the file, the sheet, the row and the column as Excel numbers them: `charts[0].data: data/northwind.xlsx, sheet "Markets", row 4, column "Revenue" is not a number: "n/a"`. It reads the first sheet unless `sheet` names another:
+
+```yaml
+- id: markets-sheet
+  type: bar
+  title: Northwind revenue by market
+  data: { file: data/northwind.xlsx, sheet: Markets, columns: [Market, Revenue] }
+  number: { prefix: "$", compact: true }
+```
+
+A cell is read as the workbook stores it, not as Excel shows it:
+
+- A number is read as it is, whatever its format and `meta.locale`: a cell that shows `25%` is `0.25`, and one that shows `$1.2M` is `1200000`. A number shown as text, such as a year in a label column, is written without decimals: `2016`.
+- A date is ISO text, `2024-03-31`, with the time of day if it is not midnight: `2024-03-31 09:30`.
+- A formula is the value Excel calculated when the workbook was last saved. A workbook written by a program other than Excel may hold formulas without values; open and save it in Excel first.
+- Text is read like a CSV cell, so a number typed as text is read the way `meta.locale` writes numbers.
+
+Older `.xls` workbooks are not read; save them as `.xlsx` or as CSV UTF-8.
 
 `vizreel render --watch` renders again when a data file is saved.
 
@@ -803,7 +824,8 @@ With more columns than the chart reads, name the ones to read, in order:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `file` | string | yes | Path to the CSV file, relative to the spec file. |
+| `file` | string | yes | Path to the CSV file or the workbook, relative to the spec file. |
+| `sheet` | string | no | The sheet of a workbook to read, by its name. The first sheet if left out. Only for a workbook. |
 | `columns` | list of strings | no | The columns to read, by the names in the first row, in this order. All of them if left out. |
 
 ### What each chart type reads

@@ -15,7 +15,7 @@ vizreel turns a declarative YAML spec into short, animated chart clips for video
 - A graphical user interface.
 - Editing or cutting video. vizreel produces clips; the editor assembles them.
 - Mathematical typesetting (LaTeX). All text is rendered with Manim's `Text` (Pango).
-- Live data fetching. The data is in the spec or in CSV files next to it.
+- Live data fetching. The data is in the spec or in CSV files and Excel workbooks next to it.
 
 ## Stack
 
@@ -27,6 +27,7 @@ vizreel turns a declarative YAML spec into short, animated chart clips for video
 | Spec validation | Pydantic v2 | Clear error messages, JSON Schema export |
 | YAML | PyYAML (`safe_load` only) | Standard, safe |
 | Terminal output | Rich | Readable progress and errors |
+| Excel workbooks | openpyxl (read-only, stored values) | Pure Python and the usual way to read `.xlsx`; the standard library has no reader for its zipped XML, shared strings and number formats. CSV needs only the standard library |
 | Packaging | `pyproject.toml`, `src/` layout, uv for development | Modern, reproducible |
 | Tests | pytest | Standard |
 | Lint / format | ruff | Fast, one tool |
@@ -56,6 +57,7 @@ vizreel/
 │   ├── spec/
 │   │   ├── models.py        ← Pydantic models for the spec
 │   │   ├── data.py          ← read a chart's CSV data file into a Table
+│   │   ├── workbook.py      ← read a sheet of an Excel workbook into a Table (openpyxl)
 │   │   └── loader.py        ← read YAML and data files → validated Spec
 │   ├── themes/
 │   │   ├── models.py        ← Theme model
@@ -102,7 +104,7 @@ vizreel/
 │   ├── showcase.yaml        ← one of every chart type (fictional data)
 │   ├── showcase-tr.yaml     ← the showcase in Turkish, numbers written for tr-TR
 │   ├── brand.yaml           ← charts in the example brand theme
-│   ├── data.yaml, data/     ← charts that read their data from CSV files
+│   ├── data.yaml, data/     ← charts that read their data from CSV files and a workbook
 │   ├── themes/example-brand.yaml  ← a complete custom theme
 │   └── plugin/              ← vizreel-dots, an example plugin package
 ├── scripts/
@@ -116,7 +118,7 @@ vizreel/
 
 ```
 spec.yaml
-   │  spec/loader.py  (YAML → dict; each chart's `data:` CSV file → spec/data.py Table
+   │  spec/loader.py  (YAML → dict; each chart's `data:` file → spec/data.py Table
    │                   → ChartType.from_table fills its fields; dict → Pydantic Spec,
    │                   all errors collected)
    ▼
@@ -242,7 +244,7 @@ A chart whose every frame is built from many parts, such as a race, uses `elemen
 
 - All expected failures raise a subclass of `VizreelError` with a user-facing message.
 - The CLI catches `VizreelError`, prints it with Rich, and exits with code 1. Unexpected exceptions show a traceback only with `--debug`.
-- Spec errors point to the exact location: `charts[1].series[0].values[4]: expected a number, got text "12k"`. Errors in a CSV file name the file, the row and the column.
+- Spec errors point to the exact location: `charts[1].series[0].values[4]: expected a number, got text "12k"`. Errors in a data file name the file, the row and the column, and the sheet of a workbook.
 
 ## Cross-platform notes
 

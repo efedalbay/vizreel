@@ -1,8 +1,8 @@
 # vizreel
 
-**Animated charts for video, from YAML and CSV files.**
+**Animated charts for video, from YAML, CSV and Excel files.**
 
-vizreel turns a short YAML file, with the data written in it or read from a CSV file, into animated chart clips that are ready to drop into a video editor: big numbers that count, bars that grow, lines that draw, races through the years. Each chart becomes its own clip, with a transparent background by default, so it sits directly over your footage.
+vizreel turns a short YAML file, with the data written in it or read from a CSV file or an Excel sheet, into animated chart clips that are ready to drop into a video editor: big numbers that count, bars that grow, lines that draw, races through the years. Each chart becomes its own clip, with a transparent background by default, so it sits directly over your footage.
 
 > **Status: 0.15.0, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
 
@@ -21,7 +21,7 @@ vizreel turns a short YAML file, with the data written in it or read from a CSV 
 
 Most chart tools are made for reports and dashboards. On video their charts look static and crowded, and animating each one by hand in a motion graphics tool takes time.
 
-- **Describe, don't animate.** You write the chart and its data in YAML, or point to a CSV file; vizreel does the motion. No code, no timeline.
+- **Describe, don't animate.** You write the chart and its data in YAML, or point to a CSV file or an Excel sheet; vizreel does the motion. No code, no timeline.
 - **Made to be watched.** Large type, one message per chart, a clear highlight moment, eased motion and a clean final frame, following written [design rules](https://github.com/efedalbay/vizreel/blob/main/docs/DESIGN.md).
 - **Ready for your editor.** One clip per chart, transparent, at your timeline's frame rate, in landscape, vertical or square, up to 4K.
 - **Consistent.** Colors, fonts and timing come from a theme, so every chart in a video matches.
@@ -74,7 +74,7 @@ This writes `out/customers.mov`: 1080p at 60 frames per second unless the spec s
 
 ## How a spec works
 
-A spec is a YAML file with a `version`, optional shared settings in `meta`, and a list of `charts`. Each chart has an `id`, which names its clip, a `type`, and its data: written in the spec, or read from a CSV file. Here the data is written in the spec:
+A spec is a YAML file with a `version`, optional shared settings in `meta`, and a list of `charts`. Each chart has an `id`, which names its clip, a `type`, and its data: written in the spec, or read from a CSV file or an Excel sheet. Here the data is written in the spec:
 
 ```yaml
 version: 1
@@ -110,11 +110,11 @@ out/
 └── offers.mov            ← three bars growing, then Buyer C highlighted
 ```
 
-The same bars could come from a spreadsheet instead: `data: data/offers.csv` in place of `bars` (see [Data from CSV files](#data-from-csv-files)); every chart type but `stat` and `progress` can read one. Values are always plain numbers; `number` decides how they are written (`$740M`). Every chart can also have a `title`, a `subtitle`, a `source` line and a `duration`. `vizreel validate charts.yaml` lists every mistake at once with its location, such as `charts[1].bars[2].value: must be at least 0, got -4`. The [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md) describes every field, and `vizreel new TYPE` prints a commented template for each chart type.
+The same bars could come from a spreadsheet instead: `data: data/offers.csv` in place of `bars` or `data: data/northwind.xlsx` (see [Data from CSV and Excel files](#data-from-csv-and-excel-files)); every chart type but `stat`, `progress` and `title-card` can read one. Values are always plain numbers; `number` decides how they are written (`$740M`). Every chart can also have a `title`, a `subtitle`, a `source` line and a `duration`. `vizreel validate charts.yaml` lists every mistake at once with its location, such as `charts[1].bars[2].value: must be at least 0, got -4`. The [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md) describes every field, and `vizreel new TYPE` prints a commented template for each chart type.
 
 ## Chart types
 
-| Type | Use it for | Sequence | CSV |
+| Type | Use it for | Sequence | Data file |
 |---|---|---|---|
 | `stat` | One number the viewer must remember, counting up to its value | | |
 | `progress` | How far a value has come toward a goal, as a bar or a ring that fills | | |
@@ -133,7 +133,7 @@ The same bars could come from a spreadsheet instead: `data: data/offers.csv` in 
 | `scatter-race` | Points moving on two axes through up to 200 periods, sized by a third value | | ✓ |
 | `title-card` | A headline that opens a video or a part of it, with a line above and under it | | |
 
-**Sequence**: the chart can be told in several clips that cut together ([below](#sequences)). **CSV**: it can read its data from a CSV file ([below](#data-from-csv-files)). Other packages can add chart types too ([Extending vizreel](#extending-vizreel)).
+**Sequence**: the chart can be told in several clips that cut together ([below](#sequences)). **Data file**: it can read its data from a CSV file or an Excel sheet ([below](#data-from-csv-and-excel-files)). Other packages can add chart types too ([Extending vizreel](#extending-vizreel)).
 
 ## Features
 
@@ -148,9 +148,9 @@ vizreel render charts.yaml --aspect 1:1
 
 Text keeps its size; charts rearrange instead. In a vertical frame bars become rows, timelines run down the frame, long titles wrap, and a chart with little content gets a card that fits it. Wider margins keep everything clear of the buttons and captions those apps draw over the video. A square frame uses the landscape arrangement where it fits and the vertical one where it does not. Vertical clips are named `ID.vertical.mov` and square ones `ID.square.mov`; set `aspect` in `meta` to make one the default.
 
-### Data from CSV files
+### Data from CSV and Excel files
 
-A chart can take its data from a CSV file, such as one exported from a spreadsheet:
+A chart can take its data from a CSV file or a sheet of an Excel workbook:
 
 ```yaml
 - id: regions
@@ -160,7 +160,7 @@ A chart can take its data from a CSV file, such as one exported from a spreadshe
   number: { prefix: "$", compact: true }
 ```
 
-The first row names the columns; a bar chart reads a label and a value from each row after it. Commas, semicolons and tabs all work, numbers may be written as your locale writes them (`1.234,5` with `locale: tr-TR`), and an error names the file, row and column. [`examples/data.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/data.yaml) has a chart of every type that reads one, including a race of ten companies through 24 years. The spec reference says [what each type reads](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#data-from-files).
+The first row names the columns; a bar chart reads a label and a value from each row after it. Commas, semicolons and tabs all work, numbers may be written as your locale writes them (`1.234,5` with `locale: tr-TR`), and an error names the file, row and column. From a workbook, `data: { file: data/northwind.xlsx, sheet: Markets }` reads one sheet, the first if `sheet` is left out, and numbers are read as Excel stores them. [`examples/data.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/data.yaml) has a chart of every type that reads one, including a race of ten companies through 24 years. The spec reference says [what each type reads](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#data-from-files).
 
 ### Sequences
 
@@ -281,7 +281,7 @@ vizreel render examples/showcase.yaml --format prores
 
 | Document | What it covers |
 |---|---|
-| [Spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md) | Every field of every chart type, number formats, locales, sequences, motion and CSV data |
+| [Spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md) | Every field of every chart type, number formats, locales, sequences, motion and data files |
 | [Theme reference](https://github.com/efedalbay/vizreel/blob/main/docs/THEMES.md) | Writing and checking a theme |
 | [Design rules](https://github.com/efedalbay/vizreel/blob/main/docs/DESIGN.md) | The visual rules every chart follows, and how to choose a chart type |
 | [Writing a chart type](https://github.com/efedalbay/vizreel/blob/main/docs/PLUGINS.md) | Adding chart types from your own package |

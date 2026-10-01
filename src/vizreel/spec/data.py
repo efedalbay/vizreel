@@ -1,4 +1,4 @@
-"""Reading a chart's data from a CSV file."""
+"""Reading a chart's data from a CSV file or an Excel workbook."""
 
 import csv
 import io
@@ -50,12 +50,16 @@ class Table:
         rows: The cells of each row, one per column, without surrounding spaces.
         lines: The line of the file each row ends on, counting from 1.
         locale: How the file writes numbers besides the plain way.
+        numbers: The number each cell stores, or None for a cell that stores text, by row and
+            column like `rows`; None for a whole CSV file, which stores only text. A stored
+            number is read as it is, not from its text.
     """
 
     header: list[str]
     rows: list[list[str]]
     lines: list[int]
     locale: Locale
+    numbers: list[list[float | None]] | None = None
 
     @property
     def width(self) -> int:
@@ -115,6 +119,9 @@ class Table:
         Raises:
             TableError: The cell is not a number.
         """
+        stored = self._stored(row, column)
+        if stored is not None:
+            return stored
         cell = self.rows[row][column]
         if not cell:
             return None
@@ -130,32 +137,51 @@ class Table:
 
     def is_number(self, row: int, column: int) -> bool:
         """Whether a cell holds a number."""
+        if self._stored(row, column) is not None:
+            return True
         try:
             parse_number(self.rows[row][column], locale=self.locale)
         except ValueError:
             return False
         return True
 
+    def _stored(self, row: int, column: int) -> float | None:
+        return None if self.numbers is None else self.numbers[row][column]
+
     def error(self, row: int, column: int, message: str) -> TableError:
         """Return an error about one cell, naming its line and column."""
         return TableError(message, row=self.lines[row], column=self.header[column])
 
 
-def read_table(path: Path, locale: Locale, columns: list[str] | None = None) -> Table:
-    """Read a CSV file whose first row names its columns.
+def read_table(
+    path: Path, locale: Locale, columns: list[str] | None = None, sheet: str | None = None
+) -> Table:
+    """Read a CSV file or a sheet of an Excel workbook whose first row names its columns.
 
-    The file is UTF-8, with or without a byte order mark, and separates cells with commas,
-    semicolons or tabs, whichever its header uses most. Empty rows are skipped.
+    A CSV file is UTF-8, with or without a byte order mark, and separates cells with commas,
+    semicolons or tabs, whichever its header uses most. A workbook is an .xlsx or .xlsm file,
+    read by `workbook.read_workbook`. Empty rows are skipped.
 
     Args:
         path: The file to read.
         locale: How the file writes numbers besides the plain way.
         columns: The columns to keep, by name and in this order. All of them if None.
+        sheet: The sheet of a workbook to read; its first sheet if None.
 
     Raises:
         TableError: The file cannot be read, has no rows, has a row with another number of
-            cells than the header, or lacks one of `columns`.
+            cells than the header, or lacks one of `columns` or `sheet`.
     """
+    from vizreel.spec.workbook import WORKBOOK_SUFFIXES, read_workbook
+
+    suffix = path.suffix.lower()
+    if suffix in WORKBOOK_SUFFIXES:
+        table = read_workbook(path, locale, sheet)
+        return table if columns is None else _select(table, columns)
+    if suffix == ".xls":
+        raise TableError("is an Excel 97-2003 workbook; save it as .xlsx or as CSV UTF-8")
+    if sheet is not None:
+        raise TableError("is not an Excel workbook, so it has no sheets; leave out sheet")
     text = _read_text(path)
     first_line = next((line for line in text.splitlines() if line.strip()), None)
     if first_line is None:
@@ -184,7 +210,7 @@ def read_table(path: Path, locale: Locale, columns: list[str] | None = None) -> 
 
 def _read_text(path: Path) -> str:
     if path.is_dir():
-        raise TableError("is a directory, expected a CSV file")
+        raise TableError("is a directory, expected a CSV file or an Excel workbook")
     try:
         return path.read_text(encoding="utf-8-sig")
     except FileNotFoundError:
@@ -217,7 +243,12 @@ def _select(table: Table, columns: list[str]) -> Table:
             raise TableError(f'has {len(found)} columns named "{name}"; rename all but one')
         indexes.append(found[0])
     rows = [[row[index] for index in indexes] for row in table.rows]
-    return Table(list(columns), rows, table.lines, table.locale)
+    numbers = (
+        None
+        if table.numbers is None
+        else [[row[index] for index in indexes] for row in table.numbers]
+    )
+    return Table(list(columns), rows, table.lines, table.locale, numbers)
 
 
 def _quoted(names: list[str]) -> str:
