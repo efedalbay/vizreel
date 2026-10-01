@@ -158,14 +158,14 @@ From here on, each milestone ends with a minor release (M7 → 0.2.0, M8 → 0.3
 
 ## M20 — Title cards and Excel files
 
-- A `title` chart type: a headline card, with an optional line above and below it, to open a video or a section.
+- A `title-card` chart type: a headline card, with an optional line above and below it, to open a video or a section. (`title-card` rather than `title`, which every chart already has as a field.)
 - Data read from a sheet of an Excel file (`.xlsx`) as well as from CSV.
 
 **Done when:** a title card honors the themes, the frame shapes and the motion options like every chart type, and every chart type that reads CSV reads the same data from an Excel sheet.
 
 ## Testing by the community
 
-Every milestone up to M17 is done. Two checks need a setup the project does not have, so they are left to users, and the README asks for them under "Help test vizreel":
+Every milestone up to M20 is done. Two checks need a setup the project does not have, so they are left to users, and the README asks for them under "Help test vizreel":
 
 - **macOS**: installing vizreel and rendering the showcase.
 - **DaVinci Resolve**: whether transparent clips (`mov`, `prores`, `png`, `webm`) keep their alpha over footage.
