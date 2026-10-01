@@ -118,6 +118,8 @@ class ThemeSizes(ThemeModel):
     """Chart title. At least 56."""
     subtitle: float = Field(ge=32)
     """Line under the title. At least 32."""
+    headline: float = Field(default=96, ge=56)
+    """The headline of a title card. At least 56; 96 if left out."""
     big_number: float = Field(ge=160)
     """The number of a stat chart. At least 160."""
     affix_scale: float = Field(default=0.6, ge=0.5, le=1)

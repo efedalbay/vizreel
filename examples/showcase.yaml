@@ -7,6 +7,13 @@ meta:
   fps: 60
 
 charts:
+  - id: opening
+    type: title-card
+    kicker: Northwind in numbers
+    title: From a garage to five countries
+    subtitle: Eight years of growth, 2016 to 2024
+    duration: 4
+
   - id: peak-valuation
     type: stat
     value: 740000000

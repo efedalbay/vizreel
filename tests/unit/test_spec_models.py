@@ -278,6 +278,7 @@ def test_json_schema_lists_every_chart_type() -> None:
         "stat",
         "table",
         "timeline",
+        "title-card",
         "waterfall",
     ]
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"

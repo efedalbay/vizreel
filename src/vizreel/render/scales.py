@@ -4,6 +4,7 @@ import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
+from itertools import combinations, pairwise
 
 NICE_STEPS = (1, 2, 2.5, 5)
 """Tick steps are one of these times a power of ten."""
@@ -220,6 +221,35 @@ def wrap_text(text: str, fits: Callable[[str], bool], max_lines: int) -> list[st
     if current:
         lines.append(current)
     return lines if len(lines) <= max_lines else None
+
+
+def balanced_lines(text: str, width_of: Callable[[str], float], count: int) -> list[str]:
+    """Break `text` at spaces into `count` lines whose widest line is as narrow as it can be.
+
+    Wrapping puts as many words on each line as fit, which can leave one word alone on the
+    last line; this spreads the words over the lines evenly instead.
+
+    Args:
+        text: The text to break, with at least `count` words.
+        width_of: The width of a line of text.
+        count: The number of lines.
+    """
+    words = text.split()
+    widths: dict[tuple[int, int], float] = {}
+
+    def width(start: int, end: int) -> float:
+        if (start, end) not in widths:
+            widths[start, end] = width_of(" ".join(words[start:end]))
+        return widths[start, end]
+
+    best: tuple[float, tuple[int, ...]] | None = None
+    for breaks in combinations(range(1, len(words)), count - 1):
+        bounds = (0, *breaks, len(words))
+        widest = max(width(start, end) for start, end in pairwise(bounds))
+        if best is None or widest < best[0] - 1e-9:
+            best = (widest, bounds)
+    assert best is not None, "the text has fewer words than lines"
+    return [" ".join(words[start:end]) for start, end in pairwise(best[1])]
 
 
 def clamp_center(center: float, width: float, low: float, high: float) -> float:

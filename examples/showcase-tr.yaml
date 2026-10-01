@@ -5,6 +5,13 @@ meta:
   locale: tr-TR
 
 charts:
+  - id: opening
+    type: title-card
+    kicker: Rakamlarla Northwind
+    title: Bir garajdan beş ülkeye
+    subtitle: Sekiz yıllık büyüme, 2016-2024
+    duration: 4
+
   - id: peak-valuation
     type: stat
     value: 740000000

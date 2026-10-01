@@ -429,19 +429,24 @@ def check_fits(mobject: Mobject, box: Box, what: str) -> None:
 
 
 def wrapped_lines(
-    content: str, style: FontStyle, size_px: float, width: float, what: str
+    content: str,
+    style: FontStyle,
+    size_px: float,
+    width: float,
+    what: str,
+    max_lines: int = MAX_TEXT_LINES,
 ) -> list[str]:
-    """Split text into at most `MAX_TEXT_LINES` lines that each fit `width`.
+    """Split text into at most `max_lines` lines that each fit `width`.
 
     Raises:
         RenderError: The text does not fit in that many lines.
     """
     lines = wrap_text(
-        content, lambda line: text(line, style, size_px, "#000000").width <= width, MAX_TEXT_LINES
+        content, lambda line: text(line, style, size_px, "#000000").width <= width, max_lines
     )
     if lines is None:
         raise RenderError(
-            f"{what} is too long to fit on {MAX_TEXT_LINES} lines at the theme's size; shorten it"
+            f"{what} is too long to fit on {max_lines} lines at the theme's size; shorten it"
         )
     return lines
 
@@ -454,13 +459,14 @@ def wrapped_block(
     width: float,
     what: str,
     align: Literal["center", "left"],
+    max_lines: int = MAX_TEXT_LINES,
 ) -> TextBlock:
-    """Build text on as many lines as it needs to fit `width`, at most `MAX_TEXT_LINES`.
+    """Build text on as many lines as it needs to fit `width`, at most `max_lines`.
 
     Raises:
         RenderError: The text does not fit in that many lines.
     """
-    lines = wrapped_lines(content, style, size_px, width, what)
+    lines = wrapped_lines(content, style, size_px, width, what, max_lines)
     if len(lines) == 1:
         return text_block(content, style, size_px, hex_color)
     return paragraph_block(lines, style, size_px, hex_color, align)

@@ -12,6 +12,7 @@ ROOT = Path(__file__).parents[2]
 SHOWCASE = ROOT / "examples" / "showcase.yaml"
 SEQUENCES = Path(__file__).parent / "fixtures" / "sequences.yaml"
 CHART_IDS = [
+    "opening",
     "peak-valuation",
     "valuation",
     "offers",

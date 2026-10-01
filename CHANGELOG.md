@@ -4,6 +4,13 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The `title-card` chart type: a headline that opens a video or a part of one, with a short `kicker` line above it and the `subtitle` under it, centered and appearing one line after another. The headline wraps onto up to three lines with its words spread evenly over them. Themes get an optional `sizes.headline`, 96 by default. The showcase opens with one.
+- Chart types, including those from other packages, can set `own_header = True` to set their title themselves, without a title band.
+
 ## [0.15.0] - 2026-09-29
 
 ### Added

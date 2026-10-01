@@ -72,6 +72,8 @@ class ChartType(ABC):
             panel close in around the chart's content when it leaves much of the frame empty.
             A chart type that draws the title and source in their bands and its panel around
             `layout.inner` gets this for free; one that places them itself sets it to False.
+        own_header: Whether the chart type sets the title and subtitle itself, at sizes of
+            its own, rather than in the title band. Its layout then has no title band.
         chart: The chart to build, an instance of `model`.
         theme: All styling.
         layout: All geometry.
@@ -86,6 +88,7 @@ class ChartType(ABC):
     template: ClassVar[str]
     api_version: ClassVar[int] = CHART_API_VERSION
     fits_to_content: ClassVar[bool] = True
+    own_header: ClassVar[bool] = False
 
     def __init__(self, chart: BaseChart, theme: Theme, layout: Layout, locale: Locale) -> None:
         self.chart = chart

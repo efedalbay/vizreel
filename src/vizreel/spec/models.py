@@ -241,6 +241,18 @@ class StatChart(BaseChart):
     """Colors the number with the theme's positive or negative color."""
 
 
+class TitleCardChart(BaseChart):
+    """A headline that opens a video or a part of one, with lines above and under it."""
+
+    type: Literal["title-card"]
+    duration: Duration = 3
+    """Total clip length in seconds, including the final hold. Minimum 2."""
+    title: Text
+    """The headline, large and centered. Wraps onto up to three lines."""
+    kicker: Text | None = None
+    """Short line above the headline, e.g. "Part 2"."""
+
+
 class ProgressChart(BaseChart):
     """How far a value has come toward a goal, as a bar or a ring that fills."""
 

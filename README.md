@@ -131,6 +131,7 @@ The same bars could come from a spreadsheet instead: `data: data/offers.csv` in 
 | `bar-race` | Bars racing through up to 200 periods, changing places as they pass each other | | ✓ |
 | `line-race` | Lines racing through up to 200 periods, the axis growing with them | | ✓ |
 | `scatter-race` | Points moving on two axes through up to 200 periods, sized by a third value | | ✓ |
+| `title-card` | A headline that opens a video or a part of it, with a line above and under it | | |
 
 **Sequence**: the chart can be told in several clips that cut together ([below](#sequences)). **CSV**: it can read its data from a CSV file ([below](#data-from-csv-files)). Other packages can add chart types too ([Extending vizreel](#extending-vizreel)).
 

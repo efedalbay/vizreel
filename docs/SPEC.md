@@ -12,6 +12,7 @@ All examples in this document use a fictional company, Northwind, and made-up nu
   - Over time: [`line`](#line--values-over-time), [`area`](#area--amounts-over-time), [`timeline`](#timeline--sequence-of-events)
   - Categories: [`bar`](#bar--compare-categories), [`grouped`](#grouped--bars-side-by-side), [`stacked`](#stacked--bars-made-of-parts), [`waterfall`](#waterfall--from-a-start-to-a-total), [`share`](#share--parts-of-a-whole), [`table`](#table--rows-and-columns)
   - Races: [`bar-race`](#bar-race--bars-racing-through-periods), [`line-race`](#line-race--lines-racing-through-periods), [`scatter-race`](#scatter-race--points-racing-on-two-axes)
+  - Text: [`title-card`](#title-card--opening-a-video-or-a-part-of-it)
 - **Across chart types:** [sequences](#sequences), [motion](#motion), [data from files](#data-from-files)
 - **Tools:** [validation](#validation), [JSON Schema](#json-schema), [versioning](#versioning)
 
@@ -71,12 +72,12 @@ CLI flags override `meta` values.
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `id` | string `[a-z0-9-]+` | yes | — | Unique in the spec. Used as the output file name, so it cannot be a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`). |
-| `type` | string | yes | — | Chart type: `stat`, `progress`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, `bar-race`, `line-race`, `scatter-race`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
-| `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. |
+| `type` | string | yes | — | Chart type: `stat`, `progress`, `line`, `area`, `bar`, `timeline`, `compare`, `waterfall`, `stacked`, `grouped`, `share`, `table`, `bar-race`, `line-race`, `scatter-race`, `title-card`, or a type from an installed [plugin](PLUGINS.md); `vizreel types` lists them all. A plugin documents its own fields. |
+| `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. A `title-card` requires it, as its headline. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Northwind annual report"`. Keep it short; it is on screen. |
 | `duration` | number (seconds) | no | depends on type | Total clip length, including the final hold. Minimum 2. |
-| `highlight` | object | no | — | The element to emphasize; its fields depend on the type (see [at a glance](#chart-types-at-a-glance)). `stat`, `progress`, `compare` and `timeline` have none; a timeline marks an event with `emphasis`. |
+| `highlight` | object | no | — | The element to emphasize; its fields depend on the type (see [at a glance](#chart-types-at-a-glance)). `stat`, `progress`, `compare`, `timeline` and `title-card` have none; a timeline marks an event with `emphasis`. |
 | `motion` | object | no | — | Motion settings for this chart, over those of `meta.motion`. See [Motion](#motion). |
 | `data` | string or object | no | — | A CSV file that gives the chart's data, such as its bars, in place of writing them in the spec. See [Data from files](#data-from-files). |
 
@@ -165,6 +166,7 @@ This renders `740 milyon TL`.
 | [`bar-race`](#bar-race--bars-racing-through-periods) | 2–30 series racing through up to 200 periods | `highlight.series`, followed | | ✓ | 15 |
 | [`line-race`](#line-race--lines-racing-through-periods) | 1–6 lines racing through up to 200 periods | `highlight.series`, followed | | ✓ | 15 |
 | [`scatter-race`](#scatter-race--points-racing-on-two-axes) | 2–30 points moving on two axes through up to 200 periods | `highlight.series`, followed | | ✓ | 15 |
+| [`title-card`](#title-card--opening-a-video-or-a-part-of-it) | A headline that opens a video or a part of it | | | | 3 |
 
 Every chart type also takes the [fields shared by every chart](#fields-shared-by-every-chart). `vizreel new TYPE` prints a commented template of any type.
 
@@ -665,6 +667,25 @@ A series is on the plot from its first period with both an `x` and a `y` to its 
 
 A scatter race's CSV file has a row per period and series: the period, the name, x, y and an optional size, in that order (see [Data from files](#data-from-files)).
 
+## `title-card` — opening a video or a part of it
+
+A headline that opens a video or a part of one, with a short line above it (`kicker`) in the theme's `accent` color and the `subtitle` under it. The lines are centered in the frame and appear one after another, as the theme's `entrance` says (see [Motion](#motion)), then hold. The headline is in the theme's `headline` size, 96 px unless the theme sets another, and wraps onto up to three lines with its words spread evenly over them; one that does not fit on three lines is an error. The kicker and the subtitle wrap onto up to two.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `title` | string | yes | — | The headline. |
+| `kicker` | string | no | — | Short line above the headline, e.g. `Part 2`. |
+
+`subtitle` and `source` are as for every chart; the subtitle goes under the headline. A title card has no data, so it takes no `data` file. Default `duration`: 3.
+
+```yaml
+- id: part-two
+  type: title-card
+  kicker: Part 2
+  title: How Northwind grew
+  subtitle: 2019 to 2024
+```
+
 ---
 
 ## Sequences
@@ -700,7 +721,7 @@ The first clip is the chart as usual, emphasizing the first item. Each later cli
 | `table` | A row name. |
 | `line` | An x label that has a value, or a point with a callout: `{ x: "2018", label: "Series C closes" }`. |
 
-A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat`, `progress` and `compare` charts have no elements to emphasize, and races (`bar-race`, `line-race`, `scatter-race`) already move through their periods; they have no sequence.
+A sequence has 2–8 items; an item may come back later. A chart with a `sequence` has no `highlight` (and a timeline no event with `emphasis`), since the sequence says what to emphasize in each clip. `stat`, `progress`, `compare` and `title-card` charts have no elements to emphasize, and races (`bar-race`, `line-race`, `scatter-race`) already move through their periods; they have no sequence.
 
 ---
 
@@ -802,7 +823,7 @@ With more columns than the chart reads, name the ones to read, in order:
 | `compare` | A label and a value. | Two: the earlier value, then the later one. | `before`, `after` |
 | `table` | Two to four. A column holds numbers if its first row does; the first holds the row names. | One row each. | `rows`, and `columns` named by the first row, unless the spec writes `columns` to name them and set their number formats |
 
-`stat` and `progress` charts read no data file. A chart type from a [plugin](PLUGINS.md) documents whether it reads one.
+`stat`, `progress` and `title-card` charts read no data file. A chart type from a [plugin](PLUGINS.md) documents whether it reads one.
 
 ---
 
@@ -817,7 +838,7 @@ Reports every error at once, with its location, for example:
 ```
 spec.yaml: 2 errors
   charts[1].series[0].values: expected 5 values (same as x), got 4
-  charts[2].type: unknown type "pie". Valid types: area, bar, bar-race, compare, grouped, line, line-race, progress, share, stacked, stat, table, timeline, waterfall
+  charts[2].type: unknown type "pie". Valid types: area, bar, bar-race, compare, grouped, line, line-race, progress, scatter-race, share, stacked, stat, table, timeline, title-card, waterfall
 ```
 
 The exit code is `0` when the spec is valid and `1` when it is not. `vizreel render` validates the spec first and renders nothing if it has errors; problems it can only find while drawing, such as a title too long for two lines, are reported for the chart they are in, and the other charts still render.

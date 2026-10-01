@@ -379,9 +379,12 @@ def render_chart(
         with tempconfig(manim_config):
             # The title band is as tall as the title and subtitle once wrapped to its width,
             # which does not depend on its height.
-            width = layout_with(1, 1).title.width
-            title, subtitle = elements.header_lines(chart.title, chart.subtitle, theme, width)
-            layout = layout_with(len(title), len(subtitle))
+            if chart_type.own_header:
+                layout = layout_with(0, 0)
+            else:
+                width = layout_with(1, 1).title.width
+                title, subtitle = elements.header_lines(chart.title, chart.subtitle, theme, width)
+                layout = layout_with(len(title), len(subtitle))
             fit = settings.aspect == "9:16" and chart_type.fits_to_content
             scene = ChartScene(
                 chart_type(chart, theme, layout, locale),

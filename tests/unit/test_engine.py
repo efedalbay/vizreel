@@ -88,6 +88,7 @@ def test_select_all_charts_in_spec_order() -> None:
     spec = load_spec(SHOWCASE)
 
     assert [chart.id for chart in select_charts(spec, ())] == [
+        "opening",
         "peak-valuation",
         "valuation",
         "offers",
@@ -119,9 +120,9 @@ def test_select_unknown_id_lists_ids() -> None:
 
     with pytest.raises(
         RenderError,
-        match="no chart with id 'nope'. Ids in the spec: peak-valuation, valuation, offers, "
-        "final-years, headcount, profit, revenue-mix, region-growth, users, fundraiser, market, "
-        "top-markets",
+        match="no chart with id 'nope'. Ids in the spec: opening, peak-valuation, valuation, "
+        "offers, final-years, headcount, profit, revenue-mix, region-growth, users, fundraiser, "
+        "market, top-markets",
     ):
         select_charts(spec, ("nope",))
 

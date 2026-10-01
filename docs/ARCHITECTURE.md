@@ -79,6 +79,7 @@ vizreel/
 │   │   ├── bar_race.py
 │   │   ├── line_race.py
 │   │   ├── scatter_race.py
+│   │   ├── title_card.py
 │   │   ├── _bars.py         ← parts the bar-like types share; not a chart type
 │   │   └── _race.py         ← timing and ordering the races share; not a chart type
 │   ├── render/
@@ -208,7 +209,7 @@ Resolution order for `meta.theme`: built-in name → path relative to the spec f
 ## Rendering
 
 - Resolution presets: `720p`, `1080p` (default), `1440p`, `4k`, named by the short side of the frame. Aspect `16:9` (default), `9:16` or `1:1` (`meta.aspect`, `--aspect`). The short side of Manim's frame is 8 scene units in every aspect, so one scene unit is 135 pixels at 1080p and theme sizes need no conversion per aspect; `layout.py` gives each aspect its frame size and safe margins. Vertical files are named `<id>.vertical.<format>` and square ones `<id>.square.<format>`.
-- Chart types adapt to a vertical frame through `Layout.vertical`: bar charts use rows (`layout: auto`) and timelines run down the frame. A square frame (`Layout.square`) tries the landscape arrangement first (see `arranged` above). Titles and subtitles wrap onto a second line when they do not fit; the engine measures them before it builds the layout, so the title band is as tall as the wrapped lines.
+- Chart types adapt to a vertical frame through `Layout.vertical`: bar charts use rows (`layout: auto`) and timelines run down the frame. A square frame (`Layout.square`) tries the landscape arrangement first (see `arranged` above). Titles and subtitles wrap onto a second line when they do not fit; the engine measures them before it builds the layout, so the title band is as tall as the wrapped lines. A chart type that sets its title at a size of its own (`title-card`, whose title is its headline) sets `own_header = True`, and its layout has no title band.
 - Text is laid out by Pango on a fixed 4096-pixel surface, not one the size of the video, so it wraps and positions the same way in every output size (`elements.TEXT_SURFACE_PX`).
 - Quality flag: `--quality preview` (low resolution, 15 fps, fast) or `final` (spec resolution and fps). A chart renders to `<id>.<format>`; preview files are named `<id>.preview.<format>` so that a preview never replaces a final clip that may already be in an editor project.
 - Formats: `mov` (QuickTime Animation) with alpha (default), `webm` with alpha, `mp4` opaque (uses the theme background), and two that `render/transcode.py` makes from Manim's `mov` with PyAV: `prores` (ProRes 4444 with alpha, through 8-bit `yuva444p`, because FFmpeg's direct conversion corrupts alpha at widths that are not a multiple of 16) and `png` (a folder of numbered frames). Which editors keep the alpha is listed in the README; what is untested is asked of the community there.

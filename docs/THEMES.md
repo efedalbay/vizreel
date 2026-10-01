@@ -142,6 +142,7 @@ Pixels at 1080p; they scale with the output resolution. Text sizes are font size
 |---|---|---|
 | `title` | Chart title | 56 |
 | `subtitle` | Line under the title | 32 |
+| `headline` | Optional, 96 by default. The headline of a `title-card` | 56 |
 | `big_number` | The number of a `stat` and the percent of a `progress` bar; at 2/3 of it the `compare` values and the percent in a `share` or `progress` ring, and at 1/2 the period of a `bar-race` | 160 |
 | `affix_scale` | Optional, 0.6 by default. Size of what surrounds the digits of a big number (the `stat` number, the `compare` values, the `share` percent), relative to the digits: 0.6 sets `milyar` in `1,85 milyar` and `$` in `$740M` at 60% of the digits, on their baseline; 1 sets them at the size of the digits. Not a pixel size. | 0.5, at most 1 |
 | `label` | Axis labels, category labels, event labels, the `stat` label | 32 |

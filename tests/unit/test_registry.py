@@ -40,6 +40,7 @@ def test_builtin_registry_has_every_chart_type() -> None:
         "stat",
         "table",
         "timeline",
+        "title-card",
         "waterfall",
     ]
 
