@@ -53,7 +53,7 @@ sizes:                    # pixels at 1080p
   title: 66
   subtitle: 40
   big_number: 200
-  affix_scale: 0.6
+  affix_scale: 0.6    # units and currency signs of big numbers at 60% of the digits
   label: 40
   value: 38
   caption: 28
@@ -73,7 +73,7 @@ motion:                   # seconds
 
 background_panel: true
 
-logo:
+logo:                     # drawn in the lower right corner of every chart
   file: northwind-logo.svg
   height: 48
 ```
@@ -115,17 +115,17 @@ Colors are `#RRGGBB`.
 | `text` | Titles, values and labels. |
 | `muted` | Secondary text and de-emphasized data. |
 | `grid` | Axes, grid lines and baselines. |
-| `accent` | Data without an emphasis of its own: bars, race bars, timeline dots, the start and total of a `waterfall`. |
+| `accent` | Data without an emphasis of its own: bars, race bars and points, timeline dots, the start and total of a `waterfall`; also the kicker of a `title-card`. |
 | `positive` | Up: a `stat` with `trend: up`, a rising `compare`, an increase in a `waterfall`. |
 | `negative` | Down: a `stat` with `trend: down`, a falling `compare`, a decrease in a `waterfall`. |
 | `highlight` | The one element that carries the message: a highlighted bar or point, the followed series of a race, the fill of a `progress`. |
 | `series` | The series of `line`, `area`, `stacked`, `grouped` and `line-race` charts, in this order. At least three; a chart never reuses one for a second series. |
 | `dim_opacity` | How much of their color other elements keep during the highlight beat, from 0 (exclusive) to 1. |
-| `brand` | Optional. Named brand colors, such as `{ contoso-coral: "#FF7A7A" }`, which a `bar-race` gives to its series by name (`colors` in the spec), so a company can race in its own color. Names are lowercase letters, digits and hyphens. |
+| `brand` | Optional. Named brand colors, such as `{ contoso-coral: "#FF7A7A" }`, which a `bar-race` or `scatter-race` gives to its series by name (`colors` in the spec), so a company can race in its own color. Names are lowercase letters, digits and hyphens. |
 
 ### `fonts`
 
-`heading` (titles and dates), `body` (labels, subtitles, the source line) and `numbers` (values), each with:
+`heading` (titles, title-card headlines and dates), `body` (labels, subtitles, the source line) and `numbers` (values), each with:
 
 | Field | Values |
 |---|---|
@@ -143,7 +143,7 @@ Pixels at 1080p; they scale with the output resolution. Text sizes are font size
 | `title` | Chart title | 56 |
 | `subtitle` | Line under the title | 32 |
 | `headline` | Optional, 96 by default. The headline of a `title-card` | 56 |
-| `big_number` | The number of a `stat` and the percent of a `progress` bar; at 2/3 of it the `compare` values and the percent in a `share` or `progress` ring, and at 1/2 the period of a `bar-race` | 160 |
+| `big_number` | The number of a `stat` and the percent of a `progress` bar; at 2/3 of it the `compare` values and the percent in a `share` or `progress` ring, and at 1/2 the period of a `bar-race` or `scatter-race` | 160 |
 | `affix_scale` | Optional, 0.6 by default. Size of what surrounds the digits of a big number (the `stat` number, the `compare` values, the `share` percent), relative to the digits: 0.6 sets `milyar` in `1,85 milyar` and `$` in `$740M` at 60% of the digits, on their baseline; 1 sets them at the size of the digits. Not a pixel size. | 0.5, at most 1 |
 | `label` | Axis labels, category labels, event labels, the `stat` label | 32 |
 | `value` | Value labels on charts | 32 |

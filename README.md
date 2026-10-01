@@ -15,7 +15,7 @@ vizreel turns a short YAML file, with the data written in it or read from a CSV 
 | ![A compare chart counting from 1,200 down to 340, a change of −72%](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/compare.gif) | ![A waterfall chart from revenue to profit](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/waterfall.gif) |
 | ![A stacked bar chart of revenue by product](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/stacked.gif) | ![A share ring with 47% in the middle](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/share.gif) |
 | ![A timeline with an emphasized event](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/timeline.gif) | ![A table with a highlighted row](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/table.gif) |
-| ![A scatter race of revenue and staff with Northwind's path](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/scatter-race.gif) | |
+| ![A scatter race of revenue and staff with Northwind's path](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/scatter-race.gif) | ![A title card whose kicker, headline and subtitle appear in turn](https://raw.githubusercontent.com/efedalbay/vizreel/main/docs/images/title-card.gif) |
 
 ## Why vizreel
 
@@ -110,7 +110,7 @@ out/
 └── offers.mov            ← three bars growing, then Buyer C highlighted
 ```
 
-The same bars could come from a spreadsheet instead: `data: data/offers.csv` in place of `bars` or `data: data/northwind.xlsx` (see [Data from CSV and Excel files](#data-from-csv-and-excel-files)); every chart type but `stat`, `progress` and `title-card` can read one. Values are always plain numbers; `number` decides how they are written (`$740M`). Every chart can also have a `title`, a `subtitle`, a `source` line and a `duration`. `vizreel validate charts.yaml` lists every mistake at once with its location, such as `charts[1].bars[2].value: must be at least 0, got -4`. The [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md) describes every field, and `vizreel new TYPE` prints a commented template for each chart type.
+The same bars could come from a spreadsheet instead: `data: data/offers.csv`, or a sheet of a workbook such as `data: data/offers.xlsx`, in place of `bars` (see [Data from CSV and Excel files](#data-from-csv-and-excel-files)); every chart type but `stat`, `progress` and `title-card` can read one. Values are always plain numbers; `number` decides how they are written (`$740M`). Every chart can also have a `title`, a `subtitle`, a `source` line and a `duration`. `vizreel validate charts.yaml` lists every mistake at once with its location, such as `charts[1].bars[2].value: must be at least 0, got -4`. The [spec reference](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md) describes every field, and `vizreel new TYPE` prints a commented template for each chart type.
 
 ## Chart types
 
@@ -160,7 +160,7 @@ A chart can take its data from a CSV file or a sheet of an Excel workbook:
   number: { prefix: "$", compact: true }
 ```
 
-The first row names the columns; a bar chart reads a label and a value from each row after it. Commas, semicolons and tabs all work, numbers may be written as your locale writes them (`1.234,5` with `locale: tr-TR`), and an error names the file, row and column. From a workbook, `data: { file: data/northwind.xlsx, sheet: Markets }` reads one sheet, the first if `sheet` is left out, and numbers are read as Excel stores them. [`examples/data.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/data.yaml) has a chart of every type that reads one, including a race of ten companies through 24 years. The spec reference says [what each type reads](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#data-from-files).
+The first row names the columns; a bar chart reads a label and a value from each row after it. Commas, semicolons and tabs all work, numbers may be written as your locale writes them (`1.234,5` with `locale: tr-TR`), and an error names the file, row and column. From a workbook, `data: { file: data/northwind.xlsx, sheet: Markets }` reads one sheet, the first if `sheet` is left out; numbers are read as Excel stores them, not as it shows them: a cell showing `$412,000,000` is 412000000, and one showing `12%` is 0.12. With more columns than a chart reads, `columns: [Market, Revenue]` picks them. [`examples/data.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/data.yaml) has a chart of every type that reads one, including a race of ten companies through 24 years. The spec reference says [what each type reads](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#data-from-files).
 
 ### Sequences
 
@@ -214,7 +214,7 @@ meta:
   theme: themes/my-brand.yaml
 ```
 
-A theme can also carry your logo, drawn in the corner of every chart, and named brand colors, which a bar race gives to companies so each races in its own color. Start from [`examples/themes/example-brand.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/themes/example-brand.yaml), and run `vizreel theme check` on it to test its contrast and its colors for color vision deficiency. The [theme reference](https://github.com/efedalbay/vizreel/blob/main/docs/THEMES.md) describes every field.
+A theme can also carry your logo, drawn in the corner of every chart, and named brand colors, which a race gives to companies so each races in its own color. Start from [`examples/themes/example-brand.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/themes/example-brand.yaml), and run `vizreel theme check` on it to test its contrast and its colors for color vision deficiency. The [theme reference](https://github.com/efedalbay/vizreel/blob/main/docs/THEMES.md) describes every field.
 
 ## Using the clips in a video editor
 

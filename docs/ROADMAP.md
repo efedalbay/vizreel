@@ -2,6 +2,8 @@
 
 Work proceeds one milestone at a time. A milestone is done only when every acceptance criterion is met, tests pass on Windows, and the relevant docs are updated.
 
+Every milestone below is done, as of 0.16.0. From here vizreel grows from real use: bugs and missing pieces found while making videos with it come in as [bug reports](https://github.com/efedalbay/vizreel/issues/new?template=bug-report.yml) and become fixes in the next release.
+
 ## M0 — Project skeleton
 
 - `pyproject.toml` with `src/` layout, package name `vizreel`, Python `>=3.11`, entry point `vizreel = vizreel.cli:app`.

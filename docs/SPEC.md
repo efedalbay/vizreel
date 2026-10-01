@@ -76,7 +76,7 @@ CLI flags override `meta` values.
 | `title` | string | no | — | Shown at the top of the chart. Wraps onto a second line if it does not fit the width; a title that does not fit on two lines is an error. A `title-card` requires it, as its headline. |
 | `subtitle` | string | no | — | Smaller line under the title. Wraps like the title. |
 | `source` | string | no | — | Short source label shown at the bottom, e.g. `"Source: Northwind annual report"`. Keep it short; it is on screen. |
-| `duration` | number (seconds) | no | depends on type | Total clip length, including the final hold. Minimum 2. |
+| `duration` | number (seconds) | no | depends on type | Total clip length, including the final hold. Minimum 2. Every text must stay on screen long enough to be read, 1 second per 3 words, before the clip ends; a duration too short for a chart's animations or texts is an error that says how long it must be. |
 | `highlight` | object | no | — | The element to emphasize; its fields depend on the type (see [at a glance](#chart-types-at-a-glance)). `stat`, `progress`, `compare`, `timeline` and `title-card` have none; a timeline marks an event with `emphasis`. |
 | `motion` | object | no | — | Motion settings for this chart, over those of `meta.motion`. See [Motion](#motion). |
 | `data` | string or object | no | — | A CSV file or an Excel workbook that gives the chart's data, such as its bars, in place of writing them in the spec. See [Data from files](#data-from-files). |
@@ -590,7 +590,7 @@ Default `duration`: 15. Each period needs at least 0.2 seconds of the race, whic
   duration: 8
 ```
 
-A race usually comes from a CSV file, the periods in the first column and a series in each other column (see [Data from files](#data-from-files)): `examples/data.yaml` races ten companies through 24 years.
+A race usually comes from a CSV file or an Excel sheet, the periods in the first column and a series in each other column (see [Data from files](#data-from-files)): `examples/data.yaml` races ten companies through 24 years.
 
 ## `line-race` — lines racing through periods
 
@@ -676,7 +676,7 @@ A headline that opens a video or a part of one, with a short line above it (`kic
 | `title` | string | yes | — | The headline. |
 | `kicker` | string | no | — | Short line above the headline, e.g. `Part 2`. |
 
-`subtitle` and `source` are as for every chart; the subtitle goes under the headline. A title card has no data, so it takes no `data` file. Default `duration`: 3.
+`subtitle` and `source` are as for every chart; the subtitle goes under the headline. A title card has no data, so it takes no `data` file. Default `duration`: 3, enough for a headline of about eight words; give a longer one more, or `vizreel render` says how long it needs.
 
 ```yaml
 - id: part-two
@@ -810,7 +810,7 @@ Older `.xls` workbooks are not read; save them as `.xlsx` or as CSV UTF-8.
 
 `vizreel render --watch` renders again when a data file is saved.
 
-### Choosing columns
+### Choosing a sheet and columns
 
 With more columns than the chart reads, name the ones to read, in order:
 

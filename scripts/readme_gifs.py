@@ -21,6 +21,7 @@ SHOWCASE = ROOT / "examples" / "showcase.yaml"
 OUT_DIR = ROOT / "docs" / "images"
 WIDTH = 640
 CHARTS = {
+    "opening": "title-card",
     "peak-valuation": "stat",
     "valuation": "line",
     "offers": "bar",

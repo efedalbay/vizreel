@@ -58,10 +58,12 @@ vizreel/
 │   │   ├── models.py        ← Pydantic models for the spec
 │   │   ├── data.py          ← read a chart's CSV data file into a Table
 │   │   ├── workbook.py      ← read a sheet of an Excel workbook into a Table (openpyxl)
+│   │   ├── templates.py     ← the commented templates `vizreel new` prints
 │   │   └── loader.py        ← read YAML and data files → validated Spec
 │   ├── themes/
 │   │   ├── models.py        ← Theme model
-│   │   ├── loader.py        ← resolve theme by name or path
+│   │   ├── loader.py        ← resolve theme by name or path, resolve its logo
+│   │   ├── check.py         ← contrast and color vision checks (pure functions)
 │   │   └── builtin/         ← default.yaml, light.yaml
 │   ├── charts/
 │   │   ├── base.py          ← ChartType base class, timing helpers
@@ -90,7 +92,8 @@ vizreel/
 │   │   ├── layout.py        ← frame geometry in scene units (pure functions)
 │   │   ├── elements.py      ← shared Manim building blocks: text, panel, easing
 │   │   ├── numbers_text.py  ← counting numbers composed from cached glyphs
-│   │   ├── scales.py        ← axis ranges, ticks, label placement (pure functions)
+│   │   ├── scales.py        ← axis ranges, ticks, label placement, text wrapping (pure functions)
+│   │   ├── transcode.py     ← ProRes and PNG-sequence output from Manim's mov (PyAV)
 │   │   └── fonts.py         ← register bundled fonts with Pango
 │   ├── plugin/              ← the public API for chart types in other packages
 │   │   ├── __init__.py      ← contract, models, formatting, timing (no Manim)
@@ -147,6 +150,10 @@ class ChartType(ABC):
     name: ClassVar[str]                 # the `type:` value in the spec, e.g. "line"
     model: ClassVar[type[BaseChart]]    # Pydantic model for this chart's fields
     template: ClassVar[str]             # commented example chart, printed by `vizreel new`
+    api_version: ClassVar[int]          # CHART_API_VERSION it is written for
+    fits_to_content: ClassVar[bool]     # True: a 9:16 card may close in around the content
+    own_header: ClassVar[bool]          # True: sets its own title, no title band
+    logo_corner: tuple[float, float] | None  # set in build to place the theme logo itself
 
     def __init__(self, chart: BaseChart, theme: Theme, layout: Layout, locale: Locale): ...
 
@@ -159,7 +166,7 @@ class ChartType(ABC):
 
     @classmethod
     def from_table(cls, table: Table, chart: dict) -> dict:
-        """The chart's data fields, as a spec writes them, read from a CSV data file."""
+        """The chart's data fields, as a spec writes them, read from a CSV file or a sheet."""
 ```
 
 A chart type whose model is a `SequencedChart` (every type with a highlight) implements `emphasis`, and its own highlight beat plays it. `emphasis` sets the final look of every element that can be emphasized, whatever it looked like before, so emphasizing an element always ends on the same frame. That is what lets a sequence cut seamlessly: the engine renders a later clip of a sequence with `ChartType.continue_to`, which builds the chart emphasizing the previous item inside `ChartScene.unrecorded()` (Manim finishes every animation without writing a frame, leaving the scene on the previous clip's last frame), then plays `emphasis` for the next item and holds. `render/engine.py` plans the clips with `plan_clips`. Anything the emphasis makes appear must start invisible, and anything it removes fades by opacity (`elements.fade_away`) rather than with Manim's FadeOut, which reshapes curves; a render test compares the frames at every cut, for every type and aspect.
@@ -169,7 +176,7 @@ Rules:
 - Registered with `@register` from `charts/registry.py`. The registry is the only place that maps `type` strings to classes.
 - A chart type with a landscape and a vertical arrangement builds its geometry with `arranged(layout, landscape, vertical)` from `base.py`: 16:9 takes the first, 9:16 the second, and 1:1 tries the first and falls back to the second when it raises `RenderError`. Geometry is built before anything is added to the scene, so a failed attempt leaves nothing behind.
 - In a 9:16 frame, `ChartScene.fit_to_content` builds the chart once without recording and measures what it draws inside `layout.content`. If that is less than 90% of its height, the chart is built again in `Layout.fitted_to_content`: the title and source bands and `inner` close in around the content, and `content` keeps its size but moves, so the chart draws exactly the same content, shifted. That is why every chart centers its content in `layout.content` and draws its panel around `layout.inner`; a chart type that does not (`stat`, which fits its own card) sets `fits_to_content = False`.
-- A chart type that can read its data from a file implements `from_table`. The loader reads the file named by `data:` into a `Table` (`spec/data.py`: header, cells, the line of each row, and number parsing in the spec's locale through `format/numbers.py`), and puts the fields `from_table` returns into the chart before Pydantic validates it, so data from a file passes exactly the checks written data does. A field the spec also writes is an error. `Table.text` and `Table.number` raise `TableError` naming the line and column of a wrong cell. The default `from_table` raises, so a type reads data files only if it says how.
+- A chart type that can read its data from a file implements `from_table`. The loader reads the file named by `data:` into a `Table` (`spec/data.py`: header, cells, the line of each row, and number parsing in the spec's locale through `format/numbers.py`; a sheet of an Excel workbook is read by `spec/workbook.py`, which keeps the numbers the workbook stores so they are never parsed from text, and imports openpyxl only when a workbook is read), and puts the fields `from_table` returns into the chart before Pydantic validates it, so data from a file passes exactly the checks written data does. A field the spec also writes is an error. `Table.text` and `Table.number` raise `TableError` naming the line and column of a wrong cell. The default `from_table` raises, so a type reads data files only if it says how.
 - `api_version` is the version of the contract (`CHART_API_VERSION`) the chart type is written for. Built-in types inherit the current one; a plugin must declare it.
 - A chart reads **all** styling from `theme` and **all** geometry from `layout` (safe area, title area, plot area). No literal colors, font names or pixel sizes inside chart modules.
 - A chart builds from Manim primitives (`Line`, `Rectangle`, `Text`, `VGroup`, `ValueTracker`) rather than Manim's high-level `BarChart`/`Axes` when those limit styling.
@@ -195,11 +202,12 @@ Adding a new built-in chart type = one module in `charts/` (with its template) +
 
 A theme is a YAML file validated by `themes/models.py`. It contains:
 
-- `colors`: named roles (`background`, `surface`, `text`, `muted`, `grid`, `accent`, `positive`, `negative`, `highlight`, `series` list of at least 3), and `dim_opacity` for everything except the highlighted element during the highlight beat.
+- `colors`: named roles (`background`, `surface`, `text`, `muted`, `grid`, `accent`, `positive`, `negative`, `highlight`, `series` list of at least 3), `dim_opacity` for everything except the highlighted element during the highlight beat, and optional named `brand` colors that races give to series by name.
 - `fonts`: `heading`, `body`, `numbers`, each a `family` and a `weight` (`regular`, `semibold`, `bold`). At most two families. Bundled fonts are registered with ManimPango at startup.
-- `sizes`: `title`, `subtitle`, `big_number`, `affix_scale` (the size of a big number's unit and currency relative to its digits), `label`, `value`, `caption`, `panel_radius`, `panel_padding`, and the stroke widths `line`, `grid_line` and the marker diameter `dot`.
+- `sizes`: `title`, `subtitle`, the optional `headline` of a title card, `big_number`, `affix_scale` (the size of a big number's unit and currency relative to its digits), `label`, `value`, `caption`, `panel_radius`, `panel_padding`, and the stroke widths `line`, `grid_line` and the marker diameter `dot`.
 - `motion`: `easing` (ease-out curves only), `title_fade`, `structure`, `stagger`, `highlight`, `hold`, in seconds, and the optional `entrance`, `exit` and `exit_time` (see [Motion](#motion)).
 - `background_panel`: whether to draw a rounded panel behind the chart when rendering with transparency.
+- `logo`: an optional image and its height, drawn in the lower right corner of every chart (see below).
 - `description`: optional one line shown by `vizreel themes list`.
 
 `themes/check.py` checks a theme with pure functions: WCAG contrast of text and data colors against the panel and background, and the CIEDE2000 difference between colors that appear side by side, with normal vision and simulated protanopia, deuteranopia and tritanopia. `vizreel theme check` runs it; built-in themes must pass.
@@ -238,7 +246,7 @@ A chart whose every frame is built from many parts, such as a race, uses `elemen
 
 ### Watch mode
 
-`vizreel render --watch` runs `watch.py`. It renders once, then polls the spec file, the theme file it resolves to and the CSV files its charts read (standard library only, no file-system event dependency: only a few files are watched). Data files are found by reading the spec loosely (`spec_data_files`), so a CSV file that makes the spec invalid is watched too. A change is read only after the files have stayed unchanged for a moment, because some editors save in several steps. Each render compares the new spec with the last one that loaded: if `meta` or the theme changed every chart renders, otherwise only charts that are new or whose model differs. Charts that failed are rendered again on the next change. A spec or theme that fails to load is reported and watching goes on. The pure parts (`FileWatcher` with an injectable clock, `charts_to_render`) are unit-tested.
+`vizreel render --watch` runs `watch.py`. It renders once, then polls the spec file, the theme file it resolves to and the data and image files its charts read (standard library only, no file-system event dependency: only a few files are watched). Those files are found by reading the spec loosely (`spec_input_files`), so a data file that makes the spec invalid is watched too. A change is read only after the files have stayed unchanged for a moment, because some editors save in several steps. Each render compares the new spec with the last one that loaded: if `meta` or the theme changed every chart renders, otherwise only charts that are new or whose model differs. Charts that failed are rendered again on the next change. A spec or theme that fails to load is reported and watching goes on. The pure parts (`FileWatcher` with an injectable clock, `charts_to_render`) are unit-tested.
 
 ## Errors
 

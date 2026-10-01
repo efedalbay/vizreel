@@ -18,6 +18,7 @@ Sizes are defined relative to a 1080p frame and scale with resolution. They refe
 | Element | Minimum font size at 1080p |
 |---|---|
 | Title | 56 px |
+| Headline of a `title-card` | 56 px (96 px by default) |
 | Big number (`stat`) | 160 px, or down to 80 px when it does not fit (see below) |
 | Value labels, axis labels | 32 px |
 | Source line | 24 px |
@@ -40,7 +41,7 @@ Motion guides the eye to the message. It is never decoration.
 
 - **Easing.** Every movement eases out (fast start, soft stop). No linear motion except the counting of numbers, which eases out as well. No bouncing or overshoot.
 - **Order of appearance:** title → structure (axes, baseline) → data → highlight → hold.
-- **Races** (`bar-race`, `line-race`) are the exception to the data reveal's share of the clip: moving through the periods is the chart, so it takes all the time the title, the first values and the hold leave. The periods pass at one pace, which is not decoration but time itself, and the race slows to a stop over the last one.
+- **Races** (`bar-race`, `line-race`, `scatter-race`) are the exception to the data reveal's share of the clip: moving through the periods is the chart, so it takes all the time the title, the first values and the hold leave. The periods pass at one pace, which is not decoration but time itself, and the race slows to a stop over the last one.
 - **Timing defaults** (seconds, overridable in the theme `motion` section):
 
 | Phase | Default |
@@ -52,7 +53,7 @@ Motion guides the eye to the message. It is never decoration.
 | Highlight | 0.6 |
 | Final hold (nothing moves) | at least 1.5 |
 
-- **Reading time.** Any text that appears must stay on screen for at least 1 second per 3 words before the clip ends.
+- **Reading time.** Any text that appears must stay on screen for at least 1 second per 3 words before the clip ends. Renders check it and say how long a `duration` must be.
 - **Highlight moment.** The highlight is a distinct beat: the highlighted element changes color, and everything else dims slightly. This is where the narration's key sentence lands, so it must be clearly visible in the timing.
 - Lines draw from left to right. Bars grow from the baseline. Numbers count; they do not fade in.
 - The last frame must be a complete, clean chart. Editors often freeze it. The exception is a clip asked to leave the screen (`exit`), which ends empty after its full hold.
