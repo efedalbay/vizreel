@@ -1,13 +1,13 @@
 [project]
 name = "vizreel"
 version = "0.16.0"
-description = "Animated charts for video, from YAML and CSV files."
+description = "Animated charts for video, from YAML, CSV and Excel files."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Efe Dalbay" }]
 requires-python = ">=3.11"
-keywords = ["charts", "animation", "video", "manim", "data visualization", "yaml"]
+keywords = ["charts", "animation", "video", "manim", "data visualization", "yaml", "csv", "excel"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
