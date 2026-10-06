@@ -186,7 +186,7 @@ A single number that counts up (or down) to its value. Use it for the one figure
 | `number` | number format | no | — | Formatting of the value. |
 | `trend` | `up` \| `down` \| `none` | no | `none` | Colors the number with `positive` / `negative` from the theme. |
 
-Default `duration`: 3.
+Default `duration`: 3. With a theme that draws a highlight ring (`highlight_mark: ring`, see [THEMES.md](THEMES.md)), the ring is drawn around the number after the count, in a beat of the theme's highlight time; a duration too short for it keeps its length and leaves the ring out, with a warning saying how long it needs.
 
 ```yaml
 - id: peak-valuation
@@ -350,7 +350,7 @@ Default `duration`: 7.
 
 ## `bar` — compare categories
 
-One bar per category, with its value at the end of the bar, so there is no value axis. The bars grow one after another; at the highlight beat the highlighted bar turns to the `highlight` color and the others to `muted`.
+One bar per category, with its value at the end of the bar, so there is no value axis. The bars grow one after another; at the highlight beat the highlighted bar turns to the `highlight` color and the others to `muted`, and a theme with `highlight_mark: ring` also rings the bar's value, as if with a pen.
 
 Bars are drawn as **columns** or as **rows**:
 

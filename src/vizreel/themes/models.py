@@ -66,6 +66,9 @@ class ThemeColors(ThemeModel):
     """Series colors, used in this order. At least three, one per line chart series."""
     dim_opacity: float = Field(gt=0, le=1)
     """Opacity of everything except the highlighted element during the highlight beat."""
+    mark: Color | None = None
+    """The pen of the highlight ring (`highlight_mark: ring`); the highlight color if left
+    out."""
     brand: dict[BrandName, Color] = Field(default_factory=dict)
     """Named brand colors, e.g. {"northwind-blue": "#1F6FEB"}, that a race can give to its
     series by name. Checked like the other data colors."""
@@ -214,6 +217,9 @@ class Theme(ThemeModel):
     """Draw a panel in the surface color behind charts in transparent output."""
     logo: ThemeLogo | None = None
     """A logo in the lower right corner of every chart, in the band of the source line."""
+    highlight_mark: Literal["none", "ring"] = "none"
+    """`ring` draws a ring around the highlighted value at the highlight beat, as if with a
+    pen, in `bar` and `stat` charts."""
     texture: ThemeTexture | None = None
     """Ruled lines or a picture on the background: inside the panel in transparent output,
     over the whole frame in opaque output."""

@@ -4,13 +4,17 @@ from itertools import pairwise
 from typing import TYPE_CHECKING
 
 from vizreel.charts.base import (
+    MIN_MAIN,
     ChartType,
+    Phases,
     check_reading_time,
     count_samples,
     fitting_number_size,
+    seconds_up,
     split_duration,
 )
 from vizreel.charts.registry import register
+from vizreel.errors import RenderError
 from vizreel.format.numbers import decimals_for, format_number
 from vizreel.render.layout import stack_gap
 from vizreel.spec.models import StatChart
@@ -135,28 +139,34 @@ class StatChartType(ChartType):
             self.layout.content.center,
         )
         number_center = final_number.get_center()
-        if logo is not None:
-            box = elements.bounds(VGroup(column, widest_number.copy().move_to(number_center)))
-            self.logo_corner = (box.right, box.bottom)
 
         header_group = VGroup(*(mobject for mobject, _ in header))
         footer_group = VGroup(*(mobject for mobject, _ in footer))
-        phases = split_duration(
-            chart.duration,
-            intro=motion.title_fade if header else 0.0,
-            highlight=0,
-            hold=motion.hold,
-        )
+        intro = motion.title_fade if header else 0.0
+        phases = split_duration(chart.duration, intro=intro, highlight=0, hold=motion.hold)
+        ring = self._ring_phases(intro)
+        if ring is not None:
+            phases = ring
         check_reading_time(
             [(text, 0.0) for text in (chart.title, chart.subtitle) if text]
             + [(text, phases.main_start) for text in (chart.label, chart.source) if text],
             chart.duration,
         )
 
+        # The ring goes around the number on the card, so the card holds it too.
+        pen = (
+            elements.highlight_ring(elements.bounds(final_number), self.theme)
+            if ring is not None
+            else None
+        )
+        widest_in_place = widest_number.copy().move_to(number_center)
+        on_card = VGroup(column, widest_in_place, *([pen] if pen is not None else []))
+        if logo is not None:
+            box = elements.bounds(on_card)
+            self.logo_corner = (box.right, box.bottom)
         opening: list[Animation] = []
         if self.layout.panel:
-            widest_in_place = widest_number.copy().move_to(number_center)
-            card_box = self.layout.panel_around(elements.bounds(VGroup(column, widest_in_place)))
+            card_box = self.layout.panel_around(elements.bounds(on_card))
             card = elements.panel(card_box, self.theme)
             opening.append(
                 elements.appear(card, self.theme, run_time=motion.title_fade, rate_func=ease)
@@ -191,4 +201,27 @@ class StatChartType(ChartType):
         counting.clear_updaters()
         scene.remove(counting)
         scene.add(final_number)
+        if pen is not None:
+            scene.play(elements.draw_ring(pen, rate_func=ease), run_time=phases.highlight)
         scene.wait(phases.hold)
+
+    def _ring_phases(self, intro: float) -> "Phases | None":
+        """The phases with a beat for the theme's highlight ring after the count.
+
+        None if the theme draws no ring, or if the duration leaves no time for one, which adds
+        a warning: the clip keeps its duration.
+        """
+        motion = self.theme.motion
+        if self.theme.highlight_mark != "ring":
+            return None
+        try:
+            return split_duration(
+                self.chart.duration, intro=intro, highlight=motion.highlight, hold=motion.hold
+            )
+        except RenderError:
+            needed = intro + motion.highlight + motion.hold + MIN_MAIN
+            self.warnings.append(
+                f"duration {self.chart.duration:g}s leaves no time to draw the highlight ring "
+                f"after the count, so the clip has none; it needs at least {seconds_up(needed)}s"
+            )
+            return None

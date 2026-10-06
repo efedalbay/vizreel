@@ -262,3 +262,59 @@ def two_line_splits(text: str) -> list[tuple[str, str]]:
     words = text.split()
     splits = [(" ".join(words[:i]), " ".join(words[i:])) for i in range(1, len(words))]
     return sorted(splits, key=lambda split: abs(len(split[0]) - len(split[1])))
+
+
+RING_TILT = math.radians(-5)
+"""How far a highlight ring leans from level: a pen's ellipse is rarely straight."""
+RING_OVERSHOOT = math.radians(30)
+"""How far past its start a highlight ring goes, as a pen does when it closes a loop."""
+RING_WIDTH = 1.3
+"""A highlight ring is at most this many times as wide as the box it rings; it grows taller
+instead, to keep the box's corners inside it."""
+RING_GAP = 0.15
+"""How far outside its start a highlight ring ends, as a share of the box's height, so its two
+ends pass each other instead of meeting."""
+
+
+def ring_path(
+    center: tuple[float, float], width: float, height: float, padding: float, samples: int = 96
+) -> list[tuple[float, float]]:
+    """The points of a ring drawn around a box, as if with a pen.
+
+    An ellipse that leans a little (`RING_TILT`), starts at its upper left, goes clockwise
+    once around and a little more (`RING_OVERSHOOT`), and widens as it goes, so it ends
+    `RING_GAP` outside where it began. It passes `padding` beyond each corner of the box,
+    whatever its lean, so it never crosses the box. It is as wide as an ellipse through the
+    corners would be, √2 times the box, but at most `RING_WIDTH` times the box's width plus
+    the padding; a wide box gets a taller ring rather than a much wider one.
+
+    Args:
+        center: The box's center.
+        width: The box's width.
+        height: The box's height.
+        padding: The least distance between the box's corners and the ring.
+        samples: The number of segments of the path.
+    """
+    half_width, half_height = width / 2 + padding, height / 2 + padding
+    cos_tilt, sin_tilt = math.cos(RING_TILT), math.sin(RING_TILT)
+    # The box's corners as the leaning ellipse sees them.
+    corners = [
+        (x * cos_tilt + y * sin_tilt, y * cos_tilt - x * sin_tilt)
+        for x in (-half_width, half_width)
+        for y in (-half_height, half_height)
+    ]
+    reach = max(abs(x) for x, _ in corners)
+    radius_x = max(min(half_width * math.sqrt(2), half_width * RING_WIDTH), reach * 1.02)
+    radius_y = max(abs(y) / math.sqrt(1 - (x / radius_x) ** 2) for x, y in corners)
+    gap = height * RING_GAP
+    start = math.radians(135)
+    points = []
+    for index in range(samples + 1):
+        share = index / samples
+        angle = start - (2 * math.pi + RING_OVERSHOOT) * share
+        x = (radius_x + gap * share) * math.cos(angle)
+        y = (radius_y + gap * share) * math.sin(angle)
+        points.append(
+            (center[0] + x * cos_tilt - y * sin_tilt, center[1] + x * sin_tilt + y * cos_tilt)
+        )
+    return points

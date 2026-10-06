@@ -197,6 +197,7 @@ def check_theme(theme: Theme) -> list[CheckResult]:
         "colors.positive": colors.positive,
         "colors.negative": colors.negative,
         "colors.highlight": colors.highlight,
+        **({"colors.mark": colors.mark} if colors.mark else {}),
         **{f"colors.series[{i}]": color for i, color in enumerate(colors.series)},
         **{f"colors.brand.{name}": color for name, color in colors.brand.items()},
     }

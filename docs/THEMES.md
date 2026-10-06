@@ -121,6 +121,7 @@ Colors are `#RRGGBB`.
 | `highlight` | The one element that carries the message: a highlighted bar or point, the followed series of a race, the fill of a `progress`. |
 | `series` | The series of `line`, `area`, `stacked`, `grouped` and `line-race` charts, in this order. At least three; a chart never reuses one for a second series. |
 | `dim_opacity` | How much of their color other elements keep during the highlight beat, from 0 (exclusive) to 1. |
+| `mark` | Optional. The pen of the highlight ring (`highlight_mark: ring`); the `highlight` color if left out, so a theme can keep its highlighted bar green and ring it in red. |
 | `brand` | Optional. Named brand colors, such as `{ contoso-coral: "#FF7A7A" }`, which a `bar-race` or `scatter-race` gives to its series by name (`colors` in the spec), so a company can race in its own color. Names are lowercase letters, digits and hyphens. |
 
 ### `fonts`
@@ -187,6 +188,15 @@ Seconds, except `easing`, `entrance` and `exit`. A spec can override `easing`, `
 ### `background_panel`
 
 `true` to draw a panel in the `surface` color behind charts in transparent output, because the footage underneath is unknown.
+
+### `highlight_mark` (optional)
+
+`none` (default) or `ring`. With `ring`, the highlight beat also draws a ring around the highlighted value, as if with a pen: a slightly leaning ellipse whose two ends pass each other, drawn from its start to its end in the `mark` color. It never crosses the value's text, and its size follows the text, so it works in every frame shape. Chart types that draw it:
+
+- `bar`: around the value of the highlighted bar, as columns or rows. Told as a sequence, the ring moves from value to value with the emphasis.
+- `stat`: around the number, drawn after it has counted, in a beat of the theme's `highlight` length. The card grows to hold the ring. A `duration` too short for that beat keeps its length; the clip has no ring, and `vizreel render` warns how long it would need.
+
+Other chart types keep their usual highlight.
 
 ### `texture` (optional)
 

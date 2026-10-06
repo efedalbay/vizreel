@@ -10,6 +10,7 @@ from functools import cache
 from typing import Any, Literal
 from xml.sax.saxutils import escape
 
+import numpy as np
 from manim import (
     DOWN,
     LEFT,
@@ -33,8 +34,8 @@ from manim import (
 
 from vizreel.errors import RenderError
 from vizreel.format.numbers import split_number_text
-from vizreel.render.layout import LINE_STEP, Box, Layout, font_size, px, stack_gap
-from vizreel.render.scales import wrap_text
+from vizreel.render.layout import LINE_STEP, Box, Layout, font_size, px, stack_gap, stroke_width
+from vizreel.render.scales import ring_path, wrap_text
 from vizreel.themes.models import FontStyle, FontWeight, Theme
 
 _PANGO_WEIGHTS = {"regular": "NORMAL", "semibold": "SEMIBOLD", "bold": "BOLD"}
@@ -412,6 +413,70 @@ def panel(box: Box, theme: Theme) -> Mobject:
 
     margin_x = box.left + px(theme.sizes.panel_padding) / 2
     return Group(rectangle, *panel_texture(box, theme, margin_x, radius))
+
+
+RING_PADDING = 0.1
+"""Least space between a highlight ring and the corners of what it rings, as a share of the
+ringed text's height."""
+RING_STROKE = 0.6
+"""Width of a highlight ring's pen, as a share of the theme's data line width."""
+RING_Z_INDEX = 2
+"""A highlight ring is drawn over the chart, as a pen mark on the page would be."""
+
+
+def highlight_ring(box: Box, theme: Theme) -> VMobject:
+    """Build the ring the theme's `highlight_mark: ring` draws around a highlighted value.
+
+    It leans a little and its ends pass each other, as a pen ring does; it never crosses
+    `box`. Draw it with `draw_ring` at the highlight beat. Its pen is the theme's `mark` color,
+    or its `highlight` color.
+    """
+    points = ring_path(box.center, box.width, box.height, box.height * RING_PADDING)
+    ring = VMobject()
+    ring.set_points_smoothly([np.array((x, y, 0.0)) for x, y in points])
+    ring.set_stroke(
+        color(theme.colors.mark or theme.colors.highlight),
+        width=stroke_width(theme.sizes.line * RING_STROKE),
+    )
+    ring.set_fill(opacity=0)
+    return ring.set_z_index(RING_Z_INDEX)
+
+
+def draw_ring(ring: VMobject, **kwargs: Any) -> Animation:
+    """Draw a highlight ring as a pen does, from its start to its end.
+
+    Unlike Manim's Create, it shows nothing at all before it starts: Create draws a dot where
+    the pen will start, so a clip of a sequence would not start on exactly the frame the clip
+    before it ended on.
+
+    Args:
+        ring: A ring from `highlight_ring`.
+        **kwargs: Passed on to the animation, e.g. `run_time` and `rate_func`.
+    """
+    whole = ring.copy()
+    opacity = ring.get_stroke_opacity()
+
+    def draw(target: VMobject, alpha: float) -> None:
+        target.pointwise_become_partial(whole, 0, alpha)
+        target.set_stroke(opacity=opacity if alpha > 0 else 0)
+
+    # Manim calls the update function with (mobject, alpha) but types it with one argument.
+    return UpdateFromAlphaFunc(ring, draw, introducer=True, **kwargs)  # type: ignore[arg-type]
+
+
+def erase_ring(ring: VMobject, **kwargs: Any) -> Animation:
+    """Fade a highlight ring out by its pen alone.
+
+    `fade_away` sets the whole opacity, which would fill the ring's inside; a ring has no
+    fill. The ring stays on the scene, invisible.
+    """
+    opacity = ring.get_stroke_opacity()
+
+    def erase(target: VMobject, alpha: float) -> None:
+        target.set_stroke(opacity=opacity * (1 - alpha))
+
+    # Manim calls the update function with (mobject, alpha) but types it with one argument.
+    return UpdateFromAlphaFunc(ring, erase, **kwargs)  # type: ignore[arg-type]
 
 
 def bounds(mobject: Mobject) -> Box:

@@ -11,6 +11,8 @@ All notable changes to vizreel are documented here. The format follows
 - A theme can bring its fonts as files: `fonts: { numbers: { file: fonts/IBMPlexMono-Regular.ttf } }` loads a TTF or OTF file next to the theme and reads its family from it, so the theme looks the same on any computer. Each role may now use its own family. `vizreel render` warns when the number font's digits do not share one width, which makes counting numbers shift.
 - Background textures: `texture: { ruled: { spacing: 54, color: ..., margin: ... } }` draws ledger lines with an optional double margin line, and `texture: { image: { file: paper.png, fit: tile } }` a picture. In transparent output the texture fills the panel inside its round corners; in opaque output it covers the frame. Sizes scale with the resolution, every aspect works, and `vizreel theme check` checks text against a picture's average color.
 - Accounting negatives: `number: { negative: parentheses }` writes `($1.2M)`, `(360)` or `(12%)` instead of a minus sign, in every locale, with the parentheses at the size of the digits. A fall in a `compare` or a `waterfall` step reads `($5.0M)`, a rise keeps `+$500K`. Data files may write negatives in parentheses too.
+- A highlight ring: `highlight_mark: ring` in a theme draws a leaning pen ring around the highlighted value at the highlight beat, in the new optional `colors.mark` color, in `bar` charts (moving with a sequence's emphasis) and `stat` charts (after the count; a duration too short for it keeps its length, leaves the ring out and warns). It never crosses the value's text.
+- Chart types can report warnings (`ChartType.warnings`), which `vizreel render` prints under the clip.
 
 ## [0.16.1] - 2026-10-01
 

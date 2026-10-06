@@ -196,6 +196,8 @@ class BarChartType(ChartType):
         scene.remove(*growing, *counting)
         scene.add(*final_bars, *final_values)
         self._final = list(zip(final_bars, bars, strict=True))
+        self._values = {bar.label: value for bar, value in zip(bars, final_values, strict=True)}
+        self._ring: VMobject | None = None
 
         if chart.highlight:
             scene.play(
@@ -204,14 +206,26 @@ class BarChartType(ChartType):
         scene.wait(phases.hold)
 
     def emphasis(self, item: Any) -> list[Any]:
-        """Turn the bar with the label `item` to the highlight color and the others to muted."""
+        """Turn the bar with the label `item` to the highlight color and the others to muted.
+
+        With the theme's `highlight_mark: ring`, a ring is also drawn around the bar's value,
+        and the ring around the value emphasized before fades away.
+        """
         colors = self.theme.colors
-        return [
+        animations: list[Any] = [
             bar_mobject.animate.set_fill(colors.highlight, opacity=1)
             if bar.label == item
             else bar_mobject.animate.set_fill(colors.muted, opacity=colors.dim_opacity)
             for bar_mobject, bar in self._final
         ]
+        if self.theme.highlight_mark == "ring":
+            from vizreel.render import elements
+
+            if self._ring is not None:
+                animations.append(elements.erase_ring(self._ring))
+            self._ring = elements.highlight_ring(elements.bounds(self._values[item]), self.theme)
+            animations.append(elements.draw_ring(self._ring))
+        return animations
 
     def _columns(
         self,
