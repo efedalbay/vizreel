@@ -46,7 +46,7 @@ def test_missing_theme_font_is_an_error() -> None:
 
 
 def test_a_theme_font_file_is_registered_for_rendering() -> None:
-    plex = Path(__file__).parents[1] / "fixtures" / "fonts" / "IBMPlexMono-Regular.ttf"
+    plex = Path(__file__).parents[2] / "examples" / "themes" / "fonts" / "IBMPlexMono-Regular.ttf"
     theme = load_theme("default", Path("."))
     numbers = theme.fonts.numbers.model_copy(
         update={"family": "IBM Plex Mono", "file": str(plex.resolve())}

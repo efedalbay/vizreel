@@ -216,7 +216,7 @@ def test_a_themes_font_and_logo_files_are_watched(tmp_path: Path) -> None:
 
     from vizreel.themes.loader import BUILTIN_DIR
 
-    plex = Path(__file__).parents[1] / "fixtures" / "fonts" / "IBMPlexMono-Regular.ttf"
+    plex = Path(__file__).parents[2] / "examples" / "themes" / "fonts" / "IBMPlexMono-Regular.ttf"
     (tmp_path / "mono.ttf").write_bytes(plex.read_bytes())
     (tmp_path / "logo.svg").write_text("<svg xmlns='http://www.w3.org/2000/svg'/>")
     theme = yaml.safe_load((BUILTIN_DIR / "default.yaml").read_text(encoding="utf-8"))

@@ -107,7 +107,7 @@ def test_stroke_widths_and_dim_opacity_must_be_positive(tmp_path: Path) -> None:
     ]
 
 
-PLEX_MONO = Path(__file__).parents[1] / "fixtures" / "fonts" / "IBMPlexMono-Regular.ttf"
+PLEX_MONO = Path(__file__).parents[2] / "examples" / "themes" / "fonts" / "IBMPlexMono-Regular.ttf"
 
 
 def test_each_font_role_may_use_its_own_family(tmp_path: Path) -> None:

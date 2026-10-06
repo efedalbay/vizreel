@@ -6,7 +6,7 @@ from functools import cache
 from pathlib import Path
 
 from vizreel.errors import RenderError
-from vizreel.themes.models import Theme
+from vizreel.themes.models import FontStyle, FontWeight, Theme
 
 FONTS_DIR = Path(__file__).parents[1] / "assets" / "fonts"
 
@@ -65,18 +65,24 @@ def tabular_figures_warning(theme: Theme) -> str | None:
     With tabular figures every digit is as wide as the others, so a counting number does not
     shift sideways. Call it after `check_theme_fonts`; it builds text, so it imports Manim.
     """
-    from vizreel.render.elements import number_text
-
     style = theme.fonts.numbers
-    # Between two zeros the ink spans the digits' advances, not their own ink, which is
-    # narrower than the advance for a digit such as 1 even with tabular figures.
-    widths = [number_text(f"0{digit * 8}0", style, 100, "#000000").width for digit in "0123456789"]
-    if max(widths) - min(widths) <= max(widths) * TABULAR_TOLERANCE:
+    if _has_tabular_figures(style.family, style.weight):
         return None
     return (
         f'the number font "{style.family}" (theme fonts.numbers) has no tabular figures, so '
         "counting numbers will shift sideways; choose a font whose digits share one width"
     )
+
+
+@cache
+def _has_tabular_figures(family: str, weight: FontWeight) -> bool:
+    from vizreel.render.elements import number_text
+
+    style = FontStyle(family=family, weight=weight)
+    # Between two zeros the ink spans the digits' advances, not their own ink, which is
+    # narrower than the advance for a digit such as 1 even with tabular figures.
+    widths = [number_text(f"0{digit * 8}0", style, 100, "#000000").width for digit in "0123456789"]
+    return max(widths) - min(widths) <= max(widths) * TABULAR_TOLERANCE
 
 
 TABULAR_TOLERANCE = 0.01

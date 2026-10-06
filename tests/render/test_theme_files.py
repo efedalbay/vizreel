@@ -11,7 +11,7 @@ from vizreel.render.engine import RenderOptions, render_spec
 from vizreel.themes.loader import BUILTIN_DIR
 
 FIXTURES = Path(__file__).parents[1] / "fixtures"
-PLEX_MONO = FIXTURES / "fonts" / "IBMPlexMono-Regular.ttf"
+PLEX_MONO = Path(__file__).parents[2] / "examples" / "themes" / "fonts" / "IBMPlexMono-Regular.ttf"
 SPEC = """\
 version: 1
 meta: {{ theme: {theme} }}
@@ -88,11 +88,13 @@ def test_a_number_font_without_tabular_figures_is_warned_about(
 
     theme = load_theme("default", tmp_path)
     assert fonts.tabular_figures_warning(theme) is None
+    fonts._has_tabular_figures.cache_clear()
     monkeypatch.setattr(elements, "number_text", proportional)
     assert fonts.tabular_figures_warning(theme) == (
         'the number font "Inter" (theme fonts.numbers) has no tabular figures, so counting '
         "numbers will shift sideways; choose a font whose digits share one width"
     )
+    fonts._has_tabular_figures.cache_clear()
 
 
 LINES, MARGIN, PAPER, TEXT = "#9CB8A6", "#B8322A", "#E8E0CC", "#1F2A24"
