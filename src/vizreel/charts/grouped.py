@@ -222,7 +222,7 @@ class GroupedChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
+            scene.play(AnimationGroup(*opening), run_time=motion.title_fade, cue="title")
             opening = []
         structure = [
             *opening,
@@ -235,7 +235,7 @@ class GroupedChartType(ChartType):
                 VGroup(legend, *geometry.labels), theme, run_time=motion.structure, rate_func=ease
             ),
         ]
-        scene.play(AnimationGroup(*structure), run_time=motion.structure)
+        scene.play(AnimationGroup(*structure), run_time=motion.structure, cue="structure")
 
         progress = ValueTracker(0.0)
 
@@ -268,7 +268,9 @@ class GroupedChartType(ChartType):
         growing = [growing_bar(series, category) for series, category in pairs]
         counting = [counting_value(series, category) for series, category in pairs]
         scene.add(*growing, *counting)
-        scene.play(progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear)
+        scene.play(
+            progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear, cue="reveal"
+        )
 
         final_bars = [
             [
@@ -293,6 +295,7 @@ class GroupedChartType(ChartType):
                 *self.emphasis(chart.highlight.series),
                 run_time=phases.highlight,
                 rate_func=ease,
+                cue="highlight",
             )
         scene.wait(phases.hold)
 

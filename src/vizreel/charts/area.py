@@ -286,7 +286,7 @@ class AreaChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
+            scene.play(AnimationGroup(*opening), run_time=motion.title_fade, cue="title")
             opening = []
         scene.play(
             AnimationGroup(
@@ -295,6 +295,7 @@ class AreaChartType(ChartType):
                 elements.appear(axis_labels, theme, run_time=motion.structure, rate_func=ease),
             ),
             run_time=motion.structure,
+            cue="structure",
         )
 
         progress = ValueTracker(0.0)
@@ -316,7 +317,9 @@ class AreaChartType(ChartType):
         growing = [mobject for index in range(count) for mobject in drawing(index)]
         racing = redrawn(lambda: tips_with_labels(x_cut()))
         scene.add(*growing, racing)
-        scene.play(progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear)
+        scene.play(
+            progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear, cue="reveal"
+        )
 
         fills = [area_fill(index, sweep_end) for index in range(count)]
         lines = [area_line(index, sweep_end) for index in range(count)]
@@ -328,7 +331,10 @@ class AreaChartType(ChartType):
 
         if chart.highlight:
             scene.play(
-                *self.emphasis(chart.highlight.series), run_time=phases.highlight, rate_func=ease
+                *self.emphasis(chart.highlight.series),
+                run_time=phases.highlight,
+                rate_func=ease,
+                cue="highlight",
             )
         scene.wait(phases.hold)
 

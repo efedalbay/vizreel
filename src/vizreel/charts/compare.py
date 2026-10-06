@@ -333,7 +333,7 @@ class CompareChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
+            scene.play(AnimationGroup(*opening), run_time=motion.title_fade, cue="title")
             opening = []
 
         def counting(
@@ -374,6 +374,7 @@ class CompareChartType(ChartType):
                 ),
             ),
             run_time=half,
+            cue="reveal",
         )
         counting_before.clear_updaters()
         scene.remove(counting_before)
@@ -396,6 +397,7 @@ class CompareChartType(ChartType):
                 ),
             ),
             run_time=half,
+            cue="reveal",
         )
         counting_after.clear_updaters()
         scene.remove(counting_after)
@@ -424,7 +426,9 @@ class CompareChartType(ChartType):
             counting_change = counting(change_tracker, change_text, change_glyphs, change_position)
             scene.add(counting_change)
             change_count.append(count(change_tracker, 0.0, amount, phases.highlight))
-        scene.play(*dimming, *change_count, run_time=phases.highlight, rate_func=ease)
+        scene.play(
+            *dimming, *change_count, run_time=phases.highlight, rate_func=ease, cue="highlight"
+        )
         if counting_change is not None:
             counting_change.clear_updaters()
         scene.wait(phases.hold)

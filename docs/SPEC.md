@@ -13,7 +13,7 @@ All examples in this document use a fictional company, Northwind, and made-up nu
   - Categories: [`bar`](#bar--compare-categories), [`grouped`](#grouped--bars-side-by-side), [`stacked`](#stacked--bars-made-of-parts), [`waterfall`](#waterfall--from-a-start-to-a-total), [`share`](#share--parts-of-a-whole), [`table`](#table--rows-and-columns)
   - Races: [`bar-race`](#bar-race--bars-racing-through-periods), [`line-race`](#line-race--lines-racing-through-periods), [`scatter-race`](#scatter-race--points-racing-on-two-axes)
   - Text: [`title-card`](#title-card--opening-a-video-or-a-part-of-it)
-- **Across chart types:** [sequences](#sequences), [motion](#motion), [data from files](#data-from-files)
+- **Across chart types:** [sequences](#sequences), [motion](#motion), [data from files](#data-from-files), [cue files](#cue-files)
 - **Tools:** [validation](#validation), [JSON Schema](#json-schema), [versioning](#versioning)
 
 ## Minimal example
@@ -63,6 +63,7 @@ vizreel new line -o revenue.yaml
 | `fps` | `23.976` \| `24` \| `25` \| `29.97` \| `30` \| `50` \| `59.94` \| `60` | `60` | Frames per second. Use your editor timeline's rate: a clip at another rate is blended or loses frames. 25 and 50 are the PAL rates used in Europe, 29.97 and 59.94 the NTSC rates, 23.976 and 24 film. The NTSC rates are stored exactly (29.97 is 30000/1001), and a clip always has `round(duration × fps)` frames. |
 | `format` | `mov` \| `webm` \| `mp4` \| `prores` \| `png` | `mov` | `mov` (QuickTime Animation), `webm`, `prores` and `png` have a transparent background. `prores` is ProRes 4444, the professional editors' standard, written as `ID.prores.mov`. `png` writes a folder named like the clip, holding one PNG per frame (`ID/ID_00001.png`, ...), which every editor imports as an image sequence. `mp4` is opaque and uses the theme background color. |
 | `motion` | object | — | Motion settings for every chart: how things appear and leave, and the easing. See [Motion](#motion). |
+| `cues` | boolean | `false` | Also write a cue file next to each clip, `ID.cues.json`, with the seconds and frames of its moments, for placing sound effects. See [Cue files](#cue-files). |
 | `locale` | `en-US` \| `tr-TR` \| `es-ES` \| `pt-BR` \| `fr-FR` | `en-US` | How numbers are written: separators, the percent sign and compact unit names. See [Locales](#locales). Text you write, such as labels and dates, is shown as written. |
 
 CLI flags override `meta` values.
@@ -848,6 +849,44 @@ With more columns than the chart reads, name the ones to read, in order:
 | `table` | Two to four. A column holds numbers if its first row does; the first holds the row names. | One row each. | `rows`, and `columns` named by the first row, unless the spec writes `columns` to name them and set their number formats |
 
 `stat`, `progress` and `title-card` charts read no data file. A chart type from a [plugin](PLUGINS.md) documents whether it reads one.
+
+---
+
+## Cue files
+
+With `meta.cues: true` or `vizreel render --cues`, each clip gets a cue file next to it, named like it: `offers.cues.json` beside `offers.mov`, `offers.2.vertical.cues.json` beside `offers.2.vertical.mov`. It says when each moment of the clip comes, so a sound effect (a pen, a stamp, a click) can go on the right frame without looking for it:
+
+```json
+{
+  "clip": "offers.mov",
+  "fps": 60.0,
+  "frames": 300,
+  "duration": 5.0,
+  "cues": [
+    { "name": "title", "start": 0.0, "end": 0.5, "start_frame": 0, "end_frame": 30 },
+    { "name": "structure", "start": 0.5, "end": 1.1, "start_frame": 30, "end_frame": 66 },
+    { "name": "reveal", "start": 1.1, "end": 2.9, "start_frame": 66, "end_frame": 174 },
+    { "name": "highlight", "start": 2.9, "end": 3.5, "start_frame": 174, "end_frame": 210 },
+    { "name": "mark", "start": 2.9, "end": 3.5, "start_frame": 174, "end_frame": 210 },
+    { "name": "hold", "start": 3.5, "end": 5.0, "start_frame": 210, "end_frame": 300 },
+    { "name": "end", "start": 4.983, "end": 5.0, "start_frame": 299, "end_frame": 300 }
+  ]
+}
+```
+
+| Cue | When |
+|---|---|
+| `title` | The panel, the title and the source appear. |
+| `structure` | Axes, grid lines and labels draw, and a race's first values grow. |
+| `reveal` | The data grows, draws or counts. It ends when the numbers stop counting. A `compare` has two: the earlier value, then the later one. |
+| `highlight` | The highlight beat; in a later clip of a sequence, the emphasis moving. |
+| `mark` | The theme's highlight ring is drawn (`highlight_mark: ring`): the moment for a pen sound. |
+| `move` | Another animation, such as one of a chart type from a plugin that does not name it. |
+| `hold` | The final hold, in which nothing moves. |
+| `exit` | The clip leaves the screen (`motion.exit`). |
+| `end` | The clip's last frame. |
+
+Times are seconds from the start of the clip, rounded to the millisecond; frames count from 0, and `end_frame` is the frame after the last one. Except for `mark` and `end`, the cues follow one another from the first frame to the last. A chart without a title has no `title` cue, and one without a highlight no `highlight` cue.
 
 ---
 

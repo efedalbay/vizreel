@@ -159,7 +159,10 @@ class ChartType(ABC):
         with scene.unrecorded():
             self.build(scene)
         scene.play(
-            *self.emphasis(item), run_time=motion.highlight, rate_func=elements.easing(self.theme)
+            *self.emphasis(item),
+            run_time=motion.highlight,
+            rate_func=elements.easing(self.theme),
+            cue="highlight",
         )
         scene.wait(hold)
 

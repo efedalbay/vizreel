@@ -253,6 +253,7 @@ vizreel schema -o vizreel.schema.json   # JSON Schema for editors and tools
 | `--aspect 16:9\|9:16\|1:1` | Frame shape: landscape, vertical (`ID.vertical.mov`) or square (`ID.square.mov`) |
 | `--fps RATE` | Frames per second of a final render. Default `meta.fps`, or 60 |
 | `--still` | Also save the final frame as a PNG |
+| `--cues` | Also write `ID.cues.json` with the seconds and frames of each clip's title, data, highlight, ring, hold and last frame, for placing sound effects. See [Cue files](https://github.com/efedalbay/vizreel/blob/main/docs/SPEC.md#cue-files) |
 | `--watch` | Keep running and render again whenever the spec, its theme file or a data file is saved. Only charts that changed are rendered; an invalid spec prints its errors and watching goes on. Ctrl+C stops |
 
 Options on the command line override the spec's `meta`. `vizreel --debug COMMAND` shows the full traceback of an unexpected error.

@@ -441,7 +441,7 @@ class BarRaceChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
+            scene.play(AnimationGroup(*opening), run_time=motion.title_fade, cue="title")
             opening = []
 
         # The names and the first period appear while the bars grow to their first values.
@@ -469,6 +469,7 @@ class BarRaceChartType(ChartType):
                 UpdateFromAlphaFunc(growth, advance, run_time=motion.structure, rate_func=linear),  # type: ignore[arg-type]
             ),
             run_time=motion.structure,
+            cue="structure",
         )
         scene.remove(growing, labels)
 
@@ -477,6 +478,11 @@ class BarRaceChartType(ChartType):
             lambda: race_frame(race_position(seconds.get_value(), race_seconds, count), 1.0, True)
         )
         scene.add(racing)
-        scene.play(seconds.animate.set_value(race_seconds), run_time=race_seconds, rate_func=linear)
+        scene.play(
+            seconds.animate.set_value(race_seconds),
+            run_time=race_seconds,
+            rate_func=linear,
+            cue="reveal",
+        )
         racing.clear_updaters()
         scene.wait(motion.hold)

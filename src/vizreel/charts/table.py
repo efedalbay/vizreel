@@ -322,7 +322,7 @@ class TableChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
+            scene.play(AnimationGroup(*opening), run_time=motion.title_fade, cue="title")
             opening = []
         scene.play(
             AnimationGroup(
@@ -336,6 +336,7 @@ class TableChartType(ChartType):
                 ),
             ),
             run_time=motion.structure,
+            cue="structure",
         )
 
         progress = ValueTracker(0.0)
@@ -375,7 +376,9 @@ class TableChartType(ChartType):
             if numeric[column]
         ]
         scene.add(*(block.mobject for block in texts.values()), *counters)
-        scene.play(progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear)
+        scene.play(
+            progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear, cue="reveal"
+        )
 
         numbers = {
             (row, column): number_at(row, column, float(rows[row][column]))
@@ -412,7 +415,10 @@ class TableChartType(ChartType):
 
         if chart.highlight:
             scene.play(
-                *self.emphasis(chart.highlight.row), run_time=phases.highlight, rate_func=ease
+                *self.emphasis(chart.highlight.row),
+                run_time=phases.highlight,
+                rate_func=ease,
+                cue="highlight",
             )
         scene.wait(phases.hold)
 

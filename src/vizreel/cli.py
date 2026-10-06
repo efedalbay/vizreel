@@ -139,6 +139,15 @@ def render(
     still: Annotated[
         bool, typer.Option("--still", help="Also save the last frame as PNG.")
     ] = False,
+    cues: Annotated[
+        bool,
+        typer.Option(
+            "--cues",
+            help="Also write ID.cues.json next to each clip: the seconds and frames of its "
+            "title, data, highlight, ring, hold and last frame, for placing sound effects. "
+            "Default: meta.cues.",
+        ),
+    ] = False,
     aspect: Annotated[
         AspectChoice | None,
         typer.Option(
@@ -174,6 +183,7 @@ def render(
         quality=quality.value,
         format=output_format.value if output_format else None,
         still=still,
+        cues=True if cues else None,
         aspect=aspect.value if aspect else None,
         fps=float(fps.value) if fps else None,
     )
@@ -241,7 +251,8 @@ def _print_chart_result(console: Console, result: ChartResult) -> None:
     if result.error:
         _stderr().print(f"  [red]{name}[/]: {escape(result.error)}")
         return
-    files = ", ".join(escape(str(path)) for path in (result.video, result.still) if path)
+    paths = (result.video, result.still, result.cues)
+    files = ", ".join(escape(str(path)) for path in paths if path)
     console.print(f"  [green]{name}[/]: {files} ({result.seconds:.1f}s)")
     for warning in result.warnings:
         _stderr().print(f"    [yellow]warning:[/] {escape(warning)}")

@@ -8,6 +8,7 @@ from manim import DEFAULT_WAIT_TIME, Mobject, Scene, config
 from manim.scene.scene_file_writer import to_av_frame_rate
 
 from vizreel.charts.base import ChartType, Continuation, FrameClock
+from vizreel.render.cues import Cue
 from vizreel.render.elements import PANEL_Z_INDEX
 from vizreel.render.layout import Box, Layout
 
@@ -80,6 +81,8 @@ class ChartScene(Scene):
         self._waiting = False
         self._held_back: float | None = None
         self._logo_shown = False
+        self.cues: list[Cue] = []
+        self._recording = True
         super().__init__(**kwargs)
 
     def construct(self) -> None:
@@ -99,10 +102,12 @@ class ChartScene(Scene):
         theme = self.chart_type.theme
         motion = theme.motion
         if motion.exit == "none" or self._held_back is None:
-            self._release_wait()
+            with self._cue("hold", self._held_back is not None):
+                self._release_wait()
             return
         hold, self._held_back = self._held_back, None
-        self._hold(hold - motion.exit_time)
+        with self._cue("hold"):
+            self._hold(hold - motion.exit_time)
         camera = self.renderer.camera
         # A copy: the image shares its pixels with the camera, which the exit draws over.
         self.still = camera.get_image().copy() if hasattr(camera, "get_image") else None
@@ -111,6 +116,7 @@ class ChartScene(Scene):
             elements.leave(list(self.mobjects), theme, center),
             run_time=motion.exit_time,
             rate_func=elements.easing(theme),
+            cue="exit",
         )
 
     def fit_to_content(self, relayout: Callable[[Layout], ChartType]) -> None:
@@ -142,6 +148,7 @@ class ChartScene(Scene):
         """
         renderer = self.renderer
         renderer._original_skipping_status = True
+        self._recording = False
         try:
             yield
             self._release_wait()
@@ -149,12 +156,21 @@ class ChartScene(Scene):
             renderer._original_skipping_status = False
             renderer.skip_animations = False
             self.clock = FrameClock(to_av_frame_rate(config.frame_rate))
+            self._recording = True
+            self.cues = []
 
-    def play(self, *args: Any, **kwargs: Any) -> None:
+    def play(self, *args: Any, cue: str | None = None, **kwargs: Any) -> None:
         """Play animations for a whole number of frames.
 
         Manim renders ceil(run_time × fps) frames, so half a frame less gives exactly the
         frames the clock hands out.
+
+        Args:
+            *args: The animations.
+            cue: What the animations show, for the clip's cue file: one of
+                `cues.CUE_NAMES`, such as "reveal" or "highlight". "move" if not given. A
+                highlight ring among the animations adds a "mark" cue by itself.
+            **kwargs: Passed on to Manim; `run_time` is required.
 
         Raises:
             TypeError: No `run_time` was given.
@@ -165,12 +181,25 @@ class ChartScene(Scene):
         if "run_time" not in kwargs:
             raise TypeError("ChartScene.play() needs an explicit run_time")
         self._release_wait()
+        start = self.clock.frames
         frames = self.clock.frames_for(kwargs["run_time"])
+        if self._recording:
+            self.cues.append(Cue(cue or "move", start, start + frames))
+            if any(_draws_mark(animation) for animation in args):
+                self.cues.append(Cue("mark", start, start + frames))
         kwargs["run_time"] = (frames - 0.5) / self.clock.fps
         if not self._logo_shown:
             self._logo_shown = True
             args = (*args, *self._logo_entrance())
         super().play(*args, **kwargs)
+
+    @contextmanager
+    def _cue(self, name: str, when: bool = True) -> Iterator[None]:
+        """Record the frames rendered inside the block as a cue, if `when`."""
+        start = self.clock.frames
+        yield
+        if when and self._recording and self.clock.frames > start:
+            self.cues.append(Cue(name, start, self.clock.frames))
 
     def _logo_entrance(self) -> list[Any]:
         """The animation of the theme's logo, if it has one, appearing in its corner.
@@ -230,3 +259,10 @@ class ChartScene(Scene):
             super().wait((frames + 0.5) / self.clock.fps, frozen_frame=True)
         finally:
             self._waiting = False
+
+
+def _draws_mark(animation: Any) -> bool:
+    """Whether an animation, or one in a group of them, draws a highlight ring."""
+    if getattr(animation, "cue", None) == "mark":
+        return True
+    return any(_draws_mark(part) for part in getattr(animation, "animations", ()))

@@ -177,7 +177,7 @@ class StatChartType(ChartType):
                     header_group, self.theme, run_time=motion.title_fade, rate_func=ease
                 )
             )
-            scene.play(AnimationGroup(*opening), run_time=phases.intro)
+            scene.play(AnimationGroup(*opening), run_time=phases.intro, cue="title")
             opening = []
 
         tracker = ValueTracker(chart.start)
@@ -196,13 +196,15 @@ class StatChartType(ChartType):
         if footer:
             fade = min(motion.title_fade, phases.main)
             reveal.append(elements.appear(footer_group, self.theme, run_time=fade, rate_func=ease))
-        scene.play(AnimationGroup(*reveal), run_time=phases.main)
+        scene.play(AnimationGroup(*reveal), run_time=phases.main, cue="reveal")
 
         counting.clear_updaters()
         scene.remove(counting)
         scene.add(final_number)
         if pen is not None:
-            scene.play(elements.draw_ring(pen, rate_func=ease), run_time=phases.highlight)
+            scene.play(
+                elements.draw_ring(pen, rate_func=ease), run_time=phases.highlight, cue="highlight"
+            )
         scene.wait(phases.hold)
 
     def _ring_phases(self, intro: float) -> "Phases | None":

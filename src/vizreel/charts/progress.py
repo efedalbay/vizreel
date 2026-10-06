@@ -225,7 +225,7 @@ class ProgressChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=phases.intro)
+            scene.play(AnimationGroup(*opening), run_time=phases.intro, cue="title")
             opening = []
 
         tracker = ValueTracker(0.0)
@@ -251,7 +251,7 @@ class ProgressChartType(ChartType):
         ]
         if label is not None:
             reveal.append(elements.appear(label, theme, run_time=fade, rate_func=ease))
-        scene.play(AnimationGroup(*reveal), run_time=phases.main)
+        scene.play(AnimationGroup(*reveal), run_time=phases.main, cue="reveal")
 
         for mobject in (fill, counting_percent, counting_amount):
             mobject.clear_updaters()

@@ -114,6 +114,9 @@ class Meta(SpecModel):
     motion: Motion = Field(default_factory=Motion)
     """Motion settings for every chart, over the theme's; a chart's own `motion` goes over
     these."""
+    cues: bool = False
+    """Also write `ID.cues.json` next to each clip: when its title, data, highlight, ring,
+    hold and last frame come, for placing sound effects."""
 
 
 class NumberFormat(SpecModel):

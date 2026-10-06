@@ -511,7 +511,7 @@ class LineChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
+            scene.play(AnimationGroup(*opening), run_time=motion.title_fade, cue="title")
             opening = []
         scene.play(
             AnimationGroup(
@@ -520,6 +520,7 @@ class LineChartType(ChartType):
                 elements.appear(axis_labels, theme, run_time=motion.structure, rate_func=ease),
             ),
             run_time=motion.structure,
+            cue="structure",
         )
 
         progress = ValueTracker(0.0)
@@ -542,7 +543,9 @@ class LineChartType(ChartType):
         trailing = redrawn(lambda: first_labels_at(x_cut()))
         racing = redrawn(lambda: tips_with_labels(x_cut()))
         scene.add(*drawing, trailing, racing)
-        scene.play(progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear)
+        scene.play(
+            progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear, cue="reveal"
+        )
 
         final_lines = [series_line(index, sweep_end) for index in range(count)]
         scene.remove(*drawing, trailing, racing)
@@ -593,7 +596,12 @@ class LineChartType(ChartType):
             marks=marks,
         )
         if chart.highlight:
-            scene.play(*self.emphasis(chart.highlight), run_time=phases.highlight, rate_func=ease)
+            scene.play(
+                *self.emphasis(chart.highlight),
+                run_time=phases.highlight,
+                rate_func=ease,
+                cue="highlight",
+            )
         scene.wait(phases.hold)
 
     def emphasis(self, item: Any) -> list[Any]:

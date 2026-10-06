@@ -95,6 +95,7 @@ vizreel/
 │   │   ├── scales.py        ← axis ranges, ticks, label placement, text wrapping (pure functions)
 │   │   ├── transcode.py     ← ProRes and PNG-sequence output from Manim's mov (PyAV)
 │   │   ├── texture.py       ← ruled lines or a picture on the panel or the opaque frame
+│   │   ├── cues.py          ← the moments of a clip and its cue file (pure functions)
 │   │   └── fonts.py         ← register bundled and theme font files with Pango
 │   ├── plugin/              ← the public API for chart types in other packages
 │   │   ├── __init__.py      ← contract, models, formatting, timing (no Manim)
@@ -238,6 +239,10 @@ A spec's `meta.motion` and a chart's `motion` override the theme's `motion` fiel
 
 - **Entrances.** Chart types make the panel, titles, labels and legends appear with `elements.appear`, which fades them in and, for `rise` or `zoom`, moves or scales them a little into place. The end state is the same for every entrance, so sequences still cut seamlessly.
 - **Exits** need nothing from chart types. `clip_theme` lengthens the hold by `exit_time` for the clip that leaves (only the last clip of a sequence), so charts keep their full hold and their "duration too short" messages stay right. `ChartScene` holds back each `wait` until the next animation or the end of the clip; at the end it renders the last wait shortened by the exit, keeps that frame as the still, and plays `elements.leave`, which fades every part from its own opacity and sinks or shrinks everything.
+
+### Cue files
+
+`ChartScene.play` takes a `cue` name besides the animations; every chart type names its plays (`title`, `structure`, `reveal`, `highlight`), and the scene records each with the frames the frame clock hands it, so cue times are exactly the clip's frames. The scene adds `hold` around the final wait, `exit` around the exit, and `mark` for any play that holds an animation from `elements.draw_ring`, which carries a `cue` attribute; `render/cues.py` adds `end` and writes the document. Nothing is recorded inside `unrecorded()`, and the list starts again after it, as the frame clock does, so the measuring build of a vertical card and the rebuilt start of a sequence's later clip leave no cues.
 
 ### The theme's logo
 

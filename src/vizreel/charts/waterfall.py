@@ -206,7 +206,7 @@ class WaterfallChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
+            scene.play(AnimationGroup(*opening), run_time=motion.title_fade, cue="title")
             opening = []
         structure = [
             *opening,
@@ -219,7 +219,7 @@ class WaterfallChartType(ChartType):
                 VGroup(*geometry.labels), theme, run_time=motion.structure, rate_func=ease
             ),
         ]
-        scene.play(AnimationGroup(*structure), run_time=motion.structure)
+        scene.play(AnimationGroup(*structure), run_time=motion.structure, cue="structure")
 
         fills = {"total": colors.accent, "up": colors.positive, "down": colors.negative}
         progress = ValueTracker(0.0)
@@ -248,7 +248,9 @@ class WaterfallChartType(ChartType):
         counting = [counting_value(index) for index in range(count)]
         joining = elements.redrawn_shapes(connectors_now)
         scene.add(joining, *growing, *counting)
-        scene.play(progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear)
+        scene.play(
+            progress.animate.set_value(1.0), run_time=phases.main, rate_func=linear, cue="reveal"
+        )
 
         final_bars = [geometry.bar(index, 1.0, fills[bar.kind]) for index, bar in enumerate(bars)]
         for index, value_mobject in enumerate(final_values):
@@ -261,7 +263,9 @@ class WaterfallChartType(ChartType):
         self._final = (list(zip(final_bars, bars, strict=True)), fills)
 
         highlighted = chart.highlight.label if chart.highlight else chart.end.label
-        scene.play(*self.emphasis(highlighted), run_time=phases.highlight, rate_func=ease)
+        scene.play(
+            *self.emphasis(highlighted), run_time=phases.highlight, rate_func=ease, cue="highlight"
+        )
         scene.wait(phases.hold)
 
     def emphasis(self, item: Any) -> list[Any]:

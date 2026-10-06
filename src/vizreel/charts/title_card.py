@@ -136,6 +136,6 @@ class TitleCardChartType(ChartType):
             reveal.append(elements.appear(card, theme, run_time=fade, rate_func=ease))
         if source is not None:
             reveal.append(elements.appear(source, theme, run_time=fade, rate_func=ease))
-        scene.play(AnimationGroup(*reveal), run_time=phases.main)
+        scene.play(AnimationGroup(*reveal), run_time=phases.main, cue="reveal")
         scene.add(VGroup(*(line.mobject for line in lines)))
         scene.wait(phases.hold)

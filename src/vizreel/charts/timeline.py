@@ -264,7 +264,7 @@ class TimelineChartType(ChartType):
                 elements.appear(titles, theme, run_time=motion.title_fade, rate_func=ease)
             )
         if len(header):
-            scene.play(AnimationGroup(*opening), run_time=motion.title_fade)
+            scene.play(AnimationGroup(*opening), run_time=motion.title_fade, cue="title")
             opening = []
 
         progress = ValueTracker(0.0)
@@ -301,7 +301,7 @@ class TimelineChartType(ChartType):
         # Manim calls the update function with (mobject, alpha) but types it with one argument.
         sweep = UpdateFromAlphaFunc(progress, move_pen, run_time=phases.main, rate_func=linear)  # type: ignore[arg-type]
         reveal: list[Animation] = [*opening, sweep]
-        scene.play(AnimationGroup(*reveal), run_time=phases.main)
+        scene.play(AnimationGroup(*reveal), run_time=phases.main, cue="reveal")
 
         stems = [geometry.stem(index, 1.0) for index in range(count)]
         dots = [geometry.dot(index, 1.0) for index in range(count)]
@@ -317,6 +317,7 @@ class TimelineChartType(ChartType):
                 *self.emphasis(events[emphasized].date),
                 run_time=phases.highlight,
                 rate_func=ease,
+                cue="highlight",
             )
         scene.wait(phases.hold)
 

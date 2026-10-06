@@ -13,6 +13,7 @@ All notable changes to vizreel are documented here. The format follows
 - Accounting negatives: `number: { negative: parentheses }` writes `($1.2M)`, `(360)` or `(12%)` instead of a minus sign, in every locale, with the parentheses at the size of the digits. A fall in a `compare` or a `waterfall` step reads `($5.0M)`, a rise keeps `+$500K`. Data files may write negatives in parentheses too.
 - A highlight ring: `highlight_mark: ring` in a theme draws a leaning pen ring around the highlighted value at the highlight beat, in the new optional `colors.mark` color, in `bar` charts (moving with a sequence's emphasis) and `stat` charts (after the count; a duration too short for it keeps its length, leaves the ring out and warns). It never crosses the value's text.
 - Chart types can report warnings (`ChartType.warnings`), which `vizreel render` prints under the clip.
+- Cue files: `vizreel render --cues` or `meta.cues: true` writes `ID.cues.json` next to each clip, with the seconds and frames of its title, structure, reveal, highlight, highlight ring (`mark`), hold, exit and last frame, for placing sound effects. Chart types name their animations with `scene.play(..., cue=...)`.
 
 ## [0.16.1] - 2026-10-01
 

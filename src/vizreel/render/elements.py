@@ -461,7 +461,10 @@ def draw_ring(ring: VMobject, **kwargs: Any) -> Animation:
         target.set_stroke(opacity=opacity if alpha > 0 else 0)
 
     # Manim calls the update function with (mobject, alpha) but types it with one argument.
-    return UpdateFromAlphaFunc(ring, draw, introducer=True, **kwargs)  # type: ignore[arg-type]
+    animation = UpdateFromAlphaFunc(ring, draw, introducer=True, **kwargs)  # type: ignore[arg-type]
+    # The scene finds it by this, for the clip's "mark" cue.
+    animation.cue = "mark"  # type: ignore[attr-defined]
+    return animation
 
 
 def erase_ring(ring: VMobject, **kwargs: Any) -> Animation:

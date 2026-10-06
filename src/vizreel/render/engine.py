@@ -1,5 +1,6 @@
 """Render the charts of a spec to clips, one file per chart."""
 
+import json
 import math
 import os
 import shutil
@@ -51,6 +52,7 @@ class RenderOptions:
         still: Also save the last frame of each chart as PNG.
         aspect: Frame shape, overriding `meta.aspect`.
         fps: Frame rate of a final render, overriding `meta.fps`. Previews stay at 15 fps.
+        cues: Also write each clip's cue file, overriding `meta.cues`.
     """
 
     out_dir: Path = Path("out")
@@ -60,6 +62,7 @@ class RenderOptions:
     still: bool = False
     aspect: Aspect | None = None
     fps: float | None = None
+    cues: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -76,6 +79,7 @@ class ChartResult:
         steps: For a chart told as a sequence, how many clips it has; else None.
         warnings: What the user should know about a clip that rendered, such as an effect
             left out because the duration is too short for it.
+        cues: The clip's cue file, if one was asked for and rendering succeeded.
     """
 
     chart_id: str
@@ -86,6 +90,7 @@ class ChartResult:
     step: int | None = None
     steps: int | None = None
     warnings: tuple[str, ...] = ()
+    cues: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -205,6 +210,16 @@ def output_paths(
     return video, still
 
 
+def cues_path(video: Path) -> Path:
+    """Return where the cue file of a clip goes: next to it, named like it, `.cues.json`."""
+    name = video.name
+    for suffix in (".prores.mov", ".mov", ".webm", ".mp4"):
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+            break
+    return video.with_name(f"{name}.cues.json")
+
+
 def clip_theme(theme: Theme, spec_motion: Motion, chart_motion: Motion, *, last: bool) -> Theme:
     """Return the theme a clip renders with: the theme's motion under the spec's and chart's.
 
@@ -294,7 +309,10 @@ def render_spec(
         for plan in plans:
             last = plan.step is None or plan.step == steps
             motion_theme = clip_theme(theme, spec.meta.motion, plan.chart.motion, last=last)
-            result = _render_safely(plan, steps, motion_theme, locale, settings, options, reraise)
+            cues = options.cues if options.cues is not None else spec.meta.cues
+            result = _render_safely(
+                plan, steps, motion_theme, locale, settings, options, reraise, cues
+            )
             results.append(result)
             if on_done:
                 on_done(result)
@@ -312,6 +330,7 @@ def _render_safely(
     settings: FrameSettings,
     options: RenderOptions,
     reraise: bool,
+    cues: bool = False,
 ) -> ChartResult:
     chart_id = plan.chart.id
     started = time.perf_counter()
@@ -323,7 +342,14 @@ def _render_safely(
 
     try:
         warnings = render_chart(
-            plan.chart, theme, locale, settings, video, still, plan.continuation
+            plan.chart,
+            theme,
+            locale,
+            settings,
+            video,
+            still,
+            plan.continuation,
+            cues_path(video) if cues else None,
         )
     except VizreelError as exc:
         return result(error=str(exc))
@@ -334,7 +360,9 @@ def _render_safely(
         # A bug in another package's chart type is reported to that package, not to vizreel.
         where = "" if source == BUILT_IN else f" in chart type {plan.chart.type} from {source}"
         return result(error=f"unexpected error{where}: {type(exc).__name__}: {exc}")
-    return result(video=video, still=still, warnings=warnings)
+    return result(
+        video=video, still=still, warnings=warnings, cues=cues_path(video) if cues else None
+    )
 
 
 def render_chart(
@@ -345,8 +373,11 @@ def render_chart(
     video_path: Path,
     still_path: Path | None,
     continuation: Continuation | None = None,
+    cues_path: Path | None = None,
 ) -> tuple[str, ...]:
     """Render one chart to `video_path` and, if given, its last frame to `still_path`.
+
+    With `cues_path`, also write the clip's cue file there (see `render/cues.py`).
 
     Returns:
         The chart type's warnings, such as an effect it left out.
@@ -426,6 +457,8 @@ def render_chart(
                     camera = scene.renderer.camera
                     assert isinstance(camera, Camera)
                     camera.get_image().save(still_path)
+    if cues_path is not None:
+        _write_cues(scene, settings, video_path, cues_path)
     return tuple(dict.fromkeys(scene.chart_type.warnings))
 
 
@@ -443,6 +476,16 @@ def _use_background(
     camera.background_image = str(path)
     camera.init_background()
     camera.reset()
+
+
+def _write_cues(scene: "ChartScene", settings: FrameSettings, video: Path, path: Path) -> None:
+    from vizreel.render.cues import cue_document
+
+    document = cue_document(scene.cues, settings.fps, scene.clock.frames, video.name)
+    try:
+        path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    except OSError as exc:
+        raise OutputError(f"cannot write {path}: {exc.strerror}") from None
 
 
 def _move(source: Path, target: Path) -> None:
