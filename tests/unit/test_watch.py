@@ -209,3 +209,28 @@ def test_a_changed_data_file_renders_the_chart_that_reads_it(tmp_path: Path) -> 
     sales.write_text("Region,Revenue\nNorth,12\nSouth,10\n", encoding="utf-8")
 
     assert charts_to_render(before, load_spec(spec_path), theme_changed=False) == ["a"]
+
+
+def test_a_themes_font_and_logo_files_are_watched(tmp_path: Path) -> None:
+    import yaml
+
+    from vizreel.themes.loader import BUILTIN_DIR
+
+    plex = Path(__file__).parents[1] / "fixtures" / "fonts" / "IBMPlexMono-Regular.ttf"
+    (tmp_path / "mono.ttf").write_bytes(plex.read_bytes())
+    (tmp_path / "logo.svg").write_text("<svg xmlns='http://www.w3.org/2000/svg'/>")
+    theme = yaml.safe_load((BUILTIN_DIR / "default.yaml").read_text(encoding="utf-8"))
+    theme["fonts"]["numbers"] = {"file": "mono.ttf"}
+    theme["logo"] = {"file": "logo.svg"}
+    (tmp_path / "brand.yaml").write_text(yaml.safe_dump(theme), encoding="utf-8")
+    spec_path = tmp_path / "spec.yaml"
+    spec_path.write_text(
+        "version: 1\nmeta: { theme: brand.yaml }\ncharts: [{ id: a, type: stat, value: 1 }]\n",
+        encoding="utf-8",
+    )
+    watcher = FileWatcher([spec_path])
+
+    watch_errors(spec_path, RenderOptions(only=("nope",)), watcher)
+
+    assert (tmp_path / "logo.svg").resolve() in watcher.paths
+    assert (tmp_path / "mono.ttf").resolve() in watcher.paths

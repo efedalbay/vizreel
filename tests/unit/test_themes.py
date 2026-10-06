@@ -107,7 +107,10 @@ def test_stroke_widths_and_dim_opacity_must_be_positive(tmp_path: Path) -> None:
     ]
 
 
-def test_theme_with_three_font_families_is_rejected(tmp_path: Path) -> None:
+PLEX_MONO = Path(__file__).parents[1] / "fixtures" / "fonts" / "IBMPlexMono-Regular.ttf"
+
+
+def test_each_font_role_may_use_its_own_family(tmp_path: Path) -> None:
     path = write_theme(
         tmp_path / "fonts.yaml",
         {
@@ -119,9 +122,49 @@ def test_theme_with_three_font_families_is_rejected(tmp_path: Path) -> None:
         },
     )
 
+    fonts = load_theme(str(path), tmp_path).fonts
+    assert [fonts.heading.family, fonts.body.family, fonts.numbers.family] == ["A", "B", "C"]
+
+
+def test_a_font_file_next_to_the_theme_gives_its_family(tmp_path: Path) -> None:
+    (tmp_path / "fonts").mkdir()
+    (tmp_path / "fonts" / "mono.ttf").write_bytes(PLEX_MONO.read_bytes())
+    path = write_theme(
+        tmp_path / "mono.yaml",
+        {"fonts": {"numbers": {"file": "fonts/mono.ttf"}, "body": {"file": "fonts/mono.ttf"}}},
+    )
+
+    numbers = load_theme(str(path), Path("elsewhere")).fonts.numbers
+    assert numbers.family == "IBM Plex Mono"
+    assert numbers.file == str((tmp_path / "fonts" / "mono.ttf").resolve())
+
+
+def test_font_files_that_cannot_be_used_name_the_file(tmp_path: Path) -> None:
+    (tmp_path / "broken.ttf").write_text("not a font")
+    (tmp_path / "mono.otf").write_bytes(PLEX_MONO.read_bytes())
+    path = write_theme(
+        tmp_path / "fonts.yaml",
+        {
+            "fonts": {
+                "heading": {"file": "missing.ttf"},
+                "body": {"file": "broken.ttf"},
+                "numbers": {"file": "mono.otf", "family": "Plex"},
+            }
+        },
+    )
+
     assert theme_errors(path) == [
-        "fonts.numbers.family: a theme uses at most 2 font families, got 3: A, B, C"
+        f"fonts.heading.file: missing.ttf was not found in {tmp_path}",
+        "fonts.body.file: broken.ttf cannot be read as a font",
+        'fonts.numbers.family: is "Plex" but mono.otf holds the family "IBM Plex Mono"; '
+        "leave out family or write it as the file names it",
     ]
+
+
+def test_a_font_file_must_be_ttf_or_otf(tmp_path: Path) -> None:
+    path = write_theme(tmp_path / "fonts.yaml", {"fonts": {"heading": {"file": "font.woff2"}}})
+
+    assert theme_errors(path) == ["fonts.heading.file: font.woff2 is not a TTF or OTF font file"]
 
 
 def test_unknown_theme_field(tmp_path: Path) -> None:

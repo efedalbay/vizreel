@@ -71,6 +71,8 @@ class ChartResult:
         seconds: Time spent rendering.
         step: For a chart told as a sequence, which clip this is, from 1; else None.
         steps: For a chart told as a sequence, how many clips it has; else None.
+        warnings: What the user should know about a clip that rendered, such as an effect
+            left out because the duration is too short for it.
     """
 
     chart_id: str
@@ -80,6 +82,7 @@ class ChartResult:
     seconds: float = 0.0
     step: int | None = None
     steps: int | None = None
+    warnings: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -242,6 +245,7 @@ def render_spec(
     *,
     on_start: Callable[[BaseChart], None] | None = None,
     on_done: Callable[[ChartResult], None] | None = None,
+    on_warning: Callable[[str], None] | None = None,
     reraise: bool = False,
 ) -> list[ChartResult]:
     """Render every selected chart of a spec file. A failing chart does not stop the others.
@@ -251,6 +255,8 @@ def render_spec(
         options: Output folder, chart selection, quality, format and still.
         on_start: Called before each chart renders.
         on_done: Called after each chart, with its result.
+        on_warning: Called with what the user should know about the whole render, such as a
+            number font without tabular figures, before the first chart renders.
         reraise: Let unexpected exceptions propagate instead of recording them.
 
     Raises:
@@ -270,9 +276,12 @@ def render_spec(
     except OSError as exc:
         raise OutputError(f"cannot create {options.out_dir}: {exc.strerror}") from None
 
-    from vizreel.render.fonts import check_theme_fonts
+    from vizreel.render.fonts import check_theme_fonts, tabular_figures_warning
 
     check_theme_fonts(theme)
+    warning = tabular_figures_warning(theme) if charts else None
+    if warning and on_warning:
+        on_warning(warning)
     results = []
     for chart in charts:
         if on_start:
@@ -310,7 +319,9 @@ def _render_safely(
         return ChartResult(chart_id, seconds=seconds, step=plan.step, steps=steps, **fields)
 
     try:
-        render_chart(plan.chart, theme, locale, settings, video, still, plan.continuation)
+        warnings = render_chart(
+            plan.chart, theme, locale, settings, video, still, plan.continuation
+        )
     except VizreelError as exc:
         return result(error=str(exc))
     except Exception as exc:
@@ -320,7 +331,7 @@ def _render_safely(
         # A bug in another package's chart type is reported to that package, not to vizreel.
         where = "" if source == BUILT_IN else f" in chart type {plan.chart.type} from {source}"
         return result(error=f"unexpected error{where}: {type(exc).__name__}: {exc}")
-    return result(video=video, still=still)
+    return result(video=video, still=still, warnings=warnings)
 
 
 def render_chart(
@@ -331,8 +342,11 @@ def render_chart(
     video_path: Path,
     still_path: Path | None,
     continuation: Continuation | None = None,
-) -> None:
+) -> tuple[str, ...]:
     """Render one chart to `video_path` and, if given, its last frame to `still_path`.
+
+    Returns:
+        The chart type's warnings, such as an effect it left out.
 
     With a `continuation`, render the later clip of a sequence that follows this chart's
     clip instead. Manim's cache and partial movie files go to a temporary folder that is
@@ -407,6 +421,7 @@ def render_chart(
                     camera = scene.renderer.camera
                     assert isinstance(camera, Camera)
                     camera.get_image().save(still_path)
+    return tuple(dict.fromkeys(scene.chart_type.warnings))
 
 
 def _move(source: Path, target: Path) -> None:

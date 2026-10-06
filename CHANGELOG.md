@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A theme can bring its fonts as files: `fonts: { numbers: { file: fonts/IBMPlexMono-Regular.ttf } }` loads a TTF or OTF file next to the theme and reads its family from it, so the theme looks the same on any computer. Each role may now use its own family. `vizreel render` warns when the number font's digits do not share one width, which makes counting numbers shift.
+
 ## [0.16.1] - 2026-10-01
 
 ### Changed

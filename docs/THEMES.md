@@ -129,10 +129,22 @@ Colors are `#RRGGBB`.
 
 | Field | Values |
 |---|---|
-| `family` | A font family name. The bundled family is `Inter`; other families must be installed. |
-| `weight` | `regular` (default), `semibold` or `bold`. |
+| `family` | A font family name. The bundled family is `Inter`; another family must be installed, or come from `file`. Optional with `file`, which names it. |
+| `weight` | `regular` (default), `semibold` or `bold`. With `file`, give the weight of the file. |
+| `file` | Optional. A TTF or OTF font file, relative to the theme file, so the theme looks the same on a computer that does not have the font installed. Its family is read from the file; a `family` that names another is an error, and so is a file that is missing, of another kind or not a font. |
 
-A theme uses at most two font families. Numbers are drawn with tabular figures, so the family should have them.
+Each role may use its own family, from a file or installed:
+
+```yaml
+fonts:
+  heading: { file: fonts/LibreCaslonDisplay-Regular.ttf }
+  body: { file: fonts/LibreCaslonText-Regular.ttf }
+  numbers: { file: fonts/IBMPlexMono-Regular.ttf }
+```
+
+Keep the font files next to the theme and share the folder: the theme renders the same from any spec, on any computer. Check the license of a font before sharing its file; fonts under the SIL Open Font License, such as those of Google Fonts, may be shared.
+
+Numbers are drawn with tabular figures, so that a counting number does not shift sideways. `vizreel render` warns when the number font's digits do not share one width, as in fonts with old-style figures or with kerning between digits.
 
 ### `sizes`
 

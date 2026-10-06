@@ -4,11 +4,9 @@ Sizes are font sizes in pixels at 1080p, the unit of `docs/DESIGN.md`. They scal
 output resolution. Minimums enforce the legibility rules of `docs/DESIGN.md` §2.
 """
 
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
-from vizreel.validation import raise_rule_violations
+from pydantic import BaseModel, ConfigDict, Field
 
 Color = Annotated[str, Field(pattern=r"^#[0-9A-Fa-f]{6}$")]
 """A color as #RRGGBB."""
@@ -28,8 +26,6 @@ Exit = Literal["none", "fade", "sink", "zoom"]
 little, or also shrinking a little."""
 
 FontWeight = Literal["regular", "semibold", "bold"]
-
-MAX_FONT_FAMILIES = 2
 
 
 class ThemeModel(BaseModel):
@@ -74,16 +70,19 @@ class ThemeColors(ThemeModel):
 
 
 class FontStyle(ThemeModel):
-    """A font family and weight."""
+    """A font family and weight, and the file it comes from if it is not installed."""
 
     family: Annotated[str, Field(min_length=1)]
-    """Font family name, e.g. "Inter"."""
+    """Font family name, e.g. "Inter". Read from `file` when the theme gives one."""
     weight: FontWeight = "regular"
     """Font weight."""
+    file: Annotated[str, Field(min_length=1)] | None = None
+    """A TTF or OTF file with the font, relative to the theme file, so the theme looks the
+    same on a computer that does not have the font installed."""
 
 
 class ThemeFonts(ThemeModel):
-    """Fonts by role. At most two families."""
+    """Fonts by role. Each role may use its own family."""
 
     heading: FontStyle
     """Titles."""
@@ -91,24 +90,6 @@ class ThemeFonts(ThemeModel):
     """Labels, subtitles and the source line."""
     numbers: FontStyle
     """Values. Rendered with tabular figures so counting does not jitter."""
-
-    @model_validator(mode="after")
-    def _check_family_count(self) -> Self:
-        families = list(
-            dict.fromkeys(style.family for style in (self.heading, self.body, self.numbers))
-        )
-        if len(families) > MAX_FONT_FAMILIES:
-            raise_rule_violations(
-                type(self).__name__,
-                [
-                    (
-                        ("numbers", "family"),
-                        f"a theme uses at most {MAX_FONT_FAMILIES} font families, got "
-                        f"{len(families)}: {', '.join(families)}",
-                    )
-                ],
-            )
-        return self
 
 
 class ThemeSizes(ThemeModel):

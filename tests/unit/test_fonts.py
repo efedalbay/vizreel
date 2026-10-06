@@ -40,6 +40,19 @@ def test_missing_theme_font_is_an_error() -> None:
     with pytest.raises(
         RenderError,
         match=r'font "No Such Font" \(theme fonts.heading\) is not installed. '
-        "The bundled font is Inter",
+        "The bundled font is Inter; a theme can also bring a font file with file:",
     ):
         check_theme_fonts(theme.model_copy(update={"fonts": fonts}))
+
+
+def test_a_theme_font_file_is_registered_for_rendering() -> None:
+    plex = Path(__file__).parents[1] / "fixtures" / "fonts" / "IBMPlexMono-Regular.ttf"
+    theme = load_theme("default", Path("."))
+    numbers = theme.fonts.numbers.model_copy(
+        update={"family": "IBM Plex Mono", "file": str(plex.resolve())}
+    )
+    fonts = theme.fonts.model_copy(update={"numbers": numbers})
+
+    check_theme_fonts(theme.model_copy(update={"fonts": fonts}))
+    # The bundled fonts stay available after another file is registered.
+    check_theme_fonts(theme)

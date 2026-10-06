@@ -94,7 +94,7 @@ vizreel/
 │   │   ├── numbers_text.py  ← counting numbers composed from cached glyphs
 │   │   ├── scales.py        ← axis ranges, ticks, label placement, text wrapping (pure functions)
 │   │   ├── transcode.py     ← ProRes and PNG-sequence output from Manim's mov (PyAV)
-│   │   └── fonts.py         ← register bundled fonts with Pango
+│   │   └── fonts.py         ← register bundled and theme font files with Pango
 │   ├── plugin/              ← the public API for chart types in other packages
 │   │   ├── __init__.py      ← contract, models, formatting, timing (no Manim)
 │   │   └── render.py        ← Manim building blocks
@@ -203,7 +203,7 @@ Adding a new built-in chart type = one module in `charts/` (with its template) +
 A theme is a YAML file validated by `themes/models.py`. It contains:
 
 - `colors`: named roles (`background`, `surface`, `text`, `muted`, `grid`, `accent`, `positive`, `negative`, `highlight`, `series` list of at least 3), `dim_opacity` for everything except the highlighted element during the highlight beat, and optional named `brand` colors that races give to series by name.
-- `fonts`: `heading`, `body`, `numbers`, each a `family` and a `weight` (`regular`, `semibold`, `bold`). At most two families. Bundled fonts are registered with ManimPango at startup.
+- `fonts`: `heading`, `body`, `numbers`, each a `family`, a `weight` (`regular`, `semibold`, `bold`) and optionally a TTF or OTF `file` next to the theme. The theme loader reads a file's family with Pillow before validation, so the model always has a family; `render/fonts.py` registers bundled and theme files with ManimPango before the first chart, and warns when the number font has no tabular figures.
 - `sizes`: `title`, `subtitle`, the optional `headline` of a title card, `big_number`, `affix_scale` (the size of a big number's unit and currency relative to its digits), `label`, `value`, `caption`, `panel_radius`, `panel_padding`, and the stroke widths `line`, `grid_line` and the marker diameter `dot`.
 - `motion`: `easing` (ease-out curves only), `title_fade`, `structure`, `stagger`, `highlight`, `hold`, in seconds, and the optional `entrance`, `exit` and `exit_time` (see [Motion](#motion)).
 - `background_panel`: whether to draw a rounded panel behind the chart when rendering with transparency.
@@ -246,7 +246,7 @@ Manim's `always_redraw` copies each frame's new shape into the old one, aligning
 
 ### Watch mode
 
-`vizreel render --watch` runs `watch.py`. It renders once, then polls the spec file, the theme file it resolves to and the data and image files its charts read (standard library only, no file-system event dependency: only a few files are watched). Those files are found by reading the spec loosely (`spec_input_files`), so a data file that makes the spec invalid is watched too. A change is read only after the files have stayed unchanged for a moment, because some editors save in several steps. Each render compares the new spec with the last one that loaded: if `meta` or the theme changed every chart renders, otherwise only charts that are new or whose model differs. Charts that failed are rendered again on the next change. A spec or theme that fails to load is reported and watching goes on. The pure parts (`FileWatcher` with an injectable clock, `charts_to_render`) are unit-tested.
+`vizreel render --watch` runs `watch.py`. It renders once, then polls the spec file, the theme file it resolves to, the theme's logo and font files, and the data and image files its charts read (standard library only, no file-system event dependency: only a few files are watched). Those files are found by reading the spec loosely (`spec_input_files`), so a data file that makes the spec invalid is watched too. A change is read only after the files have stayed unchanged for a moment, because some editors save in several steps. Each render compares the new spec with the last one that loaded: if `meta`, the theme or one of the theme's files changed every chart renders, otherwise only charts that are new or whose model differs. Charts that failed are rendered again on the next change. A spec or theme that fails to load is reported and watching goes on. The pure parts (`FileWatcher` with an injectable clock, `charts_to_render`) are unit-tested.
 
 ## Errors
 

@@ -187,6 +187,7 @@ def render(
             options,
             on_start=lambda chart: status.update(f"Rendering {escape(chart.id)}..."),
             on_done=lambda result: _print_chart_result(console, result),
+            on_warning=_print_warning,
             reraise=bool(ctx.obj),
         )
     failed = sum(1 for result in results if result.error)
@@ -216,6 +217,7 @@ def _watch(ctx: typer.Context, spec: Path, options: RenderOptions, console: Cons
                 on_result=lambda result: _print_chart_result(console, result),
                 on_error=_print_vizreel_error,
                 on_wait=waiting,
+                on_warning=_print_warning,
             )
         except KeyboardInterrupt:
             console.print("Stopped watching.")
@@ -228,6 +230,10 @@ def _print_vizreel_error(error: VizreelError) -> None:
         _stderr().print(f"[red]error:[/] {escape(str(error))}")
 
 
+def _print_warning(message: str) -> None:
+    _stderr().print(f"[yellow]warning:[/] {escape(message)}")
+
+
 def _print_chart_result(console: Console, result: ChartResult) -> None:
     name = escape(result.chart_id)
     if result.step is not None:
@@ -237,6 +243,8 @@ def _print_chart_result(console: Console, result: ChartResult) -> None:
         return
     files = ", ".join(escape(str(path)) for path in (result.video, result.still) if path)
     console.print(f"  [green]{name}[/]: {files} ({result.seconds:.1f}s)")
+    for warning in result.warnings:
+        _stderr().print(f"    [yellow]warning:[/] {escape(warning)}")
 
 
 @app.command()

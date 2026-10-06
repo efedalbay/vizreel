@@ -69,7 +69,7 @@ Motion guides the eye to the message. It is never decoration.
 
 ## 5. Typography
 
-- Maximum two font families per theme (headings and body; numbers may reuse either).
+- One family per role at most: headings, body text and numbers. Two is usually enough; a third, such as a monospaced family for numbers, earns its place when it carries the theme's character.
 - Built-in themes use bundled open-license fonts, so output looks the same on every machine.
 - Titles in sentence case. No all-caps paragraphs; all-caps is allowed only for very short labels (1–2 words).
 - Numbers are formatted by `format/numbers.py` only: thousands separators, compact notation (`$740M`), consistent decimals within one chart.

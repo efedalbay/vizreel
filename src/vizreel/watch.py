@@ -9,7 +9,7 @@ from vizreel.errors import VizreelError
 from vizreel.render.engine import ChartResult, RenderOptions, render_spec, select_charts
 from vizreel.spec.loader import load_spec, spec_input_files
 from vizreel.spec.models import Spec
-from vizreel.themes.loader import load_theme, resolve_theme_path
+from vizreel.themes.loader import load_theme, resolve_theme_path, theme_input_files
 from vizreel.themes.models import Theme
 
 POLL_SECONDS = 0.25
@@ -102,6 +102,7 @@ def watch_spec(
     on_result: Callable[[ChartResult], None],
     on_error: Callable[[VizreelError], None],
     on_wait: Callable[[], None],
+    on_warning: Callable[[str], None] | None = None,
     stop: Callable[[], bool] = lambda: False,
     poll_seconds: float = POLL_SECONDS,
     watcher: FileWatcher | None = None,
@@ -120,12 +121,13 @@ def watch_spec(
         on_result: Called after each chart, with its result.
         on_error: Called when the spec or theme cannot be loaded or rendering cannot start.
         on_wait: Called when watching resumes after a render or an error.
+        on_warning: As for `render_spec`.
         stop: Checked between polls; watching ends when it returns True.
         poll_seconds: Time between checks of the files.
         watcher: The file watcher to use; replaceable in tests.
     """
     watcher = watcher or FileWatcher([spec_path])
-    session = _Session(spec_path, options, watcher)
+    session = _Session(spec_path, options, watcher, on_warning)
     session.render(on_render, on_result, on_error)
     on_wait()
     while not stop():
@@ -142,8 +144,10 @@ class _Session:
     spec_path: Path
     options: RenderOptions
     watcher: FileWatcher
+    on_warning: Callable[[str], None] | None = None
     spec: Spec | None = None
     theme: Theme | None = None
+    theme_files: dict[Path, float] = dataclasses.field(default_factory=dict)
     failed: set[str] = dataclasses.field(default_factory=set)
 
     def render(
@@ -158,6 +162,8 @@ class _Session:
             theme_path = resolve_theme_path(spec.meta.theme, self.spec_path.parent)
             self.watcher.watch([self.spec_path, theme_path, *data_files])
             theme = load_theme(spec.meta.theme, self.spec_path.parent)
+            theme_files = {path: path.stat().st_mtime for path in theme_input_files(theme)}
+            self.watcher.watch([self.spec_path, theme_path, *data_files, *theme_files])
             select_charts(spec, self.options.only)
         except VizreelError as exc:
             # A file that is gone would keep the watcher waiting; the spec itself may be
@@ -166,14 +172,16 @@ class _Session:
             self.watcher.watch(dict.fromkeys([*kept, *data_files]))
             on_error(exc)
             return
-        wanted = charts_to_render(self.spec, spec, theme != self.theme)
+        # A theme's font or logo file can change while the theme itself stays the same.
+        theme_changed = theme != self.theme or theme_files != self.theme_files
+        wanted = charts_to_render(self.spec, spec, theme_changed)
         ids = [
             chart.id
             for chart in spec.charts
             if (chart.id in wanted or chart.id in self.failed)
             and (not self.options.only or chart.id in self.options.only)
         ]
-        self.spec, self.theme = spec, theme
+        self.spec, self.theme, self.theme_files = spec, theme, theme_files
         on_render(ids)
         if not ids:
             return
@@ -182,6 +190,7 @@ class _Session:
                 self.spec_path,
                 dataclasses.replace(self.options, only=tuple(ids)),
                 on_done=on_result,
+                on_warning=self.on_warning,
             )
         except VizreelError as exc:
             self.failed.update(ids)

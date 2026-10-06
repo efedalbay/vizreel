@@ -81,6 +81,8 @@ class ChartType(ABC):
         logo_corner: Where the lower right corner of the theme's logo goes, if the chart
             type places it itself before its first animation, such as inside a card it fits
             around its content; None puts it at the lower right of `layout.source`.
+        warnings: What the user should know about the clip, such as an effect left out
+            because the duration is too short for it. Shown after the clip renders.
     """
 
     name: ClassVar[str]
@@ -96,6 +98,7 @@ class ChartType(ABC):
         self.layout = layout
         self.locale = locale
         self.logo_corner: tuple[float, float] | None = None
+        self.warnings: list[str] = []
 
     @classmethod
     def from_table(cls, table: Table, chart: dict[str, Any]) -> dict[str, Any]:
