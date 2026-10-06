@@ -30,6 +30,8 @@ from vizreel.spec.models import (
         ("+2", 2),
         (" 7 ", 7),
         ("1,234,567", 1234567),
+        ("(360)", -360),
+        ("(1,234.5)", -1234.5),
     ],
 )
 def test_numbers_are_read_as_en_us_writes_them(text: str, value: float) -> None:
@@ -45,6 +47,7 @@ def test_numbers_are_read_as_en_us_writes_them(text: str, value: float) -> None:
         ("1.5", 1.5),
         ("1234.5", 1234.5),
         ("-0,25", -0.25),
+        ("(1.234,5)", -1234.5),
     ],
 )
 def test_numbers_are_read_as_tr_tr_writes_them_or_plain(text: str, value: float) -> None:
@@ -56,7 +59,9 @@ def test_a_space_groups_digits_in_fr_fr_whichever_space_it_is(space: str) -> Non
     assert parse_number(f"1{space}234,5", locale=FR_FR) == 1234.5
 
 
-@pytest.mark.parametrize("text", ["", "12a", "1,2,3", "1.234.5", "$12", "1e6", "nan", "12 %"])
+@pytest.mark.parametrize(
+    "text", ["", "12a", "1,2,3", "1.234.5", "$12", "1e6", "nan", "12 %", "(-3)", "(12", "()"]
+)
 def test_text_that_is_not_a_number_is_rejected(text: str) -> None:
     with pytest.raises(ValueError):
         parse_number(text, locale=EN_US)

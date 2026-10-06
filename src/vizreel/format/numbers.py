@@ -147,10 +147,14 @@ def format_change(
 ) -> str:
     """Format a change with its sign, e.g. "−72%", "+4.5%" or "+$1.2M". No change has no sign.
 
+    With `negative: parentheses` a fall is in parentheses instead, "(72%)" or "($1.2M)", and a
+    rise keeps its plus sign.
+
     Args:
         amount: The change, from `change_amount`.
         kind: Percent or absolute.
-        fmt: The chart's number format, for absolute changes. Percent changes ignore it.
+        fmt: The chart's number format: for absolute changes, and for how a fall is written.
+            Percent changes ignore its prefix, suffix, decimals and compact notation.
         decimals: Decimals to show; by default those of `change_decimals`. A change that counts
             up keeps the decimals of its final value in every frame.
         locale: Separators, the percent sign's place and compact unit names.
@@ -166,8 +170,7 @@ def format_change(
         unit = _unit_index(unit_of, fmt, places)
         rounded, _ = _round_scaled(_to_decimal(amount), _is_compact(fmt), places, unit)
         text = _format(abs(amount), fmt, places, locale, unit_of)
-    sign = "+" if rounded > 0 else MINUS_SIGN if rounded < 0 else ""
-    return sign + text
+    return ("+" + text) if rounded > 0 else _negative(text, rounded < 0, fmt)
 
 
 def whole_percents(values: Sequence[float]) -> list[int]:
@@ -197,19 +200,21 @@ def format_percent(percent: float, *, locale: Locale) -> str:
     return locale.percent.format(_digits(_round(_to_decimal(percent), 0), 0, locale))
 
 
-def split_number_text(text: str) -> tuple[str, str, str, str]:
-    """Split formatted number text into sign, prefix, digits and suffix.
+def split_number_text(text: str) -> tuple[str, str, str, str, str]:
+    """Split formatted number text into sign, prefix, digits, suffix and closing parenthesis.
 
-    The digits include the separators between them: "−$1.85B" → ("−", "$", "1.85", "B"). Text
-    without digits is all prefix.
+    The digits include the separators between them: "−$1.85B" → ("−", "$", "1.85", "B", ""),
+    and "($1.85B)" → ("(", "$", "1.85", "B", ")"). The sign is a minus sign or an opening
+    parenthesis; a plus sign is part of the prefix. Text without digits is all prefix.
     """
-    sign = MINUS_SIGN if text.startswith(MINUS_SIGN) else ""
-    rest = text[len(sign) :]
+    sign = text[:1] if text[:1] in (MINUS_SIGN, "(") else ""
+    closing = ")" if sign == "(" and text.endswith(")") else ""
+    rest = text[len(sign) : len(text) - len(closing)]
     digits = [index for index, char in enumerate(rest) if char.isdigit()]
     if not digits:
-        return sign, rest, "", ""
+        return sign, rest, "", "", closing
     first, last = digits[0], digits[-1] + 1
-    return sign, rest[:first], rest[first:last], rest[last:]
+    return sign, rest[:first], rest[first:last], rest[last:], closing
 
 
 def parse_number(text: str, *, locale: Locale) -> float:
@@ -218,12 +223,18 @@ def parse_number(text: str, *, locale: Locale) -> float:
     The locale's way has its group separators, which may be left out, and its decimal
     separator: "1.234,5" in tr-TR. A plain number has no group separators and a dot before its
     decimals: "1234.5". Where the two read the same text differently, as "1.234" in tr-TR, the
-    locale's way wins. The sign may be "-", "+" or "−".
+    locale's way wins. The sign may be "-", "+" or "−", and a negative number may be in
+    parentheses, as in accounting: "(1.234,5)".
 
     Raises:
         ValueError: The text is not a number in either way.
     """
     body = text.strip()
+    if len(body) > 2 and body[0] == "(" and body[-1] == ")":
+        inside = body[1:-1].strip()
+        if inside[:1] in ("-", "+", MINUS_SIGN, "("):
+            raise ValueError(f"not a number: {text!r}")
+        return -parse_number(inside, locale=locale)
     negative = body[:1] in ("-", MINUS_SIGN)
     if body[:1] in ("-", "+", MINUS_SIGN):
         body = body[1:]
@@ -254,10 +265,16 @@ def _format(
 ) -> str:
     forced = _unit_index(unit_of, fmt, decimals)
     rounded, unit_index = _round_scaled(_to_decimal(value), _is_compact(fmt), decimals, forced)
-    sign = MINUS_SIGN if rounded < 0 else ""
     digits = _digits(abs(rounded), decimals, locale)
     unit = locale.units(_unit_style(fmt, locale)).name(unit_index, rounded)
-    return f"{sign}{fmt.prefix}{digits}{unit}{fmt.suffix}"
+    return _negative(f"{fmt.prefix}{digits}{unit}{fmt.suffix}", rounded < 0, fmt)
+
+
+def _negative(text: str, negative: bool, fmt: NumberFormat) -> str:
+    """Mark the text of a number as negative, if it is, in the way `fmt.negative` says."""
+    if not negative:
+        return text
+    return f"({text})" if fmt.negative == "parentheses" else MINUS_SIGN + text
 
 
 def _digits(number: Decimal, decimals: int, locale: Locale) -> str:

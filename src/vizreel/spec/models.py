@@ -128,6 +128,9 @@ class NumberFormat(SpecModel):
     compact: bool | Literal["long", "short"] = False
     """Abbreviate large numbers: 740000000 becomes 740M, or 740 milyon in tr-TR. `true` uses the
     locale's usual unit names; `long` and `short` choose them: 740 million, 740 Mn."""
+    negative: Literal["minus", "parentheses"] = "minus"
+    """How a negative number is written: with a minus sign, −$1.2M, or in parentheses, as in
+    accounting, ($1.2M)."""
 
 
 class DataFile(SpecModel):

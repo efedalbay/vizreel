@@ -91,6 +91,7 @@ Used by any field that displays values.
 | `suffix` | string | `""` | `%`, ` users` |
 | `decimals` | integer, 0–6 | auto | `1` → `4.2` |
 | `compact` | `true` \| `false` \| `long` \| `short` | `false` | `true` → `740M`, `2.25B`; `long` → `740 million`; `short` → `740M` |
+| `negative` | `minus` \| `parentheses` | `minus` | `minus` → `−$1.2M`; `parentheses` → `($1.2M)`, as in accounting |
 
 `compact: true` names the units the way the spec's locale usually does: abbreviated in `en-US` (`740M`), in full elsewhere (`740 milyon`). `long` and `short` choose: `short` is narrower, which helps a big number in a vertical clip; `long` needs no knowledge of abbreviations. See [Locales](#locales) for every locale's names.
 
@@ -104,7 +105,8 @@ Formatting rules, shown for `en-US` (see [Locales](#locales) for the others):
 - **Compact units:** `K` from 1,000, `M` from 1,000,000, `B` from 1,000,000,000, `T` from 1,000,000,000,000. Numbers below 1,000 are not abbreviated. When rounding reaches 1,000 of a unit, the next unit is used: `999950` → `1M`, not `1000K`.
 - **Counting:** a value that counts up or grows is shown in the unit of its final value, so its unit and width do not jump: `$0.37B` on the way to `$1.85B`, not `$370M`. A final value that would count through fewer than 10 values in its own unit, such as `$2B`, counts through the smaller units instead.
 - **Rounding:** halves round away from zero: `2.675` → `2.68`, `2.5` → `3`.
-- **Negative numbers:** the minus sign (−, U+2212) comes before the prefix: `−$1.2M`. A value that rounds to zero never shows a sign.
+- **Negative numbers:** the minus sign (−, U+2212) comes before the prefix: `−$1.2M`. With `negative: parentheses`, the whole text goes in parentheses instead, prefix and suffix included: `($1.2M)`, `(360)`, `(12%)`, and in `tr-TR` `(%12)` or `(1,85 milyar TL)`; positive numbers are unchanged. A value that rounds to zero never shows a sign or parentheses. Parentheses are drawn at the size of the digits, like the minus sign.
+- **Changes with a sign** (the change of a `compare`, the steps of a `waterfall`): a rise is `+$500K` and a fall `−$5.0M`; with `negative: parentheses` a fall is `($5.0M)`, or `(72%)` in percent, and a rise keeps its plus sign.
 - **Same decimals within a chart:** values shown together in one chart, such as axis or bar labels, share the number of decimals of the most precise value: `$0.05B`, `$0.20B`, `$2.25B`. With `compact: true`, only values with the same unit share decimals: `$1.25B`, `$412.0M`, `$7.8M`.
 
 ### Locales
@@ -226,7 +228,7 @@ One measure at two moments: the earlier value, an arrow, the later value, and th
 
 The earlier value counts up and the arrow draws; then the later value counts from the earlier value to its own, so the viewer sees the change happen. At the highlight beat the earlier value dims and the change counts in. The values sit side by side at 16:9, and one above the other at 9:16 or when they are too wide to sit side by side. Values too wide even for that shrink until they fit, down to half their size; values wider still are an error asking you to use `compact: short`.
 
-The change is always signed. In percent it is a whole number from 10% up (`−72%`) and keeps one decimal below (`+4.5%`); as a difference it uses the chart's `number` format (`+$150M`). With `trend: auto` a rise is drawn in the theme's `positive` color and a fall in its `negative` color; use `trend: none` when a rise is bad news, such as costs.
+The change is always signed. In percent it is a whole number from 10% up (`−72%`) and keeps one decimal below (`+4.5%`); as a difference it uses the chart's `number` format (`+$150M`). With `number: { negative: parentheses }` a fall is in parentheses, `(72%)`, and a rise keeps its plus sign. With `trend: auto` a rise is drawn in the theme's `positive` color and a fall in its `negative` color; use `trend: none` when a rise is bad news, such as costs.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
@@ -452,7 +454,7 @@ Default `duration`: 6.
 
 How a starting value becomes a total through increases and decreases, e.g. revenue becoming profit.
 
-The start grows from zero. Each step then grows from where the previous one ended: up in the theme's `positive` color for an increase, down in its `negative` color for a decrease, with a thin line joining each bar to the next. The total, the start plus every step, grows last. At the highlight beat the highlighted bar turns to the `highlight` color and the others dim, keeping their colors. The start and the total show their value; each step shows its change with a sign (`−$5.0M`, `+$500K`).
+The start grows from zero. Each step then grows from where the previous one ended: up in the theme's `positive` color for an increase, down in its `negative` color for a decrease, with a thin line joining each bar to the next. The total, the start plus every step, grows last. At the highlight beat the highlighted bar turns to the `highlight` color and the others dim, keeping their colors. The start and the total show their value; each step shows its change with a sign (`−$5.0M`, `+$500K`), or a fall in parentheses with `negative: parentheses` (`($5.0M)`).
 
 Bars are drawn as columns or rows, as for bar charts (`layout`); rows have no joining lines. The running total must stay at zero or above in version 1.
 
@@ -784,7 +786,7 @@ The file gives the chart's data fields, listed below; every other field, such as
 - The file is UTF-8, with or without a byte order mark. In Excel, save it as *CSV UTF-8*.
 - Empty rows and spaces around cells are ignored.
 - Text is shown as written. Years and dates need no quotes: `2016` in a label column stays the text `2016`.
-- A number is written plainly, `1234.5`, or the way `meta.locale` writes numbers: `1.234,5` in `tr-TR`, with or without its group separators. Where the two read the same text differently, the locale's way wins: in `tr-TR`, `1.234` is one thousand two hundred and thirty-four. Leave out units, currencies and percent signs (`$12M` is an error) and format the numbers with `number`.
+- A number is written plainly, `1234.5`, or the way `meta.locale` writes numbers: `1.234,5` in `tr-TR`, with or without its group separators. A negative number has a minus sign, `-360`, or is in parentheses, as accounting exports write it: `(360)`. Where the two read the same text differently, the locale's way wins: in `tr-TR`, `1.234` is one thousand two hundred and thirty-four. Leave out units, currencies and percent signs (`$12M` is an error) and format the numbers with `number`.
 - An error in the file names the file, the row, counted as lines of the file, and the column: `charts[0].data: data/regions.csv, row 4, column "Revenue" is not a number: "187,5M"`.
 
 ### Excel workbooks

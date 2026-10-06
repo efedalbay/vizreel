@@ -355,16 +355,88 @@ def test_an_absolute_change_counts_in_the_unit_of_its_final_value() -> None:
 @pytest.mark.parametrize(
     ("text", "parts"),
     [
-        (f"{M}$1.85B", (M, "$", "1.85", "B")),
-        ("1,85\u00a0milyar TL", ("", "", "1,85", "\u00a0milyar TL")),
-        ("%47", ("", "%", "47", "")),
-        (f"{M}%3", (M, "%", "3", "")),
-        ("+14,900%", ("", "+", "14,900", "%")),
-        ("1\u202f846,5", ("", "", "1\u202f846,5", "")),
-        ("7", ("", "", "7", "")),
-        ("n/a", ("", "n/a", "", "")),
+        (f"{M}$1.85B", (M, "$", "1.85", "B", "")),
+        ("1,85 milyar TL", ("", "", "1,85", " milyar TL", "")),
+        ("%47", ("", "%", "47", "", "")),
+        (f"{M}%3", (M, "%", "3", "", "")),
+        ("+14,900%", ("", "+", "14,900", "%", "")),
+        ("1 846,5", ("", "", "1 846,5", "", "")),
+        ("7", ("", "", "7", "", "")),
+        ("n/a", ("", "n/a", "", "", "")),
+        ("($1.85B)", ("(", "$", "1.85", "B", ")")),
+        ("(%12)", ("(", "%", "12", "", ")")),
     ],
 )
-def test_split_number_text(text: str, parts: tuple[str, str, str, str]) -> None:
+def test_split_number_text(text: str, parts: tuple[str, str, str, str, str]) -> None:
     assert split_number_text(text) == parts
     assert "".join(parts) == text
+
+
+PARENS = NumberFormat(negative="parentheses")
+
+
+@pytest.mark.parametrize(
+    ("value", "fmt", "locale", "text"),
+    [
+        (-360, PARENS, "en-US", "(360)"),
+        (360, PARENS, "en-US", "360"),
+        (-0.004, PARENS, "en-US", "0"),
+        (
+            -1_200_000,
+            NumberFormat(prefix="$", compact=True, negative="parentheses"),
+            "en-US",
+            "($1.2M)",
+        ),
+        (-375_000_000, NumberFormat(prefix="$", negative="parentheses"), "en-US", "($375,000,000)"),
+        (-12.5, NumberFormat(suffix="%", negative="parentheses"), "en-US", "(12.5%)"),
+        (-12.5, NumberFormat(prefix="%", negative="parentheses"), "tr-TR", "(%12,5)"),
+        (
+            -1_850_000_000,
+            NumberFormat(suffix=" TL", compact=True, negative="parentheses"),
+            "tr-TR",
+            "(1,85 milyar TL)",
+        ),
+        (-1846.5, PARENS, "es-ES", "(1846,5)"),
+        (-18460, PARENS, "es-ES", "(18.460)"),
+        (
+            -740_000_000,
+            NumberFormat(compact=True, negative="parentheses"),
+            "pt-BR",
+            "(740 milhões)",
+        ),
+        (-1846.5, NumberFormat(suffix=" €", negative="parentheses"), "fr-FR", "(1 846,5 €)"),
+        (-1_200_000, NumberFormat(prefix="$", compact=True), "en-US", f"{M}$1.2M"),
+    ],
+)
+def test_a_negative_number_can_be_written_in_parentheses(
+    value: float, fmt: NumberFormat, locale: str, text: str
+) -> None:
+    from vizreel.format.locales import LOCALES
+
+    assert format_number(value, fmt, locale=LOCALES[locale]) == text
+
+
+def test_values_shown_together_put_only_the_negative_ones_in_parentheses() -> None:
+    fmt = NumberFormat(prefix="$", compact=True, negative="parentheses")
+
+    assert format_numbers([1_250_000, -360_000, 0], fmt, locale=EN) == ["$1.25M", "($360K)", "$0"]
+
+
+def test_a_fall_is_in_parentheses_and_a_rise_keeps_its_plus_sign() -> None:
+    fmt = NumberFormat(prefix="$", compact=True, negative="parentheses")
+
+    assert format_change(-72, "percent", fmt, locale=EN) == "(72%)"
+    assert format_change(4.5, "percent", fmt, locale=EN) == "+4.5%"
+    assert format_change(0, "percent", fmt, locale=EN) == "0%"
+    assert format_change(-5_000_000, "absolute", fmt, locale=EN) == "($5M)"
+    assert format_change(500_000, "absolute", fmt, locale=EN) == "+$500K"
+    assert (
+        format_change(-370_000_000, "absolute", fmt, 2, locale=EN, unit_of=-1_850_000_000)
+        == "($0.37B)"
+    )
+
+
+def test_a_count_toward_a_negative_value_keeps_its_unit_in_parentheses() -> None:
+    fmt = NumberFormat(prefix="$", compact=True, negative="parentheses")
+
+    assert format_number(-370_000_000, fmt, locale=EN, unit_of=-1_850_000_000) == "($0.37B)"

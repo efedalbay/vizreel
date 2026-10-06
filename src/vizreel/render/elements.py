@@ -133,19 +133,19 @@ def number_text(
         hex_color: The color.
         affix_scale: Size of what precedes and follows the digits (a currency, a unit name,
             a percent sign), relative to the digits, on the same baseline. The minus sign
-            keeps the size of the digits.
+            and the parentheses of a negative number keep the size of the digits.
 
     Raises:
         RenderError: Pango could not lay out every character.
     """
     size = font_size(size_px)
     oversample = max(1.0, LAYOUT_FONT_SIZE / size)
-    sign, prefix, digits, suffix = split_number_text(content)
+    sign, prefix, digits, suffix, closing = split_number_text(content)
     markup = escape(content)
     if affix_scale != 1.0:
         small = f'<span size="{affix_scale:.0%}">'
         affixes = [(small + escape(part) + "</span>") if part else "" for part in (prefix, suffix)]
-        markup = escape(sign) + affixes[0] + escape(digits) + affixes[1]
+        markup = escape(sign) + affixes[0] + escape(digits) + affixes[1] + escape(closing)
     with _text_surface():
         mobject = MarkupText(
             f'<span font_features="tnum">{markup}</span>',
