@@ -4,9 +4,11 @@ Sizes are font sizes in pixels at 1080p, the unit of `docs/DESIGN.md`. They scal
 output resolution. Minimums enforce the legibility rules of `docs/DESIGN.md` §2.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from vizreel.validation import raise_rule_violations
 
 Color = Annotated[str, Field(pattern=r"^#[0-9A-Fa-f]{6}$")]
 """A color as #RRGGBB."""
@@ -157,6 +159,44 @@ class ThemeLogo(ThemeModel):
     """Its height, in pixels at 1080p. At least 16."""
 
 
+class RuledTexture(ThemeModel):
+    """Lines across the background, as on ledger paper."""
+
+    spacing: float = Field(ge=16)
+    """Distance between two lines, in pixels at 1080p. At least 16."""
+    color: Color
+    """Color of the lines."""
+    width: float = Field(default=2, gt=0)
+    """Width of the lines, in pixels at 1080p."""
+    margin: Color | None = None
+    """Color of a double line down the left side, between the edge and the content."""
+
+
+class ImageTexture(ThemeModel):
+    """A picture behind the chart, such as paper."""
+
+    file: Annotated[str, Field(min_length=1)]
+    """A PNG or JPEG file, relative to the theme file."""
+    fit: Literal["tile", "cover"] = "cover"
+    """`cover` scales the picture to cover the background; `tile` repeats it at its own size,
+    in pixels at 1080p."""
+
+
+class ThemeTexture(ThemeModel):
+    """What the background shows besides its color: ruled lines or a picture."""
+
+    ruled: RuledTexture | None = None
+    """Lines across the background."""
+    image: ImageTexture | None = None
+    """A picture behind the chart."""
+
+    @model_validator(mode="after")
+    def _check_one(self) -> Self:
+        if (self.ruled is None) == (self.image is None):
+            raise_rule_violations(type(self).__name__, [((), "give one of ruled or image")])
+        return self
+
+
 class Theme(ThemeModel):
     """A complete visual theme."""
 
@@ -174,3 +214,6 @@ class Theme(ThemeModel):
     """Draw a panel in the surface color behind charts in transparent output."""
     logo: ThemeLogo | None = None
     """A logo in the lower right corner of every chart, in the band of the source line."""
+    texture: ThemeTexture | None = None
+    """Ruled lines or a picture on the background: inside the panel in transparent output,
+    over the whole frame in opaque output."""

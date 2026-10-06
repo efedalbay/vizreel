@@ -9,6 +9,7 @@ All notable changes to vizreel are documented here. The format follows
 ### Added
 
 - A theme can bring its fonts as files: `fonts: { numbers: { file: fonts/IBMPlexMono-Regular.ttf } }` loads a TTF or OTF file next to the theme and reads its family from it, so the theme looks the same on any computer. Each role may now use its own family. `vizreel render` warns when the number font's digits do not share one width, which makes counting numbers shift.
+- Background textures: `texture: { ruled: { spacing: 54, color: ..., margin: ... } }` draws ledger lines with an optional double margin line, and `texture: { image: { file: paper.png, fit: tile } }` a picture. In transparent output the texture fills the panel inside its round corners; in opaque output it covers the frame. Sizes scale with the resolution, every aspect works, and `vizreel theme check` checks text against a picture's average color.
 
 ## [0.16.1] - 2026-10-01
 

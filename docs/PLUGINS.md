@@ -117,7 +117,7 @@ Import everything from `vizreel.plugin` and `vizreel.plugin.render`. The rest of
 | Module | Contains |
 |---|---|
 | `vizreel.plugin` | `ChartType`, `CHART_API_VERSION`, `BaseChart`, `SequencedChart`, `SpecModel`, `NumberFormat`, `Text`, `Duration`, `Theme`, `FontStyle`, `Layout`, `Box`, `Locale`, `RenderError`; `Table` and `TableError` for `from_table`; number formatting (`format_number`, `format_numbers`, `format_percent`, `format_change`, `change_amount`, `change_decimals`, `decimals_for`, `shared_decimals`, `whole_percents`, `MINUS_SIGN`); timing (`split_duration`, `Phases`, `check_reading_time`, `staggered_progress`, `sequential_progress`); sizes (`px`, `stack_gap`, `stroke_width`, `count_samples`, `fitting_number_size`, `SMALLEST_NUMBER_SCALE`); `arranged`, which picks a landscape or vertical geometry for the frame and tries both at 1:1; for tests, `render_spec`, `RenderOptions` and `ChartResult`. It does not import Manim. |
-| `vizreel.plugin.render` | Manim building blocks: `appear`, `header`, `source_line`, `panel`, `text`, `text_block`, `wrapped_block`, `TextBlock`, `line_metrics`, `NumberGlyphs`, `stack`, `bounds`, `check_fits`, `color`, `easing`, `fade_away`, `redrawn_shapes`. It imports Manim. |
+| `vizreel.plugin.render` | Manim building blocks: `appear`, `header`, `source_line`, `panel` (with the theme's texture, a group), `text`, `text_block`, `wrapped_block`, `TextBlock`, `line_metrics`, `NumberGlyphs`, `stack`, `bounds`, `check_fits`, `color`, `easing`, `fade_away`, `redrawn_shapes`. It imports Manim. |
 
 Every name has a docstring. The built-in chart types in [`src/vizreel/charts`](https://github.com/efedalbay/vizreel/tree/main/src/vizreel/charts) use the same functions and are worth reading.
 

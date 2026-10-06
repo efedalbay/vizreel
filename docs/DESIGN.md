@@ -32,7 +32,7 @@ Sizes are defined relative to a 1080p frame and scale with resolution. They refe
 - **Text wears text colors.** Labels and values use `text` or `muted` from the theme, never a series color. A colored mark next to the label carries identity.
 - **Direct labels over legends** for 1–3 series. A legend appears only when two or more series exist and direct labels would collide.
 - **Selective labels.** Label the first value, the last value and the highlighted value. Never a number on every point.
-- **Recessive structure.** Grid lines and axes use the `grid` color at thin weight, or are omitted. Data is the brightest thing on screen.
+- **Recessive structure.** Grid lines and axes use the `grid` color at thin weight, or are omitted. Data is the brightest thing on screen. A background texture (ruled paper, a picture) is quieter still: close to the paper's color, never moving, and checked so text stays readable on it.
 - Numbers use the theme's `numbers` font with tabular figures, so counting animations do not jitter.
 
 ## 3. Motion

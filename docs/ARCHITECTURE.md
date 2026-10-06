@@ -94,6 +94,7 @@ vizreel/
 │   │   ├── numbers_text.py  ← counting numbers composed from cached glyphs
 │   │   ├── scales.py        ← axis ranges, ticks, label placement, text wrapping (pure functions)
 │   │   ├── transcode.py     ← ProRes and PNG-sequence output from Manim's mov (PyAV)
+│   │   ├── texture.py       ← ruled lines or a picture on the panel or the opaque frame
 │   │   └── fonts.py         ← register bundled and theme font files with Pango
 │   ├── plugin/              ← the public API for chart types in other packages
 │   │   ├── __init__.py      ← contract, models, formatting, timing (no Manim)
@@ -208,6 +209,7 @@ A theme is a YAML file validated by `themes/models.py`. It contains:
 - `motion`: `easing` (ease-out curves only), `title_fade`, `structure`, `stagger`, `highlight`, `hold`, in seconds, and the optional `entrance`, `exit` and `exit_time` (see [Motion](#motion)).
 - `background_panel`: whether to draw a rounded panel behind the chart when rendering with transparency.
 - `logo`: an optional image and its height, drawn in the lower right corner of every chart (see below).
+- `texture`: optional ruled lines or a picture on the background. `elements.panel` returns the panel's color with the texture above it (lines as shapes, a picture cut to the round corners with Pillow), so every chart type, plugins included, gets it from the panel it already draws. In opaque output `render/texture.py` paints the frame's background with Pillow and gives it to the camera as its background image, so it never moves and an exit leaves it in place.
 - `description`: optional one line shown by `vizreel themes list`.
 
 `themes/check.py` checks a theme with pure functions: WCAG contrast of text and data colors against the panel and background, and the CIEDE2000 difference between colors that appear side by side, with normal vision and simulated protanopia, deuteranopia and tritanopia. `vizreel theme check` runs it; built-in themes must pass.

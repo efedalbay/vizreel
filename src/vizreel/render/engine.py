@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from vizreel.charts.base import Continuation
 from vizreel.charts.registry import BUILT_IN, chart_registry
@@ -20,6 +20,9 @@ from vizreel.spec.loader import load_spec
 from vizreel.spec.models import BaseChart, Motion, SequencedChart, Spec
 from vizreel.themes.loader import load_theme
 from vizreel.themes.models import Theme
+
+if TYPE_CHECKING:
+    from vizreel.render.scene import ChartScene
 
 Quality = Literal["preview", "final"]
 OutputFormat = Literal["mov", "webm", "mp4", "prores", "png"]
@@ -405,6 +408,8 @@ def render_chart(
                 continuation,
                 relayout=(lambda fitted: chart_type(chart, theme, fitted, locale)) if fit else None,
             )
+            if theme.texture is not None and not settings.transparent:
+                _use_background(scene, theme, layout, settings, Path(media_dir))
             scene.render()
             movie = Path(scene.renderer.file_writer.movie_file_path)
             if settings.format == "prores":
@@ -422,6 +427,22 @@ def render_chart(
                     assert isinstance(camera, Camera)
                     camera.get_image().save(still_path)
     return tuple(dict.fromkeys(scene.chart_type.warnings))
+
+
+def _use_background(
+    scene: "ChartScene", theme: Theme, layout: Layout, settings: FrameSettings, folder: Path
+) -> None:
+    """Give an opaque clip the theme's texture over its whole frame, as its background."""
+    from manim import Camera
+
+    from vizreel.render.texture import save_background
+
+    camera = scene.renderer.camera
+    assert isinstance(camera, Camera)
+    path = save_background(theme, layout, settings.width, settings.height, folder / "bg.png")
+    camera.background_image = str(path)
+    camera.init_background()
+    camera.reset()
 
 
 def _move(source: Path, target: Path) -> None:

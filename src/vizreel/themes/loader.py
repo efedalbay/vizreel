@@ -77,7 +77,7 @@ def load_theme(ref: str, base_dir: Path) -> Theme:
         theme = Theme.model_validate(data)
     except ValidationError as exc:
         raise ThemeError(str(path), [_issue_from_error(error) for error in exc.errors()]) from None
-    return _with_logo_path(theme, path)
+    return _with_texture_path(_with_logo_path(theme, path), path)
 
 
 LOGO_SUFFIXES = (".png", ".jpg", ".jpeg", ".svg")
@@ -110,6 +110,8 @@ def theme_input_files(theme: Theme) -> list[Path]:
     styles = (fonts.heading, fonts.body, fonts.numbers)
     files = [theme.logo.file] if theme.logo else []
     files += [style.file for style in styles if style.file]
+    if theme.texture and theme.texture.image:
+        files.append(theme.texture.image.file)
     return [Path(file) for file in dict.fromkeys(files)]
 
 
@@ -175,6 +177,44 @@ def _read_font_files(data: dict[str, Any], path: Path) -> list[InputIssue]:
             continue
         fonts[role] = {**style, "family": family, "file": str(font.resolve())}
     return issues
+
+
+TEXTURE_SUFFIXES = (".png", ".jpg", ".jpeg")
+"""The picture files a theme texture can be."""
+
+
+def _with_texture_path(theme: Theme, path: Path) -> Theme:
+    """Return the theme with its texture picture as a full path, checking the file.
+
+    Raises:
+        ThemeError: The picture is missing, not a PNG or JPEG file, or cannot be read.
+    """
+    texture = theme.texture
+    if texture is None or texture.image is None:
+        return theme
+    reference = texture.image.file
+    picture = path.parent / reference
+    if picture.suffix.lower() not in TEXTURE_SUFFIXES:
+        message = f"{reference} is not a PNG or JPEG file"
+    elif not picture.is_file():
+        message = f"{reference} was not found in {picture.parent}"
+    elif not _readable_picture(picture):
+        message = f"{reference} cannot be read as a picture"
+    else:
+        image = texture.image.model_copy(update={"file": str(picture.resolve())})
+        return theme.model_copy(update={"texture": texture.model_copy(update={"image": image})})
+    raise ThemeError(str(path), [InputIssue("texture.image.file", message)])
+
+
+def _readable_picture(path: Path) -> bool:
+    from PIL import Image, UnidentifiedImageError
+
+    try:
+        with Image.open(path) as image:
+            image.load()
+    except (OSError, UnidentifiedImageError):
+        return False
+    return True
 
 
 def _issue_from_error(error: ErrorDetails) -> InputIssue:

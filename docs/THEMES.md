@@ -188,6 +188,33 @@ Seconds, except `easing`, `entrance` and `exit`. A spec can override `easing`, `
 
 `true` to draw a panel in the `surface` color behind charts in transparent output, because the footage underneath is unknown.
 
+### `texture` (optional)
+
+Ruled lines or a picture on the background, such as ledger paper or a manila folder. In transparent output it fills the background panel, inside its round corners, and appears and leaves with it; with `background_panel: false` there is none. In opaque output (`mp4`) it covers the whole frame and never moves. It is drawn on the `surface` color in the panel and on the `background` color over the frame, and always behind the chart. Give one of:
+
+`ruled`, lines across the background:
+
+| Field | Used for | Minimum |
+|---|---|---|
+| `spacing` | Distance between two lines, in pixels at 1080p | 16 |
+| `color` | Color of the lines. Keep them faint, close to the paper's color, so text stays easy to read over them | — |
+| `width` | Width of the lines, in pixels at 1080p. Optional, 2 by default | more than 0 |
+| `margin` | Optional. Color of a double line down the left side, halfway between the edge and the content | — |
+
+`image`, a picture behind the chart:
+
+| Field | Used for | Minimum |
+|---|---|---|
+| `file` | A PNG or JPEG file, relative to the theme file. A missing file, or one of another kind, is an error when the theme loads | — |
+| `fit` | `cover` (default) scales the picture to cover the background, cropping what does not fit; `tile` repeats it at its own size, its pixels taken as pixels at 1080p | — |
+
+```yaml
+texture:
+  ruled: { spacing: 54, color: "#BCD0C2", width: 2, margin: "#B8322A" }
+```
+
+Sizes are pixels at 1080p and scale with the resolution, so lines are as far apart in a 4K clip, a vertical one or a square one as in 1080p. `vizreel theme check` checks the text and data colors against a picture's average color too, besides `surface` and `background`.
+
 ### `logo` (optional)
 
 A logo drawn in the lower right corner of every chart, at the right end of the source line's band, which grows to fit it; a `stat` puts it in the lower right corner of its card. It appears with the chart's first animation and leaves with the clip's exit.

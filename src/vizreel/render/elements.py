@@ -390,8 +390,11 @@ def leave(mobjects: list[Mobject], theme: Theme, center: tuple[float, float]) ->
     return UpdateFromAlphaFunc(Group(*mobjects), step)  # type: ignore[arg-type]
 
 
-def panel(box: Box, theme: Theme) -> RoundedRectangle:
-    """Build the background panel covering `box`. It is drawn behind everything else."""
+def panel(box: Box, theme: Theme) -> Mobject:
+    """Build the background panel covering `box`. It is drawn behind everything else.
+
+    With a theme texture it is a group: the panel's color, then its ruled lines or picture.
+    """
     radius = min(px(theme.sizes.panel_radius), box.width / 2, box.height / 2)
     rectangle = RoundedRectangle(
         width=box.width,
@@ -403,7 +406,12 @@ def panel(box: Box, theme: Theme) -> RoundedRectangle:
     )
     rectangle.move_to((*box.center, 0.0))
     rectangle.set_z_index(PANEL_Z_INDEX)
-    return rectangle
+    if theme.texture is None:
+        return rectangle
+    from vizreel.render.texture import panel_texture
+
+    margin_x = box.left + px(theme.sizes.panel_padding) / 2
+    return Group(rectangle, *panel_texture(box, theme, margin_x, radius))
 
 
 def bounds(mobject: Mobject) -> Box:

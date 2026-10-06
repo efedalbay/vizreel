@@ -188,6 +188,9 @@ def check_theme(theme: Theme) -> list[CheckResult]:
     """Run every contrast and color separation check on a theme."""
     colors = theme.colors
     backgrounds = {"colors.surface": colors.surface, "colors.background": colors.background}
+    if theme.texture is not None and theme.texture.image is not None:
+        # Text sits on the picture, so it is checked against the picture's average color.
+        backgrounds["texture.image"] = average_color(theme.texture.image.file)
     text_roles = {"colors.text": colors.text, "colors.muted": colors.muted}
     mark_roles = {
         "colors.accent": colors.accent,
@@ -239,6 +242,18 @@ def check_theme(theme: Theme) -> list[CheckResult]:
                 )
             )
     return results
+
+
+def average_color(path: str) -> str:
+    """The average color of a picture file, as #RRGGBB, ignoring transparent parts."""
+    from PIL import Image
+
+    with Image.open(path) as picture:
+        rgba = picture.convert("RGBA")
+    pixel = rgba.resize((1, 1), Image.Resampling.BOX).getpixel((0, 0))
+    assert isinstance(pixel, tuple)
+    red, green, blue = pixel[:3]
+    return f"#{red:02X}{green:02X}{blue:02X}"
 
 
 def _pairs(roles: list[str]) -> list[tuple[str, str]]:
