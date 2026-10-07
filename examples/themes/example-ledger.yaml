@@ -1,0 +1,62 @@
+# An example theme that looks like a ledger page, for the fictional company Northwind:
+# cream paper with green lines and a red margin, numbers in a monospaced font, and the
+# highlighted value ringed in red, as if with a pen. Use it from a spec with a path relative
+# to the spec file:
+#
+#   meta:
+#     theme: themes/example-ledger.yaml
+#
+# Every field is described in docs/THEMES.md. Check your own theme with:
+#
+#   vizreel theme check examples/themes/example-ledger.yaml
+
+description: A ledger page, with figures ringed in red.
+
+colors:
+  background: "#ECE4D0"   # the paper, in opaque (mp4) output
+  surface: "#ECE4D0"      # the paper, in the panel of transparent output
+  text: "#1E2722"
+  muted: "#4A453C"
+  grid: "#8FA898"
+  accent: "#6F8478"
+  positive: "#2E6B4E"
+  negative: "#A8322A"
+  highlight: "#2D7F5E"
+  series: ["#B06A1C", "#8A4F2A", "#7A4B86"]
+  mark: "#B8322A"         # the pen of the highlight ring
+  dim_opacity: 0.45
+
+fonts:
+  heading: { family: Inter, weight: semibold }
+  body: { family: Inter, weight: regular }
+  numbers: { file: fonts/IBMPlexMono-Regular.ttf }  # loaded from the file, OFL
+
+sizes:                    # pixels at 1080p
+  title: 64
+  subtitle: 38
+  big_number: 190
+  affix_scale: 0.7
+  label: 38
+  value: 38
+  caption: 28
+  panel_radius: 6
+  panel_padding: 84
+  line: 6
+  grid_line: 2
+  dot: 16
+
+motion:                   # seconds
+  easing: ease_out_cubic
+  title_fade: 0.5
+  structure: 0.6
+  stagger: 0.08
+  highlight: 0.8
+  hold: 1.5
+  entrance: rise
+
+background_panel: true
+
+highlight_mark: ring
+
+texture:
+  ruled: { spacing: 54, color: "#C9D6CB", width: 2, margin: "#C4554C" }

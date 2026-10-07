@@ -109,8 +109,9 @@ vizreel/
 │   ├── showcase.yaml        ← one of every chart type (fictional data)
 │   ├── showcase-tr.yaml     ← the showcase in Turkish, numbers written for tr-TR
 │   ├── brand.yaml           ← charts in the example brand theme
+│   ├── ledger.yaml          ← charts in the example ledger theme: texture, font file, ring
 │   ├── data.yaml, data/     ← charts that read their data from CSV files and a workbook
-│   ├── themes/example-brand.yaml  ← a complete custom theme
+│   ├── themes/              ← example-brand.yaml, example-ledger.yaml and its fonts/
 │   └── plugin/              ← vizreel-dots, an example plugin package
 ├── scripts/
 │   └── readme_gifs.py       ← development tool: README GIFs

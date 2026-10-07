@@ -22,7 +22,7 @@ meta:
   theme: themes/example-brand.yaml
 ```
 
-`examples/themes/example-brand.yaml` is a complete custom theme to start from, and `examples/brand.yaml` uses it:
+`examples/themes/example-ledger.yaml` is a ledger page, with ruled paper, its number font as a file, and values ringed in red, used by `examples/ledger.yaml`. `examples/themes/example-brand.yaml` is a complete custom theme to start from, and `examples/brand.yaml` uses it:
 
 ```yaml
 description: Northwind brand colors on a navy panel.

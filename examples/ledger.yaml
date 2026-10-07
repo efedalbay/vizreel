@@ -1,0 +1,38 @@
+# Charts on a ledger page: ruled paper, a font loaded from a file, losses in parentheses, and
+# the highlighted value ringed in red. Theme: themes/example-ledger.yaml. All data is fictional.
+version: 1
+meta:
+  title: Northwind ledger example
+  theme: themes/example-ledger.yaml
+
+charts:
+  - id: ledger-check
+    type: bar
+    title: One check, one company
+    subtitle: Contoso's offer for Northwind, against every other offer
+    bars:
+      - { label: "Every other offer", value: 311000000 }
+      - { label: "Contoso, one check", value: 375000000 }
+    number: { prefix: "$", compact: true }
+    highlight: { label: "Contoso, one check" }
+    source: "Source: example data"
+
+  - id: ledger-loss
+    type: stat
+    value: -360000000
+    label: Northwind's loss in 2023
+    number: { prefix: "$", compact: true, negative: parentheses }
+    trend: down
+    duration: 3.5
+
+  - id: ledger-year
+    type: waterfall
+    title: Where Northwind's revenue went
+    start: { label: Revenue, value: 520000000 }
+    steps:
+      - { label: Robots, value: -310000000 }
+      - { label: Kitchens, value: -190000000 }
+      - { label: Grants, value: 20000000 }
+    end: { label: Left over }
+    number: { prefix: "$", compact: true, negative: parentheses }
+    source: "Source: example data"

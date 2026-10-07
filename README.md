@@ -214,7 +214,7 @@ meta:
   theme: themes/my-brand.yaml
 ```
 
-A theme can also carry your logo, drawn in the corner of every chart, and named brand colors, which a race gives to companies so each races in its own color. Start from [`examples/themes/example-brand.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/themes/example-brand.yaml), and run `vizreel theme check` on it to test its contrast and its colors for color vision deficiency. The [theme reference](https://github.com/efedalbay/vizreel/blob/main/docs/THEMES.md) describes every field.
+A theme can also carry your logo, drawn in the corner of every chart; named brand colors, which a race gives to companies so each races in its own color; its fonts as files, so it looks the same on any computer; ruled lines or a picture behind the chart, such as ledger paper; and a pen ring around the highlighted value. [`examples/themes/example-ledger.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/themes/example-ledger.yaml) puts these together. Start from [`examples/themes/example-brand.yaml`](https://github.com/efedalbay/vizreel/blob/main/examples/themes/example-brand.yaml), and run `vizreel theme check` on it to test its contrast and its colors for color vision deficiency. The [theme reference](https://github.com/efedalbay/vizreel/blob/main/docs/THEMES.md) describes every field.
 
 ## Using the clips in a video editor
 

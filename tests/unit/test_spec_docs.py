@@ -84,3 +84,16 @@ def test_example_brand_theme_loads_by_path_and_passes_checks() -> None:
     assert spec.meta.theme == "themes/example-brand.yaml"
     assert theme.description == "Northwind brand colors on a navy panel."
     assert all(result.passed for result in check_theme(theme))
+
+
+def test_example_ledger_theme_brings_its_font_and_passes_checks() -> None:
+    from vizreel.themes.check import check_theme
+    from vizreel.themes.loader import load_theme
+
+    spec_path = ROOT / "examples" / "ledger.yaml"
+    spec = load_spec(spec_path)
+    theme = load_theme(spec.meta.theme, spec_path.parent)
+
+    assert theme.fonts.numbers.family == "IBM Plex Mono"
+    assert theme.highlight_mark == "ring" and theme.texture is not None
+    assert all(result.passed for result in check_theme(theme))
