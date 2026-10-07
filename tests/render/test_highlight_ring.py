@@ -135,3 +135,59 @@ def test_a_stat_too_short_for_its_ring_keeps_its_duration_and_says_so(spec: Path
         "duration 2.5s leaves no time to draw the highlight ring after the count, so the clip "
         "has none; it needs at least 3.1s",
     )
+
+
+TIMELINE = """\
+version: 1
+meta: { theme: ring.yaml, cues: true }
+charts:
+  - id: history
+    type: timeline
+    events:
+      - { date: "2016", label: "Founded with one robot kitchen" }
+      - { date: "Nov 2018", label: "Raises $375M in one round" }
+      - { date: "Jan 2020", label: "Shuts down its pizza business", emphasis: true }
+      - { date: "Jun 2023", label: "Closes for good" }
+  - id: told-history
+    type: timeline
+    events:
+      - { date: "2016", label: "Founded with one robot kitchen" }
+      - { date: "Jan 2020", label: "Shuts down its pizza business" }
+      - { date: "Jun 2023", label: "Closes for good" }
+    sequence: ["2016", "Jan 2020"]
+"""
+
+
+@pytest.mark.parametrize("aspect", ["16:9", "9:16", "1:1"])
+def test_a_timeline_rings_the_emphasized_date_clear_of_every_label(spec: Path, aspect: str) -> None:
+    import json
+
+    from vizreel.themes.loader import load_theme
+
+    spec.write_text(TIMELINE, encoding="utf-8")
+    muted = load_theme("ring.yaml", spec.parent).colors.muted
+    [result] = render(spec, "history", aspect)
+
+    assert result.video is not None and result.cues is not None
+    clip = frames(result.video)
+    cues = json.loads(result.cues.read_text(encoding="utf-8"))["cues"]
+    [highlight] = [cue for cue in cues if cue["name"] == "highlight"]
+    before, after = clip[highlight["start_frame"] - 1], clip[-1]
+    target = [int(muted[index : index + 2], 16) for index in (1, 3, 5)]
+    # Before the beat every label is muted; the ring drawn in the beat covers none of them.
+    labels = np.all(np.abs(before - target) <= 40, axis=2)
+    ring = pen(after)
+    assert ring.sum() > 100
+    assert (ring & labels).sum() == 0
+
+
+def test_a_timeline_ring_moves_with_a_sequence_and_the_clips_cut_together(spec: Path) -> None:
+    spec.write_text(TIMELINE, encoding="utf-8")
+
+    results = render(spec, "told-history")
+
+    first, second = (frames(result.video) for result in results if result.video)
+    assert np.array_equal(first[-1], second[0])
+    before, after = pen(second[0]), pen(second[-1])
+    assert before.sum() > 100 and after.sum() > 100
+    assert np.nonzero(after)[1].mean() > np.nonzero(before)[1].mean()

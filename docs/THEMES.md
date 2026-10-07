@@ -197,6 +197,7 @@ Seconds, except `easing`, `entrance` and `exit`. A spec can override `easing`, `
 `none` (default) or `ring`. With `ring`, the highlight beat also draws a ring around the highlighted value, as if with a pen: a slightly leaning ellipse whose two ends pass each other, drawn from its start to its end in the `mark` color. It never crosses the value's text, and its size follows the text, so it works in every frame shape. Chart types that draw it:
 
 - `bar`: around the value of the highlighted bar, as columns or rows. Told as a sequence, the ring moves from value to value with the emphasis.
+- `timeline`: around the date of the emphasized event, which keeps its own highlight color. Every event leaves room under its date for the ring, so labels stay on one row and the ring never crosses one. Told as a sequence, the ring moves from date to date.
 - `stat`: around the number, drawn after it has counted, in a beat of the theme's `highlight` length. The card grows to hold the ring. A `duration` too short for that beat keeps its length; the clip has no ring, and `vizreel render` warns how long it would need.
 
 Other chart types keep their usual highlight.

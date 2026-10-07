@@ -2,6 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Literal
 
 from vizreel.charts.base import ChartType, arranged, check_reading_time, split_duration
@@ -311,6 +312,7 @@ class TimelineChartType(ChartType):
         scene.remove(drawing_axis, *appearing)
         scene.add(geometry.axis(1.0), *stems, *dots)
         self._final = (blocks, dots, stems, dots[0].width)
+        self._ring: VMobject | None = None
 
         if emphasized is not None:
             scene.play(
@@ -325,7 +327,9 @@ class TimelineChartType(ChartType):
         """Emphasize the event dated `item` and dim the other events' marks.
 
         The emphasized event's dot grows and turns to the highlight color, as does its date;
-        the other events' dots and stems dim and their text returns to its own colors.
+        the other events' dots and stems dim and their text returns to its own colors. With the
+        theme's `highlight_mark: ring`, a ring is also drawn around the emphasized date, and
+        the ring around the date emphasized before fades away.
         """
         from manim import ManimColor, interpolate_color
 
@@ -356,6 +360,18 @@ class TimelineChartType(ChartType):
                     date.animate.set_color(colors.text),
                     description.animate.set_color(colors.muted),
                 ]
+        if self.theme.highlight_mark == "ring":
+            from vizreel.render import elements
+
+            if self._ring is not None:
+                animations.append(elements.erase_ring(self._ring))
+            emphasized = next(
+                blocks[index][0]
+                for index, event in enumerate(self.chart.events)
+                if event.date == item
+            )
+            self._ring = elements.highlight_ring(elements.bounds(emphasized), self.theme)
+            animations.append(elements.draw_ring(self._ring))
         return animations
 
     def _event_block(
@@ -380,7 +396,9 @@ class TimelineChartType(ChartType):
         description = elements.paragraph(lines, fonts.body, sizes.label, colors.muted, align)
         description.next_to(date, DOWN, aligned_edge=LEFT if align == "left" else ORIGIN)
         date_baseline = elements.baseline(date, event.date, fonts.heading, sizes.label)
-        first_baseline = date_baseline - gap / 2 - label_metrics.ascent
+        # With the theme's highlight ring, the label leaves room for a ring around the date.
+        below_date = max(gap / 2, self._ring_room + gap / 4)
+        first_baseline = date_baseline - below_date - label_metrics.ascent
         description.shift(
             (
                 0.0,
@@ -393,6 +411,29 @@ class TimelineChartType(ChartType):
         top = date_baseline + date_metrics.ascent
         bottom = last_baseline - label_metrics.descent
         return VGroup(date, description), top, bottom
+
+    @cached_property
+    def _ring_room(self) -> float:
+        """How far below its baseline a highlight ring around any event's date reaches.
+
+        Zero without the theme's ring. Every event leaves the same room, so labels stay on one
+        row and any event can be emphasized, as in a sequence.
+        """
+        if self.theme.highlight_mark != "ring":
+            return 0.0
+        from vizreel.render import elements
+        from vizreel.render.layout import px
+
+        assert isinstance(self.chart, TimelineChart)
+        fonts, sizes, colors = self.theme.fonts, self.theme.sizes, self.theme.colors
+        pen = px(sizes.line * elements.RING_STROKE) / 2
+        reaches = []
+        for event in self.chart.events:
+            date = elements.text(event.date, fonts.heading, sizes.label, colors.text)
+            baseline = elements.baseline(date, event.date, fonts.heading, sizes.label)
+            ring = elements.highlight_ring(elements.bounds(date), self.theme)
+            reaches.append(baseline - float(ring.get_bottom()[1]) + pen)
+        return max(reaches)
 
     def _fits(self) -> Callable[[str, float], bool]:
         """Return a check whether a line of label text fits a width, remembering widths."""

@@ -1,5 +1,5 @@
 # Charts on a ledger page: ruled paper, a font loaded from a file, losses in parentheses, and
-# the highlighted value ringed in red. Theme: themes/example-ledger.yaml. All data is fictional.
+# the highlighted value, or a timeline's emphasized date, ringed in red. Theme: themes/example-ledger.yaml. All data is fictional.
 version: 1
 meta:
   title: Northwind ledger example
@@ -35,4 +35,14 @@ charts:
       - { label: Grants, value: 20000000 }
     end: { label: Left over }
     number: { prefix: "$", compact: true, negative: parentheses }
+    source: "Source: example data"
+
+  - id: ledger-history
+    type: timeline
+    title: Northwind's last four years
+    events:
+      - { date: "2016", label: "Founded with one robot kitchen" }
+      - { date: "Nov 2018", label: "Raises $375M in one round" }
+      - { date: "Jan 2020", label: "Shuts down its pizza business", emphasis: true }
+      - { date: "Jun 2023", label: "Closes for good" }
     source: "Source: example data"

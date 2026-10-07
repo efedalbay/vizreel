@@ -126,12 +126,11 @@ class FontFile:
         JetBrains Mono Bold has weight class 558, nearest semibold; it may be called bold too.
         """
         words = self.style.lower().replace(" ", "").replace("-", "")
-        named = {weight for word, weight in WEIGHT_WORDS.items() if word in words}
-        # "ExtraBold" holds "bold" too; the longest word is the style's own.
-        if named:
-            longest = max((word for word in WEIGHT_WORDS if word in words), key=len, default="")
-            named = {WEIGHT_WORDS[longest]}
-        return {self.weight, *named}
+        # "ExtraBold" holds "bold" too; the longest word in the style is its own.
+        found = [word for word in WEIGHT_WORDS if word in words]
+        if not found:
+            return {self.weight}
+        return {self.weight, WEIGHT_WORDS[max(found, key=len)]}
 
 
 def read_font_file(path: Path) -> FontFile:

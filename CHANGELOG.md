@@ -12,6 +12,7 @@ All notable changes to vizreel are documented here. The format follows
 
 ### Added
 
+- The highlight ring in `timeline` charts: with `highlight_mark: ring`, the emphasized event's date is ringed in the `mark` color, with a `mark` cue, and every event leaves room under its date so the ring never crosses a label. `examples/ledger.yaml` has one.
 - Font weights `medium`, `extrabold` and `black`, and `stretch` (`condensed`, `semicondensed` and the other widths) for fonts installed in several widths.
 
 ## [0.17.0] - 2026-10-07

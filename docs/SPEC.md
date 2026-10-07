@@ -326,7 +326,7 @@ Events placed in order along a line: horizontal in a 16:9 frame, vertical in a 9
 
 The line draws from its start to its end, and each event appears as the line reaches it. Events are evenly spaced. On a horizontal line, labels sit below the line when each fits its own space in at most two lines; otherwise they alternate below and above the line, with more room and up to three lines each. On a vertical line, events run from top to bottom and each label sits to the right of its event, with the whole width for up to three lines. A date always stays on one line. A date or label that still does not fit is an error asking you to shorten it.
 
-At the highlight beat the emphasized event's dot grows and turns to the `highlight` color, its date turns to the `highlight` color, and the other events' marks dim.
+At the highlight beat the emphasized event's dot grows and turns to the `highlight` color, its date turns to the `highlight` color, and the other events' marks dim. A theme with `highlight_mark: ring` also rings the emphasized date, as if with a pen; every event then leaves room under its date for the ring.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
@@ -880,7 +880,7 @@ With `meta.cues: true` or `vizreel render --cues`, each clip gets a cue file nex
 | `structure` | Axes, grid lines and labels draw, and a race's first values grow. |
 | `reveal` | The data grows, draws or counts. It ends when the numbers stop counting. A `compare` has two: the earlier value, then the later one. |
 | `highlight` | The highlight beat; in a later clip of a sequence, the emphasis moving. |
-| `mark` | The theme's highlight ring is drawn (`highlight_mark: ring`): the moment for a pen sound. |
+| `mark` | The theme's highlight ring is drawn (`highlight_mark: ring`) around a bar's value, a stat's number or a timeline's date: the moment for a pen sound. |
 | `move` | Another animation, such as one of a chart type from a plugin that does not name it. |
 | `hold` | The final hold, in which nothing moves. |
 | `exit` | The clip leaves the screen (`motion.exit`). |
