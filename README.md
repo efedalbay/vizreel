@@ -4,7 +4,7 @@
 
 vizreel turns a short YAML file, with the data written in it or read from a CSV file or an Excel sheet, into animated chart clips that are ready to drop into a video editor: big numbers that count, bars that grow, lines that draw, races through the years. Each chart becomes its own clip, with a transparent background by default, so it sits directly over your footage.
 
-> **Status: 0.16.1, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
+> **Status: 0.17.0, an early release.** The spec format is version 1. See the [changelog](https://github.com/efedalbay/vizreel/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/efedalbay/vizreel/blob/main/docs/ROADMAP.md).
 
 | | |
 |---|---|
