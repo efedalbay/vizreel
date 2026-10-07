@@ -4,6 +4,16 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- A theme's font file is drawn with exactly its own face. Its weight and width are read from the file, so a condensed file such as Archivo Condensed no longer fails to load, and an ExtraBold file is no longer drawn with the Regular file of its family. A Light or Thin file, or two files drawn as the same face, are errors when the theme loads, and `vizreel theme check` loads the font files too.
+
+### Added
+
+- Font weights `medium`, `extrabold` and `black`, and `stretch` (`condensed`, `semicondensed` and the other widths) for fonts installed in several widths.
+
 ## [0.17.0] - 2026-10-07
 
 ### Added

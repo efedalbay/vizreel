@@ -296,7 +296,7 @@ def render_spec(
 
     from vizreel.render.fonts import check_theme_fonts, tabular_figures_warning
 
-    check_theme_fonts(theme)
+    theme = check_theme_fonts(theme)
     warning = tabular_figures_warning(theme) if charts else None
     if warning and on_warning:
         on_warning(warning)

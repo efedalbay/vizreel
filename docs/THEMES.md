@@ -131,8 +131,9 @@ Colors are `#RRGGBB`.
 | Field | Values |
 |---|---|
 | `family` | A font family name. The bundled family is `Inter`; another family must be installed, or come from `file`. Optional with `file`, which names it. |
-| `weight` | `regular` (default), `semibold` or `bold`. With `file`, give the weight of the file. |
-| `file` | Optional. A TTF or OTF font file, relative to the theme file, so the theme looks the same on a computer that does not have the font installed. Its family is read from the file; a `family` that names another is an error, and so is a file that is missing, of another kind or not a font. |
+| `weight` | `regular` (default), `medium`, `semibold`, `bold`, `extrabold` or `black`. Optional with `file`, whose weight is read from it; a `weight` the file does not have is an error. |
+| `stretch` | `normal` (default), or a width such as `condensed` or `semicondensed` (from `ultracondensed` to `ultraexpanded`), for a family installed in several widths. Optional with `file`, whose width is read from it. |
+| `file` | Optional. A TTF or OTF font file, relative to the theme file, so the theme looks the same on a computer that does not have the font installed. Its family, weight and width are read from the file, so the text is drawn with exactly that file even when other files of its family are loaded too. A `family` that names another is an error, and so is a file that is missing, of another kind, not a font, lighter than regular (a Light or Thin font), or drawn as the same face as another file of the theme. |
 
 Each role may use its own family, from a file or installed:
 
@@ -144,6 +145,8 @@ fonts:
 ```
 
 Keep the font files next to the theme and share the folder: the theme renders the same from any spec, on any computer. Check the license of a font before sharing its file; fonts under the SIL Open Font License, such as those of Google Fonts, may be shared.
+
+A condensed file, such as Archivo Condensed, is drawn condensed, and an ExtraBold or Black file as heavy as it is. `vizreel theme check` loads the font files too, so a font the text renderer cannot load is found before rendering.
 
 Numbers are drawn with tabular figures, so that a counting number does not shift sideways. `vizreel render` warns when the number font's digits do not share one width, as in fonts with old-style figures or with kerning between digits.
 

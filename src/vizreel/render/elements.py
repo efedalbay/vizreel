@@ -36,9 +36,17 @@ from vizreel.errors import RenderError
 from vizreel.format.numbers import split_number_text
 from vizreel.render.layout import LINE_STEP, Box, Layout, font_size, px, stack_gap, stroke_width
 from vizreel.render.scales import ring_path, wrap_text
-from vizreel.themes.models import FontStyle, FontWeight, Theme
+from vizreel.themes.fontfile import FontStretch, FontWeight
+from vizreel.themes.models import FontStyle, Theme
 
-_PANGO_WEIGHTS = {"regular": "NORMAL", "semibold": "SEMIBOLD", "bold": "BOLD"}
+_PANGO_WEIGHTS = {
+    "regular": "NORMAL",
+    "medium": "MEDIUM",
+    "semibold": "SEMIBOLD",
+    "bold": "BOLD",
+    "extrabold": "ULTRABOLD",
+    "black": "HEAVY",
+}
 PANEL_Z_INDEX = -1
 LAYOUT_FONT_SIZE = 150
 """Text is laid out at least this large (Manim font size) and scaled to its real size.
@@ -82,17 +90,32 @@ def text(content: str, style: FontStyle, size_px: float, hex_color: str) -> VMob
     size = font_size(size_px)
     oversample = max(1.0, LAYOUT_FONT_SIZE / size)
     with _text_surface():
-        mobject = Text(
-            content,
-            font=style.family,
-            weight=_PANGO_WEIGHTS[style.weight],
-            font_size=size * oversample,
-            color=color(hex_color),
-            disable_ligatures=True,
-            warn_missing_font=False,
-        )
-    # With ligatures disabled, Text has one submobject per character, spaces included.
-    _check_complete(mobject, content, len(content))
+        if style.stretch == "normal":
+            mobject: VMobject = Text(
+                content,
+                font=style.family,
+                weight=_PANGO_WEIGHTS[style.weight],
+                font_size=size * oversample,
+                color=color(hex_color),
+                disable_ligatures=True,
+                warn_missing_font=False,
+            )
+            # With ligatures disabled, Text has one submobject per character, spaces included.
+            expected = len(content)
+        else:
+            # Text cannot ask for a width; markup can.
+            mobject = MarkupText(
+                f'<span font_stretch="{style.stretch}">{escape(content)}</span>',
+                font=style.family,
+                weight=_PANGO_WEIGHTS[style.weight],
+                font_size=size * oversample,
+                color=color(hex_color),
+                disable_ligatures=True,
+                warn_missing_font=False,
+            )
+            # MarkupText has one submobject per visible character.
+            expected = sum(1 for char in content if not char.isspace())
+    _check_complete(mobject, content, expected)
     return mobject.scale(1 / oversample)
 
 
@@ -149,7 +172,7 @@ def number_text(
         markup = escape(sign) + affixes[0] + escape(digits) + affixes[1] + escape(closing)
     with _text_surface():
         mobject = MarkupText(
-            f'<span font_features="tnum">{markup}</span>',
+            f'<span font_features="tnum" font_stretch="{style.stretch}">{markup}</span>',
             font=style.family,
             weight=_PANGO_WEIGHTS[style.weight],
             font_size=size * oversample,
@@ -177,12 +200,14 @@ class LineMetrics:
 
 def line_metrics(style: FontStyle, size_px: float) -> LineMetrics:
     """Measure the ascent and descent of a font at a size."""
-    return _line_metrics(style.family, style.weight, size_px)
+    return _line_metrics(style.family, style.weight, style.stretch, size_px)
 
 
 @cache
-def _line_metrics(family: str, weight: FontWeight, size_px: float) -> LineMetrics:
-    style = FontStyle(family=family, weight=weight)
+def _line_metrics(
+    family: str, weight: FontWeight, stretch: FontStretch, size_px: float
+) -> LineMetrics:
+    style = FontStyle(family=family, weight=weight, stretch=stretch)
     capital, ascender, descender = text("Hdg", style, size_px, "#000000")
     baseline = float(capital.get_bottom()[1])
     top = max(float(capital.get_top()[1]), float(ascender.get_top()[1]))
@@ -195,14 +220,16 @@ def baseline(line: Mobject, content: str, style: FontStyle, size_px: float) -> f
     Text is positioned by its ink, which moves with the letters: a dotted capital I or an
     accent reaches higher, a descender lower. The baseline stays put.
     """
-    below = _ink_below_baseline(content.strip(), style.family, style.weight, size_px)
+    below = _ink_below_baseline(content.strip(), style.family, style.weight, style.stretch, size_px)
     return float(line.get_bottom()[1]) + below
 
 
 @cache
-def _ink_below_baseline(content: str, family: str, weight: FontWeight, size_px: float) -> float:
+def _ink_below_baseline(
+    content: str, family: str, weight: FontWeight, stretch: FontStretch, size_px: float
+) -> float:
     # "x" sits exactly on the baseline, so the ink of the rest is measured against it.
-    style = FontStyle(family=family, weight=weight)
+    style = FontStyle(family=family, weight=weight, stretch=stretch)
     reference, *rest = text("x" + content, style, size_px, "#000000")
     return float(reference.get_bottom()[1]) - float(VGroup(*rest).get_bottom()[1])
 
@@ -227,7 +254,7 @@ class TextBlock:
     size_px: float
 
     def _baseline(self, index: int) -> float:
-        line = self.mobject if isinstance(self.mobject, Text) else self.mobject[index]
+        line = self.mobject if len(self.lines) == 1 else self.mobject[index]
         return baseline(line, self.lines[index], self.style, self.size_px)
 
     def top(self) -> float:

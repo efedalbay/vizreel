@@ -8,6 +8,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from vizreel.themes.fontfile import FontStretch, FontWeight
 from vizreel.validation import raise_rule_violations
 
 Color = Annotated[str, Field(pattern=r"^#[0-9A-Fa-f]{6}$")]
@@ -26,8 +27,6 @@ growing a little."""
 Exit = Literal["none", "fade", "sink", "zoom"]
 """How a clip ends: on the complete chart, or with everything fading out, also sinking a
 little, or also shrinking a little."""
-
-FontWeight = Literal["regular", "semibold", "bold"]
 
 
 class ThemeModel(BaseModel):
@@ -80,7 +79,10 @@ class FontStyle(ThemeModel):
     family: Annotated[str, Field(min_length=1)]
     """Font family name, e.g. "Inter". Read from `file` when the theme gives one."""
     weight: FontWeight = "regular"
-    """Font weight."""
+    """Font weight, from regular to black. Read from `file` when the theme gives one."""
+    stretch: FontStretch = "normal"
+    """Font width, such as `condensed`, for a family installed in several widths. Read from
+    `file` when the theme gives one."""
     file: Annotated[str, Field(min_length=1)] | None = None
     """A TTF or OTF file with the font, relative to the theme file, so the theme looks the
     same on a computer that does not have the font installed."""

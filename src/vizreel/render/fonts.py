@@ -6,7 +6,8 @@ from functools import cache
 from pathlib import Path
 
 from vizreel.errors import RenderError
-from vizreel.themes.models import FontStyle, FontWeight, Theme
+from vizreel.themes.fontfile import FontStretch, FontWeight, read_font_file
+from vizreel.themes.models import FontStyle, Theme
 
 FONTS_DIR = Path(__file__).parents[1] / "assets" / "fonts"
 
@@ -33,30 +34,42 @@ def register_bundled_fonts() -> frozenset[str]:
     return _register(bundled_font_files())
 
 
-def check_theme_fonts(theme: Theme) -> None:
+def check_theme_fonts(theme: Theme) -> Theme:
     """Register the font files the theme brings, and check that every family is available.
+
+    Returns:
+        The theme with each font file's family as the text renderer lists it, which may
+        differ from the file's own name: on Windows, "Archivo Condensed" is listed as
+        "Archivo", in a condensed width.
 
     Raises:
         RenderError: A family is neither bundled, nor installed, nor in a file the theme
             brings.
     """
     available = register_bundled_fonts()
-    styles = [(role, getattr(theme.fonts, role)) for role in ("heading", "body", "numbers")]
-    files = [Path(style.file) for _, style in styles if style.file]
+    styles = {role: getattr(theme.fonts, role) for role in ("heading", "body", "numbers")}
+    files = [Path(style.file) for style in styles.values() if style.file]
     if files:
         available |= _register(files)
-    for role, style in styles:
-        if style.family in available:
-            continue
+    resolved = {}
+    for role, style in styles.items():
         if style.file:
+            names = read_font_file(Path(style.file)).names
+            listed = next((name for name in names if name in available), None)
+            if listed is None:
+                raise RenderError(
+                    f"the font file {Path(style.file).name} (theme fonts.{role}) holds the "
+                    f'family "{style.family}", which the text renderer could not load'
+                )
+            resolved[role] = style.model_copy(update={"family": listed})
+        elif style.family not in available:
             raise RenderError(
-                f"the font file {Path(style.file).name} (theme fonts.{role}) holds the family "
-                f'"{style.family}", which the text renderer could not load'
+                f'font "{style.family}" (theme fonts.{role}) is not installed. The bundled font '
+                "is Inter; a theme can also bring a font file with file:"
             )
-        raise RenderError(
-            f'font "{style.family}" (theme fonts.{role}) is not installed. The bundled font is '
-            "Inter; a theme can also bring a font file with file:"
-        )
+    if not resolved:
+        return theme
+    return theme.model_copy(update={"fonts": theme.fonts.model_copy(update=resolved)})
 
 
 def tabular_figures_warning(theme: Theme) -> str | None:
@@ -66,7 +79,7 @@ def tabular_figures_warning(theme: Theme) -> str | None:
     shift sideways. Call it after `check_theme_fonts`; it builds text, so it imports Manim.
     """
     style = theme.fonts.numbers
-    if _has_tabular_figures(style.family, style.weight):
+    if _has_tabular_figures(style.family, style.weight, style.stretch):
         return None
     return (
         f'the number font "{style.family}" (theme fonts.numbers) has no tabular figures, so '
@@ -75,10 +88,10 @@ def tabular_figures_warning(theme: Theme) -> str | None:
 
 
 @cache
-def _has_tabular_figures(family: str, weight: FontWeight) -> bool:
+def _has_tabular_figures(family: str, weight: FontWeight, stretch: FontStretch) -> bool:
     from vizreel.render.elements import number_text
 
-    style = FontStyle(family=family, weight=weight)
+    style = FontStyle(family=family, weight=weight, stretch=stretch)
     # Between two zeros the ink spans the digits' advances, not their own ink, which is
     # narrower than the advance for a digit such as 1 even with tabular figures.
     widths = [number_text(f"0{digit * 8}0", style, 100, "#000000").width for digit in "0123456789"]

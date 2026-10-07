@@ -364,9 +364,13 @@ def theme_check(
         bool, typer.Option("--verbose", "-v", help="List every check, not only failures.")
     ] = False,
 ) -> None:
-    """Check a theme for text contrast and color vision separation."""
+    """Check a theme for text contrast and color vision separation, and that its fonts load."""
+    from vizreel.render.fonts import check_theme_fonts
+
     with _reporting_errors(ctx):
-        results = check_theme(load_theme(theme, Path.cwd()))
+        loaded = load_theme(theme, Path.cwd())
+        check_theme_fonts(loaded)
+        results = check_theme(loaded)
     console = _stdout()
     for result in results:
         if verbose or not result.passed:

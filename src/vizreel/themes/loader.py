@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from pydantic_core import ErrorDetails
 
 from vizreel.errors import InputIssue, ThemeError
+from vizreel.themes.fontfile import LIGHTEST_CLASS, FontFile, read_font_file
 from vizreel.themes.models import Theme
 from vizreel.validation import format_location, issue_from_error, read_yaml_mapping, show
 
@@ -120,63 +121,105 @@ FONT_SUFFIXES = (".ttf", ".otf")
 FONT_ROLES = ("heading", "body", "numbers")
 
 
-def font_family(path: Path) -> str:
-    """Return the family name a font file holds, e.g. "IBM Plex Mono".
-
-    Raises:
-        OSError: The file is not a font.
-    """
-    from PIL import ImageFont
-
-    family, _ = ImageFont.truetype(str(path), 16).getname()
-    if not family:
-        raise OSError(f"{path} names no font family")
-    return family
-
-
 def _read_font_files(data: dict[str, Any], path: Path) -> list[InputIssue]:
-    """Give each font with a `file` the family that file holds and the file's full path.
+    """Give each font with a `file` the family, weight and width that file holds.
 
-    The data is changed in place, before validation, so the theme model always has a family.
+    The data is changed in place, before validation, so the theme model always has them and
+    the text renderer is asked for exactly the file's face: another weight or width would
+    draw another file of the family, or a fallback font.
 
     Returns:
-        What is wrong with the font files: one missing, not a TTF or OTF file, unreadable, or
-        holding another family than the one the theme names.
+        What is wrong with the font files: one missing, not a TTF or OTF file, unreadable,
+        lighter than regular, named otherwise than the theme names it, or drawn as the same
+        face as another file of its family.
     """
     fonts = data.get("fonts")
     if not isinstance(fonts, dict):
         return []
-    issues = []
+    issues: list[InputIssue] = []
+    faces: dict[tuple[str, str, str], tuple[str, str]] = {}
     for role in FONT_ROLES:
         style = fonts.get(role)
         reference = style.get("file") if isinstance(style, dict) else None
         if not isinstance(style, dict) or not isinstance(reference, str) or not reference:
             continue
         font = path.parent / reference
-        loc = f"fonts.{role}.file"
+        loc = f"fonts.{role}"
         if font.suffix.lower() not in FONT_SUFFIXES:
-            issues.append(InputIssue(loc, f"{reference} is not a TTF or OTF font file"))
+            issues.append(InputIssue(f"{loc}.file", f"{reference} is not a TTF or OTF font file"))
             continue
         if not font.is_file():
-            issues.append(InputIssue(loc, f"{reference} was not found in {font.parent}"))
+            issues.append(InputIssue(f"{loc}.file", f"{reference} was not found in {font.parent}"))
             continue
         try:
-            family = font_family(font)
-        except OSError:
-            issues.append(InputIssue(loc, f"{reference} cannot be read as a font"))
+            info = read_font_file(font)
+        except (OSError, ValueError):
+            issues.append(InputIssue(f"{loc}.file", f"{reference} cannot be read as a font"))
             continue
-        given = style.get("family")
-        if given is not None and given != family:
+        problem = _font_file_problem(style, reference, info)
+        if problem is not None:
+            issues.append(InputIssue(f"{loc}.{problem[0]}", problem[1]))
+            continue
+        face = (info.family, info.weight, info.stretch)
+        resolved = str(font.resolve())
+        if face in faces and faces[face][1] != resolved:
+            other_role, _ = faces[face]
             issues.append(
                 InputIssue(
-                    f"fonts.{role}.family",
-                    f'is "{given}" but {reference} holds the family "{family}"; leave out '
-                    "family or write it as the file names it",
+                    f"{loc}.file",
+                    f"{reference} and the file of fonts.{other_role} are both {info.family} "
+                    f"{info.weight}{_width_words(info.stretch)} to the text renderer, so one of "
+                    "them could not be drawn; use one of them for both roles",
                 )
             )
             continue
-        fonts[role] = {**style, "family": family, "file": str(font.resolve())}
+        faces[face] = (role, resolved)
+        fonts[role] = {
+            **style,
+            "family": info.family,
+            "weight": info.weight,
+            "stretch": info.stretch,
+            "file": resolved,
+        }
     return issues
+
+
+def _font_file_problem(
+    style: dict[str, Any], reference: str, info: FontFile
+) -> tuple[str, str] | None:
+    """What is wrong with a font file for its role: the field and the message, or None."""
+    if info.weight_class < LIGHTEST_CLASS:
+        return (
+            "file",
+            f"{reference} is {info.style or 'a light font'} (weight {info.weight_class}); a theme "
+            "draws weights from regular (400) to black (900)",
+        )
+    given = style.get("family")
+    if given is not None and given not in info.names:
+        return (
+            "family",
+            f'is "{given}" but {reference} holds the family "{info.family}"; leave out family '
+            "or write it as the file names it",
+        )
+    weight = style.get("weight")
+    if weight is not None and weight not in info.named_weights():
+        return (
+            "weight",
+            f"is {weight} but {reference} is {info.style} (weight {info.weight_class}), "
+            f"{info.weight}; leave out weight, which is read from the file",
+        )
+    stretch = style.get("stretch")
+    if stretch is not None and stretch != info.stretch:
+        return (
+            "stretch",
+            f"is {stretch} but {reference} is {info.stretch}; leave out stretch, which is read "
+            "from the file",
+        )
+    return None
+
+
+def _width_words(stretch: str) -> str:
+    return "" if stretch == "normal" else f" {stretch}"
 
 
 TEXTURE_SUFFIXES = (".png", ".jpg", ".jpeg")
