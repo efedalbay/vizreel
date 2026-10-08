@@ -1053,10 +1053,18 @@ def test_composed_numbers_match_pango_layout(
         for sample in samples:
             composed = glyphs(sample)
             direct = elements.number_text(sample, fonts.numbers, size_px, colors.text, affix_scale)
-            assert len(composed.submobjects) == len(direct.submobjects)
-            for ours, pango in zip(composed.submobjects, direct.submobjects, strict=True):
-                assert ours.get_left()[0] == pytest.approx(pango.get_left()[0], abs=px(0.5))
-                assert ours.get_bottom()[1] == pytest.approx(pango.get_bottom()[1], abs=px(0.5))
+            # The composed number ends with its invisible strut, and is placed by its box.
+            *ours_glyphs, strut = composed.submobjects
+            assert strut.get_stroke_width() == 0
+            assert len(ours_glyphs) == len(direct.submobjects)
+            ours_origin, pango_origin = ours_glyphs[0], direct.submobjects[0]
+            for ours, pango in zip(ours_glyphs, direct.submobjects, strict=True):
+                ours_x = ours.get_left()[0] - ours_origin.get_left()[0]
+                pango_x = pango.get_left()[0] - pango_origin.get_left()[0]
+                ours_y = ours.get_bottom()[1] - ours_origin.get_bottom()[1]
+                pango_y = pango.get_bottom()[1] - pango_origin.get_bottom()[1]
+                assert ours_x == pytest.approx(pango_x, abs=px(0.5))
+                assert ours_y == pytest.approx(pango_y, abs=px(0.5))
                 assert ours.width == pytest.approx(pango.width, abs=px(0.5))
 
 
