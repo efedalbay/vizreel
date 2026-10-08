@@ -6,6 +6,10 @@ All notable changes to vizreel are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The data grows, draws or counts for at most the theme's new `motion.reveal_max`, 3 seconds by default; a longer clip holds longer instead. A 26-second stat used to count for 13 seconds, and now counts for 3. Timelines and races still take the clip for their events and periods, and clips of the default durations are unchanged. Chart types from other packages get the limit by passing `reveal_max` to `split_duration`.
+
 ### Fixed
 
 - A `stat`'s highlight ring goes around the number alone. It used to cross the label and the source under the number; they now move out of its way, as the title above it does.

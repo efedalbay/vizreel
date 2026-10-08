@@ -129,7 +129,9 @@ class StatChartType(ChartType):
 
         elements.check_fits(widest_number, self.layout.inner, "the number")
         intro = motion.title_fade if header else 0.0
-        phases = split_duration(chart.duration, intro=intro, highlight=0, hold=motion.hold)
+        phases = split_duration(
+            chart.duration, intro=intro, highlight=0, hold=motion.hold, reveal_max=motion.reveal_max
+        )
         ring = self._ring_phases(intro)
         if ring is not None:
             phases = ring
@@ -242,7 +244,11 @@ class StatChartType(ChartType):
             return None
         try:
             return split_duration(
-                self.chart.duration, intro=intro, highlight=motion.highlight, hold=motion.hold
+                self.chart.duration,
+                intro=intro,
+                highlight=motion.highlight,
+                hold=motion.hold,
+                reveal_max=motion.reveal_max,
             )
         except RenderError:
             needed = intro + motion.highlight + motion.hold + MIN_MAIN

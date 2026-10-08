@@ -48,7 +48,7 @@ Motion guides the eye to the message. It is never decoration.
 |---|---|
 | Title fade-in | 0.5 |
 | Structure draw | 0.6 |
-| Data reveal | 40–50% of the clip |
+| Data reveal | 40–50% of the clip, at most 3 (`reveal_max`); a long clip holds longer instead |
 | Stagger between bars / events | 0.08 |
 | Highlight | 0.6 |
 | Final hold (nothing moves) | at least 1.5 |

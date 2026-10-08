@@ -147,6 +147,9 @@ class ThemeMotion(ThemeModel):
     """The highlight beat."""
     hold: float = Field(ge=1.5)
     """Final hold where nothing moves. At least 1.5."""
+    reveal_max: float = Field(default=3.0, ge=0.5)
+    """Longest time the data takes to grow, draw or count. Time a long clip has beyond it
+    lengthens the hold. At least 0.5; 3 if left out."""
     entrance: Entrance = "fade"
     """How the panel, titles, labels and legends appear. Data always grows, draws or counts."""
     exit: Exit = "none"

@@ -115,7 +115,9 @@ class TitleCardChartType(ChartType):
             )
         source = elements.source_line(chart.source, theme, layout)
 
-        phases = split_duration(chart.duration, intro=0.0, highlight=0, hold=motion.hold)
+        phases = split_duration(
+            chart.duration, intro=0.0, highlight=0, hold=motion.hold, reveal_max=motion.reveal_max
+        )
         starts = line_starts(len(lines), phases.main)
         texts = [text for text in (chart.kicker, chart.title, chart.subtitle) if text]
         check_reading_time(

@@ -311,7 +311,11 @@ class CompareChartType(ChartType):
 
         intro = motion.title_fade if len(header) else 0.0
         phases = split_duration(
-            chart.duration, intro=intro, highlight=motion.highlight, hold=motion.hold
+            chart.duration,
+            intro=intro,
+            highlight=motion.highlight,
+            hold=motion.hold,
+            reveal_max=motion.reveal_max,
         )
         half = phases.main / 2
         check_reading_time(

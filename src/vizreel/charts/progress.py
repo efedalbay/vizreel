@@ -208,7 +208,9 @@ class ProgressChartType(ChartType):
             return fill.set_z_index(1)
 
         intro = motion.title_fade if len(header) else 0.0
-        phases = split_duration(chart.duration, intro=intro, highlight=0, hold=motion.hold)
+        phases = split_duration(
+            chart.duration, intro=intro, highlight=0, hold=motion.hold, reveal_max=motion.reveal_max
+        )
         check_reading_time(
             [(text, 0.0) for text in (chart.title, chart.subtitle, chart.source) if text]
             + ([(chart.label, phases.main_start)] if chart.label else []),

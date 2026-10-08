@@ -212,17 +212,27 @@ class Phases:
         return self.intro + self.main + self.highlight + self.hold
 
 
-def split_duration(duration: float, *, intro: float, highlight: float, hold: float) -> Phases:
+def split_duration(
+    duration: float,
+    *,
+    intro: float,
+    highlight: float,
+    hold: float,
+    reveal_max: float | None = None,
+) -> Phases:
     """Divide a clip into phases.
 
     The data reveal gets the time left after intro, highlight and the minimum hold, up to
-    half of the clip. Any time beyond that lengthens the hold.
+    half of the clip and up to `reveal_max`. Any time beyond that lengthens the hold, so a
+    long clip, such as one as long as its narration, counts no slower than a short one.
 
     Args:
         duration: Total clip length in seconds.
         intro: Length of the intro.
         highlight: Length of the highlight beat, 0 for none.
         hold: Minimum final hold.
+        reveal_max: Longest data reveal, usually the theme's `motion.reveal_max`; None for
+            no limit but half the clip.
 
     Raises:
         RenderError: The duration leaves less than `MIN_MAIN` seconds for the data reveal.
@@ -234,6 +244,8 @@ def split_duration(duration: float, *, intro: float, highlight: float, hold: flo
             f"duration {duration:g}s is too short for this chart; use at least {needed:g}s"
         )
     main = min(available, duration * MAIN_SHARE_MAX)
+    if reveal_max is not None:
+        main = min(main, max(reveal_max, MIN_MAIN))
     return Phases(intro=intro, main=main, highlight=highlight, hold=hold + (available - main))
 
 

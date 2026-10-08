@@ -298,6 +298,7 @@ class TableChartType(ChartType):
             intro=intro,
             highlight=motion.highlight if chart.highlight else 0.0,
             hold=motion.hold,
+            reveal_max=motion.reveal_max,
         )
         check_reading_time(
             [(text, 0.0) for text in (chart.title, chart.subtitle, chart.source) if text]

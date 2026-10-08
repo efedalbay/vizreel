@@ -173,3 +173,27 @@ def test_a_suggested_duration_is_rounded_up_so_it_is_enough() -> None:
 def test_a_text_that_needs_a_little_more_than_the_duration_asks_for_more() -> None:
     with pytest.raises(RenderError, match=r"set duration to at least 3.1s"):
         check_reading_time([("one two three four five six seven eight", 0.38)], 3)
+
+
+def test_a_long_clip_reveals_no_longer_than_reveal_max_and_holds_the_rest() -> None:
+    phases = split_duration(25.92, intro=0, highlight=0.6, hold=1.5, reveal_max=3)
+
+    assert phases.main == 3
+    assert phases.hold == pytest.approx(25.92 - 3 - 0.6)
+    assert phases.total == pytest.approx(25.92)
+
+
+def test_reveal_max_only_shortens_a_reveal() -> None:
+    short = split_duration(3, intro=0, highlight=0, hold=1.5, reveal_max=3)
+    unlimited = split_duration(25.92, intro=0, highlight=0, hold=1.5)
+
+    assert short.main == 1.5
+    assert unlimited.main == pytest.approx(12.96)
+
+
+def test_the_theme_limits_the_reveal_to_three_seconds_by_default() -> None:
+    from pathlib import Path
+
+    from vizreel.themes.loader import load_theme
+
+    assert load_theme("default", Path(".")).motion.reveal_max == 3

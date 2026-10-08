@@ -184,6 +184,7 @@ Seconds, except `easing`, `entrance` and `exit`. A spec can override `easing`, `
 | `stagger` | Delay between bars appearing one after another | 0 |
 | `highlight` | The highlight beat | more than 0 |
 | `hold` | Final hold, where nothing moves | 1.5 |
+| `reveal_max` | Longest time the data takes to grow, draw or count; a long clip, such as one as long as its narration, holds for the rest. Timelines and races are not limited: their events and periods take the clip. Optional, 3 by default | 0.5 |
 | `entrance` | How the panel, titles, labels and legends appear: `fade`, `rise` (also rising a little) or `zoom` (also growing a little). Optional, `fade` by default | — |
 | `exit` | How a clip ends: `none` (on the complete chart), `fade`, `sink` (also sinking a little) or `zoom` (also shrinking a little). Optional, `none` by default | — |
 | `exit_time` | Length of the exit, taken from the end of the clip after the full hold. Optional, 0.5 by default | more than 0 |
