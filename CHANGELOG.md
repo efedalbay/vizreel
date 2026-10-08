@@ -4,6 +4,12 @@ All notable changes to vizreel are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Output redirected to a file or another program is written as UTF-8, so a path with letters such as `ı` (`ledgerfall-kitaplık`) no longer reads as `kitapl�k`. A console keeps its own encoding, and `PYTHONIOENCODING` still chooses one.
+
 ## [0.18.0] - 2026-10-07
 
 ### Fixed

@@ -34,6 +34,29 @@ def test_help_exits_cleanly() -> None:
     assert "schema" in result.stdout
 
 
+def test_redirected_output_is_utf8_so_a_turkish_path_reads_right(tmp_path: Path) -> None:
+    import os
+
+    folder = tmp_path / "kitaplık"
+    folder.mkdir()
+    (folder / "spec.yaml").write_text(
+        "version: 1\ncharts:\n  - { id: a, type: stat, value: 1 }\n", encoding="utf-8"
+    )
+    (folder / "bad.yaml").write_text(
+        "version: 1\ncharts:\n  - { id: a, type: stat, value: x }\n", encoding="utf-8"
+    )
+    env = {key: value for key, value in os.environ.items() if key != "PYTHONIOENCODING"}
+
+    def run(name: str) -> subprocess.CompletedProcess[bytes]:
+        command = [sys.executable, "-m", "vizreel", "validate", str(folder / name)]
+        return subprocess.run(command, capture_output=True, env=env, check=False)
+
+    valid, invalid = run("spec.yaml"), run("bad.yaml")
+
+    assert "kitaplık" in valid.stdout.decode("utf-8")
+    assert "kitaplık" in invalid.stderr.decode("utf-8")
+
+
 def test_python_dash_m_runs_cli() -> None:
     result = subprocess.run(
         [sys.executable, "-m", "vizreel", "--version"],

@@ -2,6 +2,7 @@
 
 import io
 import json
+import os
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -437,7 +438,17 @@ def _stderr() -> Console:
 
 
 def _replace_unprintable_characters() -> None:
-    """Keep output that the console encoding cannot show from crashing the command."""
+    """Keep unprintable output from crashing the command, and write redirected output as UTF-8.
+
+    Redirected to a file or another program, Python writes in the Windows code page, so a
+    path such as "kitaplık" reaches a reader of UTF-8 as "kitapl�k". A console keeps its own
+    encoding, and so does output whose encoding PYTHONIOENCODING sets.
+    """
+    chosen = bool(os.environ.get("PYTHONIOENCODING"))
     for stream in (sys.stdout, sys.stderr):
-        if isinstance(stream, io.TextIOWrapper):
+        if not isinstance(stream, io.TextIOWrapper):
+            continue
+        if chosen or stream.isatty():
             stream.reconfigure(errors="replace")
+        else:
+            stream.reconfigure(encoding="utf-8", errors="replace")
