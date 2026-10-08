@@ -12,6 +12,7 @@ All notable changes to vizreel are documented here. The format follows
 
 ### Fixed
 
+- A counting number no longer jumps up and down in a font whose digits are not all as tall, such as one with old-style figures (Libre Caslon): every value of a number now has the same box, so its prefix and suffix stay put while it counts.
 - A `stat`'s highlight ring goes around the number alone. It used to cross the label and the source under the number; they now move out of its way, as the title above it does.
 - Output redirected to a file or another program is written as UTF-8, so a path with letters such as `ı` (`ledgerfall-kitaplık`) no longer reads as `kitapl�k`. A console keeps its own encoding, and `PYTHONIOENCODING` still chooses one.
 

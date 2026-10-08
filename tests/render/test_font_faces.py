@@ -95,3 +95,54 @@ def test_each_weight_and_width_of_a_family_draws_its_own_file(tmp_path: Path) ->
         narrow = elements.text("0IIIIII0", style, 100, "#000000").width
         wide = elements.text("0MMMMMM0", style, 100, "#000000").width
         assert abs(narrow - wide) < 0.01
+
+
+def test_a_counting_number_in_old_style_figures_does_not_jump(tmp_path: Path) -> None:
+    import json
+
+    import av
+    import numpy as np
+
+    from vizreel.render.engine import RenderOptions, render_spec
+
+    data = yaml.safe_load((BUILTIN_DIR / "default.yaml").read_text(encoding="utf-8"))
+    data["fonts"]["numbers"] = {"file": str(FONTS / "LibreCaslonText-Bold.ttf")}
+    (tmp_path / "caslon.yaml").write_text(yaml.safe_dump(data), encoding="utf-8")
+    (tmp_path / "spec.yaml").write_text(
+        "version: 1\nmeta: { theme: caslon.yaml, cues: true }\ncharts:\n"
+        "  - { id: v, type: stat, value: 2250000000, number: { prefix: '$', compact: true },"
+        " duration: 6 }\n",
+        encoding="utf-8",
+    )
+    text = load_theme("caslon.yaml", tmp_path).colors.text
+
+    [result] = render_spec(
+        tmp_path / "spec.yaml", RenderOptions(out_dir=tmp_path, quality="preview"), reraise=True
+    )
+
+    assert result.video is not None and result.cues is not None
+    with av.open(str(result.video)) as container:
+        clip = [frame.to_ndarray(format="rgb24").astype(int) for frame in container.decode(video=0)]
+    [reveal] = [
+        cue
+        for cue in json.loads(result.cues.read_text(encoding="utf-8"))["cues"]
+        if cue["name"] == "reveal"
+    ]
+    target = [int(text[index : index + 2], 16) for index in (1, 3, 5)]
+
+    def ink(frame: np.ndarray) -> np.ndarray:
+        return np.all(np.abs(frame - target) <= 60, axis=2)
+
+    final = ink(clip[-1])
+    columns = np.nonzero(final.any(axis=0))[0]
+    left, right = columns.min(), columns.max()
+    edge = max(4, (right - left) // 12)
+
+    def rows(frame: np.ndarray, start: int, stop: int) -> tuple[int, int]:
+        found = np.nonzero(ink(frame)[:, start:stop].any(axis=1))[0]
+        return int(found.min()), int(found.max())
+
+    # The "$" at the left and the "B" at the right stay where they are while the digits count.
+    counting = clip[reveal["start_frame"] + 2 : reveal["end_frame"]]
+    assert len({rows(frame, left, left + edge) for frame in counting}) == 1
+    assert len({rows(frame, right - edge, right + 1) for frame in counting}) == 1
