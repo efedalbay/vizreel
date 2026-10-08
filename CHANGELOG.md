@@ -8,6 +8,7 @@ All notable changes to vizreel are documented here. The format follows
 
 ### Fixed
 
+- A `stat`'s highlight ring goes around the number alone. It used to cross the label and the source under the number; they now move out of its way, as the title above it does.
 - Output redirected to a file or another program is written as UTF-8, so a path with letters such as `ı` (`ledgerfall-kitaplık`) no longer reads as `kitapl�k`. A console keeps its own encoding, and `PYTHONIOENCODING` still chooses one.
 
 ## [0.18.0] - 2026-10-07

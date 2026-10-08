@@ -128,12 +128,26 @@ class StatChartType(ChartType):
             )
 
         elements.check_fits(widest_number, self.layout.inner, "the number")
+        intro = motion.title_fade if header else 0.0
+        phases = split_duration(chart.duration, intro=intro, highlight=0, hold=motion.hold)
+        ring = self._ring_phases(intro)
+        if ring is not None:
+            phases = ring
         # The header and the source line are set apart; the number and its label stay close.
         band_breaks = {len(header) - 1 if header else -1, len(lines) - 2 if source else -1}
         gaps = [
             self.layout.band_gap if index in band_breaks else stack_gap(size, below)
             for index, ((_, size), (_, below)) in enumerate(pairwise(lines))
         ]
+        if ring is not None:
+            # The ring goes around the number alone: the lines above and below it move out of
+            # its way.
+            above, below = self._ring_overhang(final_number)
+            at = len(header)
+            if at > 0:
+                gaps[at - 1] = max(gaps[at - 1], above)
+            if at < len(gaps):
+                gaps[at] = max(gaps[at], below)
         column = elements.stack(
             [(mobject, gap) for (mobject, _), gap in zip(lines, [*gaps, 0.0], strict=True)],
             self.layout.content.center,
@@ -142,11 +156,6 @@ class StatChartType(ChartType):
 
         header_group = VGroup(*(mobject for mobject, _ in header))
         footer_group = VGroup(*(mobject for mobject, _ in footer))
-        intro = motion.title_fade if header else 0.0
-        phases = split_duration(chart.duration, intro=intro, highlight=0, hold=motion.hold)
-        ring = self._ring_phases(intro)
-        if ring is not None:
-            phases = ring
         check_reading_time(
             [(text, 0.0) for text in (chart.title, chart.subtitle) if text]
             + [(text, phases.main_start) for text in (chart.label, chart.source) if text],
@@ -206,6 +215,21 @@ class StatChartType(ChartType):
                 elements.draw_ring(pen, rate_func=ease), run_time=phases.highlight, cue="highlight"
             )
         scene.wait(phases.hold)
+
+    def _ring_overhang(self, number: "VMobject") -> tuple[float, float]:
+        """How far the highlight ring reaches above and below the number, with room to spare.
+
+        The gaps above and below the number are at least this, so the ring crosses no text.
+        """
+        from vizreel.render import elements
+        from vizreel.render.layout import px
+
+        sizes = self.theme.sizes
+        pen = elements.highlight_ring(elements.bounds(number), self.theme)
+        spare = px(sizes.line * elements.RING_STROKE) / 2 + stack_gap(sizes.caption, sizes.caption)
+        above = float(pen.get_top()[1]) - float(number.get_top()[1]) + spare
+        below = float(number.get_bottom()[1]) - float(pen.get_bottom()[1]) + spare
+        return above, below
 
     def _ring_phases(self, intro: float) -> "Phases | None":
         """The phases with a beat for the theme's highlight ring after the count.

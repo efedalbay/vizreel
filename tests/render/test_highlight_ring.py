@@ -191,3 +191,46 @@ def test_a_timeline_ring_moves_with_a_sequence_and_the_clips_cut_together(spec: 
     before, after = pen(second[0]), pen(second[-1])
     assert before.sum() > 100 and after.sum() > 100
     assert np.nonzero(after)[1].mean() > np.nonzero(before)[1].mean()
+
+
+TEXTED_STAT = """\
+version: 1
+meta: { theme: ring.yaml, cues: true }
+charts:
+  - id: valuation
+    type: stat
+    title: Northwind at its peak
+    value: 2250000000
+    label: Northwind's valuation at its peak
+    number: { prefix: "$", compact: true }
+    source: "Source: example data"
+    duration: 6
+"""
+
+
+@pytest.mark.parametrize("aspect", ["16:9", "9:16", "1:1"])
+def test_a_stat_rings_its_number_alone_clear_of_its_title_label_and_source(
+    spec: Path, aspect: str
+) -> None:
+    import json
+
+    from vizreel.themes.loader import load_theme
+
+    spec.write_text(TEXTED_STAT, encoding="utf-8")
+    colors = load_theme("ring.yaml", spec.parent).colors
+    [result] = render(spec, "valuation", aspect)
+
+    assert result.video is not None and result.cues is not None
+    clip = frames(result.video)
+    cues = json.loads(result.cues.read_text(encoding="utf-8"))["cues"]
+    [mark] = [cue for cue in cues if cue["name"] == "mark"]
+    before, after = clip[mark["start_frame"] - 1], clip[-1]
+    # Every line of text, before the ring is drawn: the title and number in the text color,
+    # the label and source in the muted one.
+    texts = np.zeros(before.shape[:2], dtype=bool)
+    for hex_color in (colors.text, colors.muted):
+        target = [int(hex_color[index : index + 2], 16) for index in (1, 3, 5)]
+        texts |= np.all(np.abs(before - target) <= 40, axis=2)
+    ring = pen(after)
+    assert ring.sum() > 150
+    assert (ring & texts).sum() == 0
